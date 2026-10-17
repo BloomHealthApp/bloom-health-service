@@ -4,7 +4,7 @@ GOBIN       := $(shell go env GOPATH)/bin
 MOCKGEN     := $(GOBIN)/mockgen
 WIRE        := $(GOBIN)/wire
 
-SERVICE_IFACES   := IAuthService,IUserService,IHabitService,IDailyLogService,IWorkoutService,ISettingsService,ISyncService,IStatsService,IProvisionService,IHealthService
+SERVICE_IFACES   := IAuthService,IUserService,IHabitService,IDailyLogService,IWorkoutService,IPeriodService,ISettingsService,ISyncService,IStatsService,IProvisionService,IHealthService
 MONGOREPO_IFACES := IUserRepo,ISpaceRepo,IMembershipRepo,IEntityRepo,IOpRepo,IOTPRepo,ISessionRepo
 DRIVER_IFACES    := IPinger,IMongoDB
 

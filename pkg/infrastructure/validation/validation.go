@@ -11,6 +11,9 @@ import (
 	"github.com/bubu-bloom/service/pkg/enums/entitytype"
 	"github.com/bubu-bloom/service/pkg/enums/habitcategory"
 	"github.com/bubu-bloom/service/pkg/enums/logstatus"
+	"github.com/bubu-bloom/service/pkg/enums/periodflow"
+	"github.com/bubu-bloom/service/pkg/enums/periodmood"
+	"github.com/bubu-bloom/service/pkg/enums/periodsymptom"
 	"github.com/bubu-bloom/service/pkg/enums/remindertype"
 	"github.com/bubu-bloom/service/pkg/enums/restdaymode"
 	"github.com/bubu-bloom/service/pkg/enums/targetcomparison"
@@ -38,6 +41,9 @@ var (
 	workoutTyps  = set(workouttype.Values()...)
 	restModes    = set(restdaymode.Values()...)
 	reminderKeys = set(remindertype.Values()...)
+	periodFlows  = set(periodflow.Values()...)
+	periodMoods  = set(periodmood.Values()...)
+	periodSymps  = set(periodsymptom.Values()...)
 )
 
 func set(v ...string) map[string]bool {
@@ -53,7 +59,8 @@ var allowed = map[string]map[string]bool{
 		"unit", "schedule", "reminder", "isActive", "sortOrder", "isDefault"),
 	entitytype.DailyLog: set("habitId", "localDate", "value", "status", "note"),
 	entitytype.Workout:  set("type", "startedAt", "endedAt", "durationSeconds", "pausedSeconds", "notes", "localDate"),
-	entitytype.Settings: set("dailyThreshold", "restDays", "restDayMode", "reminders", "stepGoal"),
+	entitytype.Settings: set("dailyThreshold", "restDays", "restDayMode", "reminders", "stepGoal", "sundayRest"),
+	entitytype.Period:   set("startDate", "endDate", "flow", "symptoms", "mood", "note"),
 }
 
 // serverOnly fields that clients may not set (silently kept from existing / defaulted on create).
@@ -96,6 +103,8 @@ func Merge(typ string, existing, payload map[string]any, ctx Context) (map[strin
 		err = validateWorkout(out, ctx)
 	case entitytype.Settings:
 		err = validateSettings(out)
+	case entitytype.Period:
+		err = validatePeriod(out, ctx)
 	}
 	if err != nil {
 		return nil, err
@@ -446,7 +455,7 @@ func DefaultReminders() []any {
 // DefaultSettings returns the initial settings data.
 func DefaultSettings() map[string]any {
 	return map[string]any{"dailyThreshold": float64(80), "restDays": []any{}, "restDayMode": "neutral",
-		"reminders": DefaultReminders(), "stepGoal": float64(7000)}
+		"reminders": DefaultReminders(), "stepGoal": float64(7000), "sundayRest": true}
 }
 
 func validateSettings(m map[string]any) error {
@@ -477,6 +486,9 @@ func validateSettings(m map[string]any) error {
 	} else if sg < 0 || sg > 100000 {
 		return bad("stepGoal out of range")
 	}
+	if err := boolean(m, "sundayRest", true); err != nil {
+		return err
+	}
 	if m["reminders"] == nil {
 		m["reminders"] = DefaultReminders()
 		return nil
@@ -504,5 +516,92 @@ func validateSettings(m map[string]any) error {
 		clean = append(clean, c)
 	}
 	m["reminders"] = clean
+	return nil
+}
+
+// MaxPeriodDays is the maximum length of a period in days (inclusive of both ends).
+const MaxPeriodDays = 14
+
+// MaxPeriodSymptoms is the maximum number of symptoms on one entry.
+const MaxPeriodSymptoms = 10
+
+// PeriodRange returns the start and end dates of a validated period entity data map; end is "" while ongoing.
+func PeriodRange(data map[string]any) (start, end string) {
+	start, _ = data["startDate"].(string)
+	end, _ = data["endDate"].(string)
+	return start, end
+}
+
+func validatePeriod(m map[string]any, ctx Context) error {
+	start, err := str(m, "startDate", 10, 10, true)
+	if err != nil {
+		return err
+	}
+	st, err := ParseDate(start)
+	if err != nil {
+		return err
+	}
+	if ctx.Today != "" && start > ctx.Today {
+		return bad("startDate cannot be in the future")
+	}
+	if m["endDate"] == nil || m["endDate"] == "" {
+		m["endDate"] = nil
+	} else {
+		end, err := str(m, "endDate", 10, 10, true)
+		if err != nil {
+			return err
+		}
+		et, err := ParseDate(end)
+		if err != nil {
+			return err
+		}
+		if et.Before(st) {
+			return bad("endDate must not be before startDate")
+		}
+		if int(et.Sub(st).Hours()/24)+1 > MaxPeriodDays {
+			return bad("a period can last at most %d days", MaxPeriodDays)
+		}
+	}
+	if m["flow"] == nil {
+		m["flow"] = periodflow.Medium
+	}
+	if err := enum(m, "flow", periodFlows, true); err != nil {
+		return err
+	}
+	if m["mood"] == nil || m["mood"] == "" {
+		m["mood"] = nil
+	} else if err := enum(m, "mood", periodMoods, false); err != nil {
+		return err
+	}
+	if m["symptoms"] == nil {
+		m["symptoms"] = []any{}
+	} else {
+		arr, ok := m["symptoms"].([]any)
+		if !ok {
+			return bad("symptoms must be an array")
+		}
+		if len(arr) > MaxPeriodSymptoms {
+			return bad("at most %d symptoms", MaxPeriodSymptoms)
+		}
+		seen := map[string]bool{}
+		clean := make([]any, 0, len(arr))
+		for _, x := range arr {
+			sy, ok := x.(string)
+			if !ok || !periodSymps[sy] {
+				return bad("symptoms has an invalid entry")
+			}
+			if !seen[sy] {
+				seen[sy] = true
+				clean = append(clean, sy)
+			}
+		}
+		m["symptoms"] = clean
+	}
+	if _, err := str(m, "note", 0, 500, false); err != nil {
+		return err
+	}
+	if m["note"] == nil || m["note"] == "" {
+		m["note"] = nil
+	}
 	return nil
 }

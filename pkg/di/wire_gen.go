@@ -46,6 +46,7 @@ func InitializeApp() (AppInterface, func(), error) {
 	iHabitService := service.NewHabitService(iLogger, iEntityRepo, iSyncService)
 	iDailyLogService := service.NewDailyLogService(iLogger, iEntityRepo, iSyncService)
 	iWorkoutService := service.NewWorkoutService(iLogger, iEntityRepo, iSyncService)
+	iPeriodService := service.NewPeriodService(iLogger, iEntityRepo, iSyncService)
 	iSettingsService := service.NewSettingsService(iLogger, iEntityRepo, iSyncService, clockClock)
 	iStatsService := service.NewStatsService(iLogger, iEntityRepo, iUserRepo, iMembershipRepo, clockClock)
 	iPinger := repositories.Pinger
@@ -60,6 +61,7 @@ func InitializeApp() (AppInterface, func(), error) {
 		habit:     iHabitService,
 		dailyLog:  iDailyLogService,
 		workout:   iWorkoutService,
+		period:    iPeriodService,
 		settings:  iSettingsService,
 		sync:      iSyncService,
 		stats:     iStatsService,
@@ -89,6 +91,7 @@ func InitializeTestApp(cfg *config.Store, log logger.ILogger, clk clock.Clock, m
 	iHabitService := service.NewHabitService(log, iEntityRepo, iSyncService)
 	iDailyLogService := service.NewDailyLogService(log, iEntityRepo, iSyncService)
 	iWorkoutService := service.NewWorkoutService(log, iEntityRepo, iSyncService)
+	iPeriodService := service.NewPeriodService(log, iEntityRepo, iSyncService)
 	iSettingsService := service.NewSettingsService(log, iEntityRepo, iSyncService, clk)
 	iStatsService := service.NewStatsService(log, iEntityRepo, iUserRepo, iMembershipRepo, clk)
 	iPinger := repos.Pinger
@@ -103,6 +106,7 @@ func InitializeTestApp(cfg *config.Store, log logger.ILogger, clk clock.Clock, m
 		habit:     iHabitService,
 		dailyLog:  iDailyLogService,
 		workout:   iWorkoutService,
+		period:    iPeriodService,
 		settings:  iSettingsService,
 		sync:      iSyncService,
 		stats:     iStatsService,
@@ -115,7 +119,7 @@ func InitializeTestApp(cfg *config.Store, log logger.ILogger, clk clock.Clock, m
 // container.go:
 
 // services are shared by the production and the test injector.
-var services = wire.NewSet(service.NewAuthService, service.NewUserService, service.NewHabitService, service.NewDailyLogService, service.NewWorkoutService, service.NewSettingsService, service.NewSyncService, service.NewStatsService, service.NewProvisionService, service.NewHealthService)
+var services = wire.NewSet(service.NewAuthService, service.NewUserService, service.NewHabitService, service.NewDailyLogService, service.NewWorkoutService, service.NewPeriodService, service.NewSettingsService, service.NewSyncService, service.NewStatsService, service.NewProvisionService, service.NewHealthService)
 
 var repositoryFields = wire.FieldsOf(new(*Repositories),
 	"Users", "Spaces", "Memberships", "Entities", "Ops", "OTPs", "Sessions", "Pinger")

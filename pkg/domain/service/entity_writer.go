@@ -33,6 +33,8 @@ func resultToEntity(res *serviceBos.ApplyResult) (map[string]any, apperrors.IHtt
 		switch res.Reason {
 		case "forbidden":
 			return nil, apperrors.ForbiddenError("read-only access")
+		case ReasonPeriodTrackerDisabled:
+			return nil, apperrors.ForbiddenError("period tracker is disabled")
 		case "not_found":
 			return nil, apperrors.NotFoundError("not found")
 		default:

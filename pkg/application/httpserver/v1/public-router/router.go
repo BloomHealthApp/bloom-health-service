@@ -39,4 +39,9 @@ func RegisterRoutes(v1 *gin.RouterGroup) {
 	owner.PATCH("/workouts/:id", PatchWorkout)
 	owner.DELETE("/workouts/:id", DeleteWorkout)
 	owner.POST("/sync/push", SyncPush)
+	// period tracker: owner only (viewers get 403) and only while the owner's tracker is enabled
+	owner.GET("/periods", ListPeriods)
+	owner.POST("/periods", CreatePeriod)
+	owner.PATCH("/periods/:id", PatchPeriod)
+	owner.DELETE("/periods/:id", DeletePeriod)
 }

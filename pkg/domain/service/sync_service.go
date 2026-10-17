@@ -43,6 +43,9 @@ func NewSyncService(log logger.ILogger, entities mongorepo.IEntityRepo, ops mong
 	return &syncService{log: log, entities: entities, ops: ops, clock: clk}
 }
 
+// ReasonPeriodTrackerDisabled is the rejection reason for period writes while the owner's tracker is off.
+const ReasonPeriodTrackerDisabled = "period_tracker_disabled"
+
 const (
 	opUpsert = "upsert"
 	opDelete = "delete"
@@ -78,6 +81,9 @@ func copyMap(m map[string]any) map[string]any {
 func (s *syncService) Apply(ctx context.Context, a *serviceBos.Actor, op serviceBos.ApplyOp) (*serviceBos.ApplyResult, apperrors.IHttpError) {
 	if !a.IsOwner() {
 		return rejected("forbidden"), nil
+	}
+	if op.EntityType == entitytype.Period && !a.User.IsPeriodTrackerEnabled() {
+		return rejected(ReasonPeriodTrackerDisabled), nil
 	}
 	if op.OperationID != "" {
 		if rec, err := s.ops.Get(ctx, op.OperationID); err == nil {
@@ -205,6 +211,13 @@ func (s *syncService) apply(ctx context.Context, a *serviceBos.Actor, op service
 			}
 			return nil, err
 		}
+		if op.EntityType == entitytype.Period {
+			if reason, err := s.checkPeriodRules(ctx, space, op.EntityID, data, today); err != nil {
+				return nil, err
+			} else if reason != "" {
+				return rejected(reason), nil
+			}
+		}
 		if exists {
 			next = existing.Clone()
 		} else {
@@ -255,7 +268,48 @@ func (s *syncService) Push(ctx context.Context, a *serviceBos.Actor, req *reques
 	return &response.SyncPushResponse{Results: results}, nil
 }
 
-var changeKeys = map[string]string{entitytype.Habit: "habits", entitytype.DailyLog: "dailyLogs", entitytype.Workout: "workouts", entitytype.Settings: "settings"}
+var changeKeys = map[string]string{entitytype.Habit: "habits", entitytype.DailyLog: "dailyLogs", entitytype.Workout: "workouts",
+	entitytype.Settings: "settings", entitytype.Period: "periods"}
+
+// checkPeriodRules enforces the cross-record period rules: a range must not overlap another non-deleted
+// period and only one period may be ongoing. An ongoing period is treated as lasting through today.
+// It returns a rejection reason ("" when fine); the error is for infrastructure failures only.
+func (s *syncService) checkPeriodRules(ctx context.Context, space, id string, data map[string]any, today string) (string, error) {
+	start, end := validation.PeriodRange(data)
+	ongoing := end == ""
+	effEnd := end
+	if ongoing {
+		effEnd = maxStr(today, start)
+	}
+	others, err := s.entities.List(ctx, space, entitytype.Period, mongorepo.EntityQuery{})
+	if err != nil {
+		return "", err
+	}
+	for i := range others {
+		if others[i].ID == id {
+			continue
+		}
+		os, oe := validation.PeriodRange(others[i].Data)
+		if ongoing && oe == "" {
+			return "validation_failed: only one period can be ongoing", nil
+		}
+		oEff := oe
+		if oe == "" {
+			oEff = maxStr(today, os)
+		}
+		if start <= oEff && os <= effEnd {
+			return "validation_failed: periods must not overlap", nil
+		}
+	}
+	return "", nil
+}
+
+func maxStr(a, b string) string {
+	if a > b {
+		return a
+	}
+	return b
+}
 
 func (s *syncService) Pull(ctx context.Context, a *serviceBos.Actor, req *request.SyncPullReq) (*response.SyncPullResponse, apperrors.IHttpError) {
 	limit := req.Limit
@@ -267,15 +321,19 @@ func (s *syncService) Pull(ctx context.Context, a *serviceBos.Actor, req *reques
 		return nil, internalErr(s.log, ctx, "pull failed", err)
 	}
 	out := &response.SyncPullResponse{Cursor: utils.EncodeCursor(req.After),
-		Changes: map[string][]map[string]any{"habits": {}, "dailyLogs": {}, "workouts": {}, "settings": {}}}
+		Changes: map[string][]map[string]any{"habits": {}, "dailyLogs": {}, "workouts": {}, "settings": {}, "periods": {}}}
 	if len(rows) > limit {
 		out.HasMore = true
 		rows = rows[:limit]
 	}
 	for i := range rows {
+		out.Cursor = utils.EncodeCursor(rows[i].Seq) // advances over filtered rows too
+		// Period data is private to the owner: never returned to viewers (and never when the actor has no owner role).
+		if rows[i].Type == entitytype.Period && !a.IsOwner() {
+			continue
+		}
 		k := changeKeys[rows[i].Type]
 		out.Changes[k] = append(out.Changes[k], rows[i].Public())
-		out.Cursor = utils.EncodeCursor(rows[i].Seq)
 	}
 	return out, nil
 }

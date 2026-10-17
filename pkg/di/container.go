@@ -22,6 +22,7 @@ var services = wire.NewSet(
 	service.NewHabitService,
 	service.NewDailyLogService,
 	service.NewWorkoutService,
+	service.NewPeriodService,
 	service.NewSettingsService,
 	service.NewSyncService,
 	service.NewStatsService,

@@ -24,6 +24,7 @@ type AppInterface interface {
 	GetHabitService() service.IHabitService
 	GetDailyLogService() service.IDailyLogService
 	GetWorkoutService() service.IWorkoutService
+	GetPeriodService() service.IPeriodService
 	GetSettingsService() service.ISettingsService
 	GetSyncService() service.ISyncService
 	GetStatsService() service.IStatsService
@@ -41,6 +42,7 @@ type appLogic struct {
 	habit     service.IHabitService
 	dailyLog  service.IDailyLogService
 	workout   service.IWorkoutService
+	period    service.IPeriodService
 	settings  service.ISettingsService
 	sync      service.ISyncService
 	stats     service.IStatsService
@@ -57,6 +59,7 @@ func (a *appLogic) GetUserService() service.IUserService           { return a.us
 func (a *appLogic) GetHabitService() service.IHabitService         { return a.habit }
 func (a *appLogic) GetDailyLogService() service.IDailyLogService   { return a.dailyLog }
 func (a *appLogic) GetWorkoutService() service.IWorkoutService     { return a.workout }
+func (a *appLogic) GetPeriodService() service.IPeriodService       { return a.period }
 func (a *appLogic) GetSettingsService() service.ISettingsService   { return a.settings }
 func (a *appLogic) GetSyncService() service.ISyncService           { return a.sync }
 func (a *appLogic) GetStatsService() service.IStatsService         { return a.stats }

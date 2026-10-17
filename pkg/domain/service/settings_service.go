@@ -43,7 +43,11 @@ func (s *settingsService) Get(ctx context.Context, a *serviceBos.Actor) (map[str
 	if err != nil {
 		return nil, internalErr(s.log, ctx, "settings lookup failed", err)
 	}
-	return e.Public(), nil
+	pub := e.Public()
+	if _, ok := pub["sundayRest"]; !ok {
+		pub["sundayRest"] = true // legacy settings without the field: Sunday rest is on by default
+	}
+	return pub, nil
 }
 
 // Patch updates settings; a missing version means "no known base" (0), which conflicts with an existing record.
