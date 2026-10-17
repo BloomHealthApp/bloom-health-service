@@ -95,15 +95,16 @@ const (
 // OTPChallenge is a pending one-time code (stored hashed), addressed by its opaque ChallengeID.
 // Sign-up challenges carry the pending name and phone; the account exists only after verification.
 type OTPChallenge struct {
-	ChallengeID  string    `bson:"_id"`
-	Purpose      string    `bson:"purpose"`
-	Email        string    `bson:"email"` // lower-cased address the code was mailed to
-	PendingName  string    `bson:"pendingName,omitempty"`
-	PendingPhone string    `bson:"pendingPhone,omitempty"`
-	CodeHash     string    `bson:"codeHash"`
-	CreatedAt    time.Time `bson:"createdAt"`
-	ExpiresAt    time.Time `bson:"expiresAt"`
-	Attempts     int       `bson:"attempts"`
+	ChallengeID   string    `bson:"_id"`
+	Purpose       string    `bson:"purpose"`
+	Email         string    `bson:"email"` // lower-cased address the code was mailed to
+	PendingName   string    `bson:"pendingName,omitempty"`
+	PendingPhone  string    `bson:"pendingPhone,omitempty"`
+	PendingAvatar string    `bson:"pendingAvatar,omitempty"` // optional avatar id chosen at sign-up
+	CodeHash      string    `bson:"codeHash"`
+	CreatedAt     time.Time `bson:"createdAt"`
+	ExpiresAt     time.Time `bson:"expiresAt"`
+	Attempts      int       `bson:"attempts"`
 }
 
 // RefreshSession is one rotating refresh token (stored hashed) belonging to a token family.

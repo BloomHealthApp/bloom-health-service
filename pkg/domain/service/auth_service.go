@@ -120,7 +120,7 @@ func (s *authService) cooldown(ctx context.Context, email string) (*dao.OTPChall
 }
 
 // sendChallenge stores a new challenge for email, retires the previous one and mails the code.
-func (s *authService) sendChallenge(ctx context.Context, purpose, email, name, phone string) (string, error) {
+func (s *authService) sendChallenge(ctx context.Context, purpose, email, name, phone, avatarID string) (string, error) {
 	id, err := randomToken()
 	if err != nil {
 		return "", err
@@ -131,7 +131,7 @@ func (s *authService) sendChallenge(ctx context.Context, purpose, email, name, p
 	}
 	prev, _ := s.otps.LatestByEmail(ctx, email)
 	now := s.clock.Now()
-	ch := &dao.OTPChallenge{ChallengeID: id, Purpose: purpose, Email: email, PendingName: name, PendingPhone: phone,
+	ch := &dao.OTPChallenge{ChallengeID: id, Purpose: purpose, Email: email, PendingName: name, PendingPhone: phone, PendingAvatar: avatarID,
 		CodeHash: s.otpHash(id, code), CreatedAt: now, ExpiresAt: now.Add(constants.OTPTTL)}
 	if err := s.otps.Save(ctx, ch); err != nil {
 		return "", fmt.Errorf("save challenge: %w", err)
@@ -166,7 +166,7 @@ func (s *authService) RequestSignUp(ctx context.Context, req *request.SignUpReq)
 		return nil, apperrors.TooManyRequestsError("a code was just sent, please wait before requesting another",
 			strconv.Itoa(int(math.Ceil(wait.Seconds()))))
 	}
-	id, err := s.sendChallenge(ctx, dao.OTPPurposeSignUp, req.Email, req.Name, req.Phone)
+	id, err := s.sendChallenge(ctx, dao.OTPPurposeSignUp, req.Email, req.Name, req.Phone, deref(req.Avatar))
 	if err != nil {
 		return nil, internalErr(s.log, ctx, "signup: could not issue code", err)
 	}
@@ -200,7 +200,7 @@ func (s *authService) RequestSignIn(ctx context.Context, req *request.SignInReq)
 	if cur, _ := s.cooldown(ctx, email); cur != nil && cur.Purpose == dao.OTPPurposeSignIn {
 		return &response.ChallengeResponse{Status: "sent", ChallengeID: cur.ChallengeID}, nil // code already mailed
 	}
-	id, err := s.sendChallenge(ctx, dao.OTPPurposeSignIn, email, "", "")
+	id, err := s.sendChallenge(ctx, dao.OTPPurposeSignIn, email, "", "", "")
 	if err != nil {
 		s.log.Error(ctx, "signin: could not issue code", map[string]any{"err": err.Error()})
 		return decoy() // never reveal the failure: the caller sees the same answer as for unknown accounts
@@ -234,7 +234,7 @@ func (s *authService) VerifyOTP(ctx context.Context, req *request.OTPVerifyReq) 
 	var u *dao.User
 	switch ch.Purpose {
 	case dao.OTPPurposeSignUp:
-		u, err = s.provision.EnsureAccount(ctx, ch.PendingName, ch.PendingPhone, ch.Email, s.defaultTZ)
+		u, err = s.provision.EnsureAccount(ctx, ch.PendingName, ch.PendingPhone, ch.PendingAvatar, ch.Email, s.defaultTZ)
 		if apperrors.IsConflict(err) { // phone (or email) taken between request and verify: unique-index race
 			return nil, apperrors.AlreadyRegisteredError("an account with this email or phone already exists")
 		}
@@ -345,4 +345,11 @@ func (s *authService) Authenticate(ctx context.Context, accessToken string) (*se
 		return nil, internalErr(s.log, ctx, "membership lookup failed", err)
 	}
 	return &serviceBos.Actor{User: u, Membership: m}, nil
+}
+
+func deref(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }

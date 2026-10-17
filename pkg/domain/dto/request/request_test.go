@@ -115,3 +115,38 @@ func TestPatchEntityVersionExtraction(t *testing.T) {
 	_ = r.Validate()
 	require.False(t, r.HasVersion)
 }
+
+func TestPatchMeAvatarValidate(t *testing.T) {
+	const msg = "avatar must be null or one of bubu-01 to bubu-09"
+	ok := []string{`{"avatar":null}`, `{"avatar":"bubu-01"}`, `{"avatar":"bubu-09"}`}
+	for _, body := range ok {
+		var r PatchMeReq
+		require.NoError(t, json.Unmarshal([]byte(body), &r), body)
+		require.Nil(t, r.Validate(), body)
+	}
+	bad := []string{`{"avatar":""}`, `{"avatar":"bubu-00"}`, `{"avatar":"bubu-10"}`, `{"avatar":"Bubu-01"}`, `{"avatar":"bubu-01 "}`,
+		`{"avatar":"https://x/y.png"}`, `{"avatar":"` + strings.Repeat("a", 500) + `"}`}
+	for _, body := range bad {
+		var r PatchMeReq
+		require.NoError(t, json.Unmarshal([]byte(body), &r), body)
+		herr := r.Validate()
+		require.NotNil(t, herr, body)
+		require.Equal(t, msg, herr.Error(), body)
+	}
+	var r PatchMeReq
+	require.Error(t, json.Unmarshal([]byte(`{"avatar":5}`), &r))
+}
+
+func TestSignUpReqAvatarValidate(t *testing.T) {
+	str := func(s string) *string { return &s }
+	for _, a := range []*string{nil, str("bubu-01"), str("bubu-09")} {
+		r := SignUpReq{Name: "Riya", Phone: "9876543210", Email: "r@example.com", Avatar: a}
+		require.Nil(t, r.Validate())
+	}
+	for _, a := range []*string{str(""), str("bubu-10"), str("evil"), str(strings.Repeat("a", 300))} {
+		r := SignUpReq{Name: "Riya", Phone: "9876543210", Email: "r@example.com", Avatar: a}
+		herr := r.Validate()
+		require.NotNil(t, herr, *a)
+		require.Contains(t, herr.Error(), "avatar must be null or one of bubu-01 to bubu-09")
+	}
+}

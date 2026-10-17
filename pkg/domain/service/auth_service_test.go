@@ -290,7 +290,7 @@ func TestVerifyOTP(t *testing.T) {
 		svc, m, ch, code := issueChallenge(t, ctrl, dao.OTPPurposeSignUp)
 		m.otps.EXPECT().Get(gomock.Any(), ch.ChallengeID).Return(ch, nil)
 		m.otps.EXPECT().Delete(gomock.Any(), ch.ChallengeID).Return(nil)
-		m.provision.EXPECT().EnsureAccount(gomock.Any(), "Anu", anuPhone, anu.Email, gomock.Any()).Return(anuFull, nil)
+		m.provision.EXPECT().EnsureAccount(gomock.Any(), "Anu", anuPhone, gomock.Any(), anu.Email, gomock.Any()).Return(anuFull, nil)
 		m.sessions.EXPECT().Save(gomock.Any(), gomock.Any()).Return(nil)
 		m.memberships.EXPECT().ForUser(gomock.Any(), anu.ID).Return(anuMember, nil)
 		expectUserResponse(m)
@@ -303,7 +303,7 @@ func TestVerifyOTP(t *testing.T) {
 		svc, m, ch, code := issueChallenge(t, ctrl, dao.OTPPurposeSignUp)
 		m.otps.EXPECT().Get(gomock.Any(), ch.ChallengeID).Return(ch, nil)
 		m.otps.EXPECT().Delete(gomock.Any(), ch.ChallengeID).Return(nil)
-		m.provision.EXPECT().EnsureAccount(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, apperrors.ErrRepoConflict)
+		m.provision.EXPECT().EnsureAccount(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, apperrors.ErrRepoConflict)
 		_, herr := svc.VerifyOTP(ctx, &request.OTPVerifyReq{ChallengeID: ch.ChallengeID, Code: code})
 		requireStatus(t, herr, 409, "already_registered")
 	})
@@ -542,3 +542,36 @@ func mintForTest(t *testing.T, svc IAuthService, m *authMocks) string {
 	require.Nil(t, herr)
 	return resp.AccessToken
 }
+
+func TestSignUpAvatarIsStoredInChallengeAndAppliedAtVerify(t *testing.T) {
+	ctx := context.Background()
+	for name, tc := range map[string]struct {
+		avatar *string
+		want   string
+	}{"with avatar": {avatarPtr("bubu-04"), "bubu-04"}, "without avatar": {nil, ""}} {
+		t.Run(name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			var saved dao.OTPChallenge
+			svc, m := createAuthService(ctrl, func(m *authMocks) {
+				m.users.EXPECT().ByEmail(gomock.Any(), anu.Email).Return(nil, apperrors.ErrRepoNotFound)
+				m.users.EXPECT().ByPhone(gomock.Any(), anuPhone).Return(nil, apperrors.ErrRepoNotFound)
+				expectNewChallenge(m, &saved)
+			})
+			_, herr := svc.RequestSignUp(ctx, &request.SignUpReq{Name: "Anu", Phone: anuPhone, Email: anu.Email, Avatar: tc.avatar})
+			require.Nil(t, herr)
+			require.Equal(t, tc.want, saved.PendingAvatar)
+
+			code := codeRegexp.FindString(m.mailer.Snapshot()[0].Body)
+			m.otps.EXPECT().Get(gomock.Any(), saved.ChallengeID).Return(&saved, nil)
+			m.otps.EXPECT().Delete(gomock.Any(), saved.ChallengeID).Return(nil)
+			m.provision.EXPECT().EnsureAccount(gomock.Any(), "Anu", anuPhone, tc.want, anu.Email, gomock.Any()).Return(anuFull, nil)
+			m.sessions.EXPECT().Save(gomock.Any(), gomock.Any()).Return(nil)
+			m.memberships.EXPECT().ForUser(gomock.Any(), anu.ID).Return(anuMember, nil)
+			expectUserResponse(m)
+			_, herr = svc.VerifyOTP(ctx, &request.OTPVerifyReq{ChallengeID: saved.ChallengeID, Code: code})
+			require.Nil(t, herr)
+		})
+	}
+}
+
+func avatarPtr(s string) *string { return &s }

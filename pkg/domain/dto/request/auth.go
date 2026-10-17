@@ -6,6 +6,7 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 
+	"github.com/bubu-bloom/service/pkg/enums/avatar"
 	apperrors "github.com/bubu-bloom/service/pkg/errors"
 	"github.com/bubu-bloom/service/pkg/utils"
 )
@@ -25,6 +26,8 @@ type SignUpReq struct {
 	Name  string `json:"name"`
 	Phone string `json:"phone"`
 	Email string `json:"email"`
+	// Avatar is optional: absent or null means no avatar, otherwise an id from pkg/enums/avatar.
+	Avatar *string `json:"avatar"`
 }
 
 // Validate trims and checks name and email and requires a phone; Normalize canonicalizes the phone.
@@ -38,7 +41,11 @@ func (r *SignUpReq) Validate() apperrors.IHttpError {
 			return n >= 1 && n <= 40
 		})),
 		validation.Field(&r.Phone, rule(phoneMsg, func(v any) bool { return v.(string) != "" })),
-		validation.Field(&r.Email, rule("a valid email is required", func(v any) bool { return validEmail(v.(string)) }))))
+		validation.Field(&r.Email, rule("a valid email is required", func(v any) bool { return validEmail(v.(string)) })),
+		validation.Field(&r.Avatar, rule("avatar must be null or one of bubu-01 to bubu-09", func(v any) bool {
+			a, _ := v.(*string)
+			return a == nil || avatar.IsValid(*a)
+		}))))
 }
 
 // Normalize rewrites Phone to E.164 using the default country code for bare 10-digit numbers.
