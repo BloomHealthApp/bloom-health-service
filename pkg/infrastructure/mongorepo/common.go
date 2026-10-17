@@ -20,6 +20,7 @@ var EntityCollections = map[string]string{
 	entitytype.DailyLog: constants.CollDailyLogs,
 	entitytype.Workout:  constants.CollWorkouts,
 	entitytype.Settings: constants.CollSettings,
+	entitytype.Period:   constants.CollPeriods,
 }
 
 func isDup(err error) bool { return mongo.IsDuplicateKeyError(err) }
@@ -70,6 +71,8 @@ func EnsureIndexes(ctx context.Context, db drivers.IMongoDB) error {
 				mongo.IndexModel{Keys: asc("spaceId", "data.localDate")})
 		case constants.CollWorkouts:
 			models = append(models, mongo.IndexModel{Keys: asc("spaceId", "data.localDate")})
+		case constants.CollPeriods:
+			models = append(models, mongo.IndexModel{Keys: asc("spaceId", "data.startDate")})
 		}
 		if err := idx(c, models...); err != nil {
 			return err

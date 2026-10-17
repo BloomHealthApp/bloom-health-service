@@ -4,7 +4,7 @@
 //
 //   mongosh "$MONGODB_URI" --file ddl/mongodb/indexes.js
 //
-// Collections: users, memberships, sharedSpaces, habits, dailyHabitLogs, workoutSessions, settings,
+// Collections: users, memberships, sharedSpaces, habits, dailyHabitLogs, workoutSessions, settings, periods,
 // appliedOperations, otpChallenges, refreshSessions, counters (per-space sync sequence).
 // Writes use single-document compare-and-swap on `version`; no multi-document transactions are needed.
 
@@ -21,13 +21,15 @@ d.memberships.createIndex({ sharedSpaceId: 1, userId: 1 }, { unique: true });
 d.memberships.createIndex({ userId: 1 });
 
 // Entity collections: sync pull cursor is (spaceId, seq).
-["habits", "dailyHabitLogs", "workoutSessions", "settings"].forEach((c) => {
+["habits", "dailyHabitLogs", "workoutSessions", "settings", "periods"].forEach((c) => {
   d[c].createIndex({ spaceId: 1, seq: 1 });
 });
 // Daily logs are unique per habit and local date within a space.
 d.dailyHabitLogs.createIndex({ spaceId: 1, "data.habitId": 1, "data.localDate": 1 }, { unique: true });
 d.dailyHabitLogs.createIndex({ spaceId: 1, "data.localDate": 1 });
 d.workoutSessions.createIndex({ spaceId: 1, "data.localDate": 1 });
+// Periods (private to the space owner; filtered out of viewer reads in the service layer).
+d.periods.createIndex({ spaceId: 1, "data.startDate": 1 });
 
 // Idempotency records for sync operations, retained 60 days (>= 30 days required by the contract).
 d.appliedOperations.createIndex({ createdAt: 1 }, { expireAfterSeconds: 60 * 60 * 24 * 60 });

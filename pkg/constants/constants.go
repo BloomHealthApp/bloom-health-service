@@ -53,6 +53,7 @@ const (
 	CollDailyLogs   = "dailyHabitLogs"
 	CollWorkouts    = "workoutSessions"
 	CollSettings    = "settings"
+	CollPeriods     = "periods"
 	CollOps         = "appliedOperations"
 	CollOTP         = "otpChallenges"
 	CollSessions    = "refreshSessions"

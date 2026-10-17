@@ -6,10 +6,11 @@ const (
 	DailyLog = "dailyLog"
 	Workout  = "workout"
 	Settings = "settings"
+	Period   = "period"
 )
 
 // Values lists every allowed value.
-func Values() []string { return []string{Habit, DailyLog, Workout, Settings} }
+func Values() []string { return []string{Habit, DailyLog, Workout, Settings, Period} }
 
 // Valid reports whether s is an allowed value.
 func Valid(s string) bool {
