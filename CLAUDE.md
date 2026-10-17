@@ -1,14 +1,13 @@
 # CLAUDE.md — bubu-bloom-service
 
-Go REST + offline-sync API for the Bubu Bloom wellness tracker (two invite-only users: one **owner** who writes, one **viewer** who reads). Public contract: `docs/api-contract.md` (paths `/v1/...`, error body `{"error":{code,message,details}}`) — it must not change without updating the contract and the app. Module path: `github.com/bubu-bloom/service`. Store: MongoDB (Atlas); `STORE=memory` for tests/dev.
+Go REST + offline-sync API for the Bubu Bloom wellness tracker (any email can sign in; each new user gets a private space as **owner**; **viewer** access exists in the data model but has no invite endpoint yet). Public contract: `docs/api-contract.md` (paths `/v1/...`, error body `{"error":{code,message,details}}`) — it must not change without updating the contract and the app. Module path: `github.com/bubu-bloom/service`. Store: MongoDB (Atlas); `STORE=memory` for tests/dev.
 
 The service uses a layered clean architecture (handlers → interface-based services → repository interfaces, Wire DI, `IHttpError`, header middleware, viper env config, Makefile mock/wire targets).
 
 ## Commands
 ```
-make build            # bin/http-server + bin/seed
+make build            # bin/http-server
 make run              # go run ./cmd  (ACTIVE_ENV=DEV, see .env.example)
-make seed             # idempotent provisioning (STORE=mongo)
 make wire             # regenerate pkg/di/wire_gen.go from pkg/di/container.go
 make mock-service     # pkg/domain/service/mock_gen.go
 make mock-mongorepo   # pkg/infrastructure/mongorepo/mock_gen.go
@@ -19,12 +18,11 @@ make test-coverage    # coverage.out + total
 Regenerate wire/mocks and commit `wire_gen.go` / `mock_gen.go` whenever a constructor signature or an interface changes. Tools install themselves (`make install-tools`: mockgen v1.6.0, wire).
 
 Local run without MongoDB:
-`ACTIVE_ENV=DEV STORE=memory ACCESS_TOKEN_SECRET=$(openssl rand -base64 48) OWNER_EMAIL=anu@example.com VIEWER_EMAIL=aman@example.com go run ./cmd` — the OTP is printed in the log (console mailer).
+`ACTIVE_ENV=DEV STORE=memory ACCESS_TOKEN_SECRET=$(openssl rand -base64 48) go run ./cmd` — the OTP is printed in the log (console mailer).
 
 ## Layout
 ```
-cmd/http-server.go            entrypoint: wire graph, gin server, graceful shutdown, dev auto-seed
-cmd/seed/main.go              idempotent provisioning of owner, viewer, space, 8 default habits, settings
+cmd/http-server.go            entrypoint: wire graph, gin server, graceful shutdown
 config/                       viper loader (config.Store); assets/{dev,stag,prod}-config.json embedded via assets/embed.go
 pkg/application/httpserver/   router.go (middleware chain, 404/405) + v1/public-router/*.go (handlers)
 pkg/di/                       container.go (wire sets, build tag wireinject), wire_gen.go (generated),

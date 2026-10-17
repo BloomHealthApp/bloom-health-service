@@ -31,8 +31,8 @@ import (
 
 // IAuthService implements email OTP login, short-lived JWT access tokens and rotating refresh tokens.
 type IAuthService interface {
-	// RequestOTP emails a code if (and only if) the email belongs to a provisioned user. It never
-	// reveals whether the email is known: unknown emails and cooldowns return nil.
+	// RequestOTP emails a sign-in code to any valid address. The response never reveals whether the
+	// email already has an account; cooldowns return nil. The account is created on successful verify.
 	RequestOTP(ctx context.Context, req *request.OTPRequestReq) apperrors.IHttpError
 	VerifyOTP(ctx context.Context, req *request.OTPVerifyReq) (*response.AuthResponse, apperrors.IHttpError)
 	// Refresh rotates a refresh token. Reusing an already-rotated token revokes the whole family.
@@ -50,6 +50,8 @@ type authService struct {
 	otps        mongorepo.IOTPRepo
 	sessions    mongorepo.ISessionRepo
 	mailer      smtp.IMailer
+	provision   IProvisionService
+	defaultTZ   string
 	clock       clock.Clock
 	secret      []byte
 	issuer      string
@@ -58,9 +60,9 @@ type authService struct {
 
 // NewAuthService wires the auth service.
 func NewAuthService(log logger.ILogger, cfg *config.Store, users mongorepo.IUserRepo, memberships mongorepo.IMembershipRepo,
-	otps mongorepo.IOTPRepo, sessions mongorepo.ISessionRepo, mailer smtp.IMailer, clk clock.Clock) IAuthService {
+	otps mongorepo.IOTPRepo, sessions mongorepo.ISessionRepo, mailer smtp.IMailer, provision IProvisionService, clk clock.Clock) IAuthService {
 	return &authService{log: log, users: users, memberships: memberships, otps: otps, sessions: sessions, mailer: mailer,
-		clock: clk, secret: []byte(cfg.AccessSecret), issuer: cfg.Issuer, resendAfter: cfg.OTPResendAfter}
+		provision: provision, defaultTZ: cfg.DefaultTZ, clock: clk, secret: []byte(cfg.AccessSecret), issuer: cfg.Issuer, resendAfter: cfg.OTPResendAfter}
 }
 
 func internalErr(log logger.ILogger, ctx context.Context, msg string, err error) apperrors.IHttpError {
@@ -97,13 +99,6 @@ func randomToken() (string, error) {
 
 func (s *authService) RequestOTP(ctx context.Context, req *request.OTPRequestReq) apperrors.IHttpError {
 	email := req.Email
-	u, err := s.users.ByEmail(ctx, email)
-	if apperrors.IsNotFound(err) {
-		return nil
-	}
-	if err != nil {
-		return internalErr(s.log, ctx, "otp: user lookup failed", err)
-	}
 	now := s.clock.Now()
 	if cur, err := s.otps.Get(ctx, email); err == nil {
 		issued := cur.ExpiresAt.Add(-constants.OTPTTL)
@@ -120,7 +115,7 @@ func (s *authService) RequestOTP(ctx context.Context, req *request.OTPRequestReq
 	}
 	body := fmt.Sprintf("Your Bubu Bloom sign-in code is %s. It expires in %d minutes. If you didn't ask for it, ignore this email.",
 		code, int(constants.OTPTTL.Minutes()))
-	if err := s.mailer.Send(ctx, u.Email, "Your Bubu Bloom code", body); err != nil {
+	if err := s.mailer.Send(ctx, email, "Your Bubu Bloom code", body); err != nil {
 		return internalErr(s.log, ctx, "otp: mail send failed", err)
 	}
 	return nil
@@ -147,9 +142,9 @@ func (s *authService) VerifyOTP(ctx context.Context, req *request.OTPVerifyReq) 
 	if err := s.otps.Delete(ctx, email); err != nil {
 		return nil, internalErr(s.log, ctx, "otp: delete failed", err)
 	}
-	u, err := s.users.ByEmail(ctx, email)
+	u, err := s.provision.EnsureAccount(ctx, email, s.defaultTZ)
 	if err != nil {
-		return nil, invalid
+		return nil, internalErr(s.log, ctx, "otp: account provisioning failed", err)
 	}
 	return s.issue(ctx, u, uuid.NewString())
 }

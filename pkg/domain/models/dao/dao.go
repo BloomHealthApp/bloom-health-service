@@ -8,7 +8,7 @@ import (
 	"github.com/bubu-bloom/service/pkg/enums/userrole"
 )
 
-// User is an invite-only account.
+// User is an account, created on first verified login.
 type User struct {
 	ID          string    `bson:"_id"`
 	Email       string    `bson:"email"`

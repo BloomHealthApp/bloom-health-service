@@ -10,6 +10,7 @@ import (
 
 	request "github.com/bubu-bloom/service/pkg/domain/dto/request"
 	response "github.com/bubu-bloom/service/pkg/domain/dto/response"
+	dao "github.com/bubu-bloom/service/pkg/domain/models/dao"
 	serviceBos "github.com/bubu-bloom/service/pkg/domain/serviceBos"
 	errors "github.com/bubu-bloom/service/pkg/errors"
 	gomock "github.com/golang/mock/gomock"
@@ -561,6 +562,21 @@ func NewMockIProvisionService(ctrl *gomock.Controller) *MockIProvisionService {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockIProvisionService) EXPECT() *MockIProvisionServiceMockRecorder {
 	return m.recorder
+}
+
+// EnsureAccount mocks base method.
+func (m *MockIProvisionService) EnsureAccount(arg0 context.Context, arg1, arg2 string) (*dao.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnsureAccount", arg0, arg1, arg2)
+	ret0, _ := ret[0].(*dao.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// EnsureAccount indicates an expected call of EnsureAccount.
+func (mr *MockIProvisionServiceMockRecorder) EnsureAccount(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnsureAccount", reflect.TypeOf((*MockIProvisionService)(nil).EnsureAccount), arg0, arg1, arg2)
 }
 
 // Provision mocks base method.

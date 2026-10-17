@@ -131,10 +131,13 @@ func today() string { return time.Now().UTC().Format("2006-01-02") }
 func TestAuthFlow(t *testing.T) {
 	e := setup(t)
 
-	// unknown email: 202, nothing sent
+	// any email may sign in: a brand-new address gets a code and, once verified, a private owner account
 	st, _ := e.do("POST", "/v1/auth/otp/request", "", map[string]any{"email": "stranger@example.com"})
 	require.Equal(t, 202, st)
-	require.Empty(t, e.mail.Messages)
+	require.Len(t, e.mail.Messages, 1)
+	_, err := e.repos.Users.ByEmail(context.Background(), "stranger@example.com")
+	require.Error(t, err, "no account until the code is verified")
+	e.mail.Messages = nil
 
 	// wrong code
 	e.do("POST", "/v1/auth/otp/request", "", map[string]any{"email": "anu@example.com"})
@@ -190,24 +193,33 @@ func TestExpiredToken(t *testing.T) {
 	require.Equal(t, "token_expired", body["error"].(map[string]any)["code"])
 }
 
-func TestOutsiderWithoutMembershipForbidden(t *testing.T) {
+func TestNewUserGetsPrivateSpace(t *testing.T) {
 	e := setup(t)
-	// Login itself is refused without a membership...
-	e.do("POST", "/v1/auth/otp/request", "", map[string]any{"email": "outsider@example.com"})
-	code := codeRe.FindString(e.mail.Messages[len(e.mail.Messages)-1].Body)
-	st, _ := e.do("POST", "/v1/auth/otp/verify", "", map[string]any{"email": "outsider@example.com", "code": code})
-	require.Equal(t, 403, st)
-	// ...and a token minted for them is useless on protected endpoints.
-	e.do("POST", "/v1/auth/otp/request", "", map[string]any{"email": "outsider@example.com"})
-	code = codeRe.FindString(e.mail.Messages[len(e.mail.Messages)-1].Body)
-	tok, _, err := e.auth.VerifyOTP(context.Background(), "outsider@example.com", code)
-	require.NoError(t, err)
-	access := tok.AccessToken
-	st, body := e.do("GET", "/v1/habits", access, nil)
-	require.Equal(t, 403, st)
-	require.Equal(t, "forbidden", body["error"].(map[string]any)["code"])
-	st, _ = e.do("GET", "/v1/sync/pull", access, nil)
-	require.Equal(t, 403, st)
+	newTok, _ := e.login("newcomer@example.com")
+	st, me := e.do("GET", "/v1/me", newTok, nil)
+	require.Equal(t, 200, st)
+	require.Equal(t, "owner", me["role"])
+	require.Equal(t, "newcomer@example.com", me["email"])
+	st, habits := e.do("GET", "/v1/habits", newTok, nil)
+	require.Equal(t, 200, st)
+	require.Len(t, habits["items"], 8)
+
+	// the new account is isolated from Anu's space
+	anu, _ := e.login("anu@example.com")
+	_, anuMe := e.do("GET", "/v1/me", anu, nil)
+	require.NotEqual(t, anuMe["sharedSpaceId"], me["sharedSpaceId"])
+	st, created := e.do("POST", "/v1/habits", anu, map[string]any{"title": "Anu only", "trackingType": "boolean"})
+	require.Equal(t, 201, st)
+	_, list := e.do("GET", "/v1/habits?includeInactive=true", newTok, nil)
+	for _, h := range list["items"].([]any) {
+		require.NotEqual(t, created["id"], h.(map[string]any)["id"])
+	}
+
+	// logging in again reuses the same account and space
+	again, _ := e.login("newcomer@example.com")
+	_, me2 := e.do("GET", "/v1/me", again, nil)
+	require.Equal(t, me["id"], me2["id"])
+	require.Equal(t, me["sharedSpaceId"], me2["sharedSpaceId"])
 }
 
 func TestViewerIsReadOnly(t *testing.T) {

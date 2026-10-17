@@ -22,9 +22,13 @@ import (
 	"github.com/bubu-bloom/service/pkg/utils/clock"
 )
 
-// IProvisionService creates users, the space, memberships, settings and the default habits idempotently.
-// There is no signup endpoint: this is the only way accounts come into existence.
+// IProvisionService creates users, spaces, memberships, settings and the default habits idempotently.
 type IProvisionService interface {
+	// EnsureAccount returns the user for a verified email, creating the user plus a private space
+	// (owner membership, default habits, default settings) on first login. Safe to call repeatedly.
+	EnsureAccount(ctx context.Context, email, timezone string) (*dao.User, error)
+	// Provision creates an owner and a viewer sharing one space. It is the only way to create a viewer
+	// membership until invitations exist; no endpoint exposes it.
 	Provision(ctx context.Context, opts serviceBos.ProvisionOptions) error
 }
 
@@ -119,6 +123,11 @@ func (s *provisionService) Provision(ctx context.Context, o serviceBos.Provision
 	} else if err != nil {
 		return err
 	}
+	return s.seedSpace(ctx, spaceID, now)
+}
+
+// seedSpace writes the default habits and settings for a space if they are missing.
+func (s *provisionService) seedSpace(ctx context.Context, spaceID string, now time.Time) error {
 	for i, h := range defaultHabits {
 		if _, err := s.entities.Get(ctx, spaceID, entitytype.Habit, h.id); err == nil {
 			continue
@@ -156,4 +165,42 @@ func (s *provisionService) Provision(ctx context.Context, o serviceBos.Provision
 		}
 	}
 	return nil
+}
+
+func (s *provisionService) EnsureAccount(ctx context.Context, email, timezone string) (*dao.User, error) {
+	now := s.clock.Now().UTC()
+	email = request.NormalizeEmail(email)
+	if timezone == "" {
+		timezone = "UTC"
+	}
+	if _, err := time.LoadLocation(timezone); err != nil {
+		timezone = "UTC"
+	}
+	name := email
+	if i := strings.Index(email, "@"); i > 0 {
+		name = email[:i]
+	}
+	if r := []rune(name); len(r) > 40 {
+		name = string(r[:40])
+	}
+	u, err := s.ensureUser(ctx, serviceBos.Person{Email: email, Name: name}, timezone, now)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := s.memberships.ForUser(ctx, u.ID); err == nil {
+		return u, nil
+	} else if !apperrors.IsNotFound(err) {
+		return nil, err
+	}
+	spaceID := uuid.NewString()
+	if err := s.spaces.Save(ctx, &dao.Space{ID: spaceID, Name: u.DisplayName, CreatedBy: u.ID, CreatedAt: now}); err != nil {
+		return nil, err
+	}
+	if err := s.memberships.Save(ctx, &dao.Membership{ID: uuid.NewString(), SpaceID: spaceID, UserID: u.ID, Role: userrole.Owner, CreatedAt: now}); err != nil {
+		return nil, err
+	}
+	if err := s.seedSpace(ctx, spaceID, now); err != nil {
+		return nil, err
+	}
+	return u, nil
 }

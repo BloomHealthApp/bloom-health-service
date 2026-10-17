@@ -36,7 +36,8 @@ type Store struct {
 	SMTPPort string
 	MailFrom string
 
-	OwnerName, ViewerName, DefaultTZ string
+	// DefaultTZ is the timezone assigned to new accounts until the app reports the device timezone.
+	DefaultTZ string
 
 	// Secrets and deployment-specific values: environment only, never in the JSON files.
 	MongoURI     string
@@ -44,24 +45,20 @@ type Store struct {
 	SMTPHost     string
 	SMTPUser     string
 	SMTPPass     string
-	OwnerEmail   string
-	ViewerEmail  string
 }
 
 // envBindings maps viper keys to the environment variables that may override them.
 var envBindings = map[string]string{
-	"server.port":          "PORT",
-	"server.trustProxy":    "TRUST_PROXY",
-	"log.level":            "LOG_LEVEL",
-	"store.kind":           "STORE",
-	"store.mongoDb":        "MONGODB_DB",
-	"auth.issuer":          "AUTH_ISSUER",
-	"mail.kind":            "MAILER",
-	"mail.smtpPort":        "SMTP_PORT",
-	"mail.from":            "MAIL_FROM",
-	"seed.ownerName":       "OWNER_NAME",
-	"seed.viewerName":      "VIEWER_NAME",
-	"seed.defaultTimezone": "DEFAULT_TIMEZONE",
+	"server.port":             "PORT",
+	"server.trustProxy":       "TRUST_PROXY",
+	"log.level":               "LOG_LEVEL",
+	"store.kind":              "STORE",
+	"store.mongoDb":           "MONGODB_DB",
+	"auth.issuer":             "AUTH_ISSUER",
+	"mail.kind":               "MAILER",
+	"mail.smtpPort":           "SMTP_PORT",
+	"mail.from":               "MAIL_FROM",
+	"account.defaultTimezone": "DEFAULT_TIMEZONE",
 }
 
 // NewConfig reads the file for ACTIVE_ENV (default DEV), applies env overrides and validates.
@@ -101,10 +98,9 @@ func NewConfig() (*Store, error) {
 		StoreKind: strings.ToLower(v.GetString("store.kind")), MongoDB: v.GetString("store.mongoDb"),
 		Issuer: v.GetString("auth.issuer"), OTPResendAfter: time.Duration(v.GetInt("auth.otpResendSeconds")) * time.Second,
 		Mailer: strings.ToLower(v.GetString("mail.kind")), SMTPPort: v.GetString("mail.smtpPort"), MailFrom: v.GetString("mail.from"),
-		OwnerName: v.GetString("seed.ownerName"), ViewerName: v.GetString("seed.viewerName"), DefaultTZ: v.GetString("seed.defaultTimezone"),
-		MongoURI: os.Getenv("MONGODB_URI"), AccessSecret: os.Getenv("ACCESS_TOKEN_SECRET"),
+		DefaultTZ: v.GetString("account.defaultTimezone"),
+		MongoURI:  os.Getenv("MONGODB_URI"), AccessSecret: os.Getenv("ACCESS_TOKEN_SECRET"),
 		SMTPHost: os.Getenv("SMTP_HOST"), SMTPUser: os.Getenv("SMTP_USER"), SMTPPass: os.Getenv("SMTP_PASS"),
-		OwnerEmail: os.Getenv("OWNER_EMAIL"), ViewerEmail: os.Getenv("VIEWER_EMAIL"),
 	}
 	return c, c.Validate()
 }

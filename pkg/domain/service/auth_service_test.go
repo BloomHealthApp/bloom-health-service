@@ -28,6 +28,7 @@ type authMocks struct {
 	otps        *mongorepo.MockIOTPRepo
 	sessions    *mongorepo.MockISessionRepo
 	mailer      *smtp.CaptureMailer
+	provision   *MockIProvisionService
 	clock       *clock.Fake
 }
 
@@ -36,13 +37,15 @@ func createAuthService(ctrl *gomock.Controller, setup func(m *authMocks)) (IAuth
 	m := &authMocks{
 		users: mongorepo.NewMockIUserRepo(ctrl), memberships: mongorepo.NewMockIMembershipRepo(ctrl),
 		otps: mongorepo.NewMockIOTPRepo(ctrl), sessions: mongorepo.NewMockISessionRepo(ctrl),
-		mailer: &smtp.CaptureMailer{}, clock: clock.NewFake(),
+		mailer: &smtp.CaptureMailer{}, provision: NewMockIProvisionService(ctrl), clock: clock.NewFake(),
 	}
+	// Verified emails are provisioned on first login; the default stub returns the existing Anu account.
+	m.provision.EXPECT().EnsureAccount(gomock.Any(), gomock.Any(), gomock.Any()).Return(anu, nil).AnyTimes()
 	if setup != nil {
 		setup(m)
 	}
 	cfg := &config.Store{AccessSecret: testSecret, Issuer: "unit", OTPResendAfter: 30 * time.Second}
-	return NewAuthService(logger.NewDiscard(), cfg, m.users, m.memberships, m.otps, m.sessions, m.mailer, m.clock), m
+	return NewAuthService(logger.NewDiscard(), cfg, m.users, m.memberships, m.otps, m.sessions, m.mailer, m.provision, m.clock), m
 }
 
 var (
@@ -59,19 +62,21 @@ func expectUserResponse(m *authMocks) {
 
 func TestRequestOTP(t *testing.T) {
 	ctx := context.Background()
-	t.Run("unknown email sends nothing and reveals nothing", func(t *testing.T) {
+	t.Run("new email gets a code without creating an account", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		svc, m := createAuthService(ctrl, func(m *authMocks) {
-			m.users.EXPECT().ByEmail(gomock.Any(), "stranger@example.com").Return(nil, apperrors.ErrRepoNotFound)
+			m.otps.EXPECT().Get(gomock.Any(), "stranger@example.com").Return(nil, apperrors.ErrRepoNotFound)
+			m.otps.EXPECT().Save(gomock.Any(), gomock.Any()).Return(nil)
 		})
 		require.Nil(t, svc.RequestOTP(ctx, &request.OTPRequestReq{Email: "stranger@example.com"}))
-		require.Empty(t, m.mailer.Snapshot())
+		msgs := m.mailer.Snapshot()
+		require.Len(t, msgs, 1)
+		require.Equal(t, "stranger@example.com", msgs[0].To)
 	})
 	t.Run("known email stores only a hash and mails the code", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		var saved *dao.OTPChallenge
 		svc, m := createAuthService(ctrl, func(m *authMocks) {
-			m.users.EXPECT().ByEmail(gomock.Any(), anu.Email).Return(anu, nil)
 			m.otps.EXPECT().Get(gomock.Any(), anu.Email).Return(nil, apperrors.ErrRepoNotFound)
 			m.otps.EXPECT().Save(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, c *dao.OTPChallenge) error {
 				saved = c
@@ -89,7 +94,6 @@ func TestRequestOTP(t *testing.T) {
 	t.Run("resend cooldown silently skips", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		svc, m := createAuthService(ctrl, func(m *authMocks) {
-			m.users.EXPECT().ByEmail(gomock.Any(), anu.Email).Return(anu, nil)
 			m.otps.EXPECT().Get(gomock.Any(), anu.Email).Return(&dao.OTPChallenge{Email: anu.Email, ExpiresAt: m.clock.Now().Add(9*time.Minute + 50*time.Second)}, nil)
 		})
 		require.Nil(t, svc.RequestOTP(ctx, &request.OTPRequestReq{Email: anu.Email}))
@@ -102,7 +106,6 @@ func issueOTP(t *testing.T, ctrl *gomock.Controller) (IAuthService, *authMocks, 
 	t.Helper()
 	var saved dao.OTPChallenge
 	svc, m := createAuthService(ctrl, func(m *authMocks) {
-		m.users.EXPECT().ByEmail(gomock.Any(), anu.Email).Return(anu, nil).AnyTimes()
 		m.otps.EXPECT().Get(gomock.Any(), anu.Email).Return(nil, apperrors.ErrRepoNotFound).Times(1)
 		m.otps.EXPECT().Save(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, c *dao.OTPChallenge) error {
 			saved = *c
@@ -312,7 +315,6 @@ func mintForTest(t *testing.T, svc IAuthService, m *authMocks) string {
 	t.Helper()
 	ctx := context.Background()
 	var ch dao.OTPChallenge
-	m.users.EXPECT().ByEmail(gomock.Any(), anu.Email).Return(anu, nil).AnyTimes()
 	m.otps.EXPECT().Get(gomock.Any(), anu.Email).DoAndReturn(func(context.Context, string) (*dao.OTPChallenge, error) {
 		if ch.Email == "" {
 			return nil, apperrors.ErrRepoNotFound

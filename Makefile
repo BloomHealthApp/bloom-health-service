@@ -8,7 +8,7 @@ SERVICE_IFACES   := IAuthService,IUserService,IHabitService,IDailyLogService,IWo
 MONGOREPO_IFACES := IUserRepo,ISpaceRepo,IMembershipRepo,IEntityRepo,IOpRepo,IOTPRepo,ISessionRepo
 DRIVER_IFACES    := IPinger,IMongoDB
 
-.PHONY: all build run seed wire install-tools mock-all mock-service mock-mongorepo mock-drivers mock-smtp vet test test-coverage tidy clean
+.PHONY: all build run wire install-tools mock-all mock-service mock-mongorepo mock-drivers mock-smtp vet test test-coverage tidy clean
 
 all: wire mock-all vet test build
 
@@ -18,13 +18,9 @@ install-tools:
 
 build:
 	CGO_ENABLED=0 go build -trimpath -o $(BIN_DIR)/http-server ./cmd
-	CGO_ENABLED=0 go build -trimpath -o $(BIN_DIR)/seed ./cmd/seed
 
 run:
 	go run ./cmd
-
-seed:
-	go run ./cmd/seed
 
 # Regenerates pkg/di/wire_gen.go from pkg/di/container.go.
 wire: install-tools

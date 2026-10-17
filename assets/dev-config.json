@@ -4,5 +4,5 @@
   "store": { "kind": "memory", "mongoDb": "bubu_bloom_dev" },
   "auth": { "issuer": "bubu-bloom", "otpResendSeconds": 30 },
   "mail": { "kind": "console", "smtpPort": "587", "from": "Bubu Bloom <no-reply@localhost>" },
-  "seed": { "ownerName": "Anu", "viewerName": "Aman", "defaultTimezone": "Asia/Kolkata" }
+  "account": { "defaultTimezone": "Asia/Kolkata" }
 }

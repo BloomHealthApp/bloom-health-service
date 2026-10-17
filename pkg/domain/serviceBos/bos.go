@@ -39,10 +39,10 @@ type ApplyResult struct {
 	Entity      *dao.Entity
 }
 
-// Person is an invited user.
+// Person is a user to provision.
 type Person struct{ Email, Name string }
 
-// ProvisionOptions describes the invite-only pair and their shared space.
+// ProvisionOptions describes an owner/viewer pair and their shared space.
 type ProvisionOptions struct {
 	Owner, Viewer Person
 	Timezone      string

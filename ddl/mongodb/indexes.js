@@ -11,7 +11,7 @@
 const dbName = process.env.MONGODB_DB || "bubu_bloom";
 const d = db.getSiblingDB(dbName);
 
-// Invite-only accounts: one user per lower-cased email.
+// One user per lower-cased email.
 d.users.createIndex({ emailLower: 1 }, { unique: true });
 
 // One membership per user per space; lookup by user on every authenticated request.

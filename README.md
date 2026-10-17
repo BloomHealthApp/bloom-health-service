@@ -6,7 +6,7 @@ The service follows a clean-architecture layout: **handlers → interface-based 
 
 ## Layout
 ```
-cmd/http-server.go   HTTP server        cmd/seed   idempotent invite-only provisioning
+cmd/http-server.go   HTTP server
 config/ + assets/    viper config, per-env JSON (dev|stag|prod), secrets only from env
 pkg/application/httpserver   gin router, middleware chain, /v1 handlers
 pkg/domain           services (+ gomock mocks), DTOs (ozzo validation), business objects, DAOs
@@ -21,21 +21,21 @@ testdata/scoring.json    shared scoring fixtures (copied into the app)
 ## Run locally
 ```
 cp .env.example .env   # edit; export the variables (e.g. `set -a; source .env; set +a`)
-# Quick start without MongoDB (ephemeral, auto-seeds OWNER_EMAIL/VIEWER_EMAIL):
+# Quick start without MongoDB (ephemeral):
 ACTIVE_ENV=DEV STORE=memory ACCESS_TOKEN_SECRET=$(openssl rand -base64 48) \
-  OWNER_EMAIL=anu@example.com VIEWER_EMAIL=aman@example.com make run
+  make run
 # With Atlas: set STORE=mongo and MONGODB_URI, then
-make seed && make run
+make run
 ```
 With `MAILER=console` (default in DEV) the OTP code is printed in the server log (dev only; PROD refuses to start with it).
 
 Sign in: `POST /v1/auth/otp/request {"email":"anu@example.com"}` → read the code from the log → `POST /v1/auth/otp/verify {"email","code"}` → use `accessToken` as `Authorization: Bearer ...`.
 
 ## Configuration
-`ACTIVE_ENV` (`DEV` default, `STAG`, `PROD`) selects `assets/<env>-config.json` (embedded in the binary). Environment variables override file values (`PORT`, `STORE`, `MONGODB_DB`, `AUTH_ISSUER`, `MAILER`, `SMTP_PORT`, `MAIL_FROM`, `TRUST_PROXY`, `CORS_ORIGINS`, `LOG_LEVEL`, `OWNER_NAME`, `VIEWER_NAME`, `DEFAULT_TIMEZONE`). Secrets are read **only** from the environment: `MONGODB_URI`, `ACCESS_TOKEN_SECRET` (>= 32 chars), `SMTP_HOST`/`SMTP_USER`/`SMTP_PASS`, plus `OWNER_EMAIL`/`VIEWER_EMAIL` for provisioning.
+`ACTIVE_ENV` (`DEV` default, `STAG`, `PROD`) selects `assets/<env>-config.json` (embedded in the binary). Environment variables override file values (`PORT`, `STORE`, `MONGODB_DB`, `AUTH_ISSUER`, `MAILER`, `SMTP_PORT`, `MAIL_FROM`, `TRUST_PROXY`, `CORS_ORIGINS`, `LOG_LEVEL`, `DEFAULT_TIMEZONE`). Secrets are read **only** from the environment: `MONGODB_URI`, `ACCESS_TOKEN_SECRET` (>= 32 chars), `SMTP_HOST`/`SMTP_USER`/`SMTP_PASS`.
 
 ## Commands
-`make build | run | seed | wire | mock-service | mock-mongorepo | mock-drivers | mock-smtp | mock-all | test | test-coverage`.
+`make build | run | wire | mock-service | mock-mongorepo | mock-drivers | mock-smtp | mock-all | test | test-coverage`.
 `make wire` and the `mock-*` targets regenerate `pkg/di/wire_gen.go` and the `mock_gen.go` files (committed). CI (`.github/workflows/ci.yml`) runs `go vet ./...` and `go test -race ./...`.
 
 ## Tests
@@ -51,4 +51,4 @@ The MongoDB repositories compile but are **not covered by automated tests** (no 
 - Mailer: `console` and `smtp` implemented; add a provider (e.g. an HTTP API) by implementing `smtp.IMailer`.
 
 ## Security model
-Invite-only (no signup endpoint; only seeded emails get codes, responses never reveal membership), 6-digit OTP hashed with HMAC, 10 min TTL, 5 attempts, resend cooldown, per-IP/per-email rate limits; 15 min HS256 access tokens; rotating refresh tokens (hashed at rest, family revoked on reuse); role and space resolved from the database on every request; strict JSON (unknown fields rejected, 1 MiB limit); logs exclude tokens, OTPs and wellness values.
+Open sign-in (any email can request a code; the account and a private space are created only after the code is verified; responses never reveal whether an account exists), 6-digit OTP hashed with HMAC, 10 min TTL, 5 attempts, resend cooldown, per-IP/per-email rate limits; 15 min HS256 access tokens; rotating refresh tokens (hashed at rest, family revoked on reuse); role and space resolved from the database on every request; strict JSON (unknown fields rejected, 1 MiB limit); logs exclude tokens, OTPs and wellness values.

@@ -36,9 +36,11 @@ func InitializeApp() (AppInterface, func(), error) {
 	iotpRepo := repositories.OTPs
 	iSessionRepo := repositories.Sessions
 	iMailer := smtp.NewMailer(store, iLogger)
-	iAuthService := service.NewAuthService(iLogger, store, iUserRepo, iMembershipRepo, iotpRepo, iSessionRepo, iMailer, clockClock)
-	iUserService := service.NewUserService(iLogger, iUserRepo, iMembershipRepo, clockClock)
+	iSpaceRepo := repositories.Spaces
 	iEntityRepo := repositories.Entities
+	iProvisionService := service.NewProvisionService(iLogger, iUserRepo, iSpaceRepo, iMembershipRepo, iEntityRepo, clockClock)
+	iAuthService := service.NewAuthService(iLogger, store, iUserRepo, iMembershipRepo, iotpRepo, iSessionRepo, iMailer, iProvisionService, clockClock)
+	iUserService := service.NewUserService(iLogger, iUserRepo, iMembershipRepo, clockClock)
 	iOpRepo := repositories.Ops
 	iSyncService := service.NewSyncService(iLogger, iEntityRepo, iOpRepo, clockClock)
 	iHabitService := service.NewHabitService(iLogger, iEntityRepo, iSyncService)
@@ -46,8 +48,6 @@ func InitializeApp() (AppInterface, func(), error) {
 	iWorkoutService := service.NewWorkoutService(iLogger, iEntityRepo, iSyncService)
 	iSettingsService := service.NewSettingsService(iLogger, iEntityRepo, iSyncService, clockClock)
 	iStatsService := service.NewStatsService(iLogger, iEntityRepo, iUserRepo, iMembershipRepo, clockClock)
-	iSpaceRepo := repositories.Spaces
-	iProvisionService := service.NewProvisionService(iLogger, iUserRepo, iSpaceRepo, iMembershipRepo, iEntityRepo, clockClock)
 	iPinger := repositories.Pinger
 	iHealthService := service.NewHealthService(iLogger, store, iPinger, clockClock)
 	diAppLogic := &appLogic{
@@ -79,9 +79,11 @@ func InitializeTestApp(cfg *config.Store, log logger.ILogger, clk clock.Clock, m
 	iMembershipRepo := repos.Memberships
 	iotpRepo := repos.OTPs
 	iSessionRepo := repos.Sessions
-	iAuthService := service.NewAuthService(log, cfg, iUserRepo, iMembershipRepo, iotpRepo, iSessionRepo, mailer, clk)
-	iUserService := service.NewUserService(log, iUserRepo, iMembershipRepo, clk)
+	iSpaceRepo := repos.Spaces
 	iEntityRepo := repos.Entities
+	iProvisionService := service.NewProvisionService(log, iUserRepo, iSpaceRepo, iMembershipRepo, iEntityRepo, clk)
+	iAuthService := service.NewAuthService(log, cfg, iUserRepo, iMembershipRepo, iotpRepo, iSessionRepo, mailer, iProvisionService, clk)
+	iUserService := service.NewUserService(log, iUserRepo, iMembershipRepo, clk)
 	iOpRepo := repos.Ops
 	iSyncService := service.NewSyncService(log, iEntityRepo, iOpRepo, clk)
 	iHabitService := service.NewHabitService(log, iEntityRepo, iSyncService)
@@ -89,8 +91,6 @@ func InitializeTestApp(cfg *config.Store, log logger.ILogger, clk clock.Clock, m
 	iWorkoutService := service.NewWorkoutService(log, iEntityRepo, iSyncService)
 	iSettingsService := service.NewSettingsService(log, iEntityRepo, iSyncService, clk)
 	iStatsService := service.NewStatsService(log, iEntityRepo, iUserRepo, iMembershipRepo, clk)
-	iSpaceRepo := repos.Spaces
-	iProvisionService := service.NewProvisionService(log, iUserRepo, iSpaceRepo, iMembershipRepo, iEntityRepo, clk)
 	iPinger := repos.Pinger
 	iHealthService := service.NewHealthService(log, cfg, iPinger, clk)
 	diAppLogic := &appLogic{
