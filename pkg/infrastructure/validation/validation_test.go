@@ -49,3 +49,48 @@ func TestSettingsValidation(t *testing.T) {
 	_, err = Merge(entitytype.Settings, nil, map[string]any{"reminders": []any{map[string]any{"key": "bedtime", "enabled": true, "time": "25:00"}}}, Context{})
 	require.Error(t, err)
 }
+
+func TestPeriodValidation(t *testing.T) {
+	ctx := Context{Today: "2026-10-18"}
+	d, err := Merge(entitytype.Period, nil, map[string]any{"startDate": "2026-10-10"}, ctx)
+	require.NoError(t, err)
+	require.Nil(t, d["endDate"])
+	require.Equal(t, "medium", d["flow"])
+	require.Equal(t, []any{}, d["symptoms"])
+	require.Nil(t, d["mood"])
+	require.Nil(t, d["note"])
+
+	ok := map[string]any{"startDate": "2026-10-01", "endDate": "2026-10-14", "flow": "light", "mood": "happy", "symptoms": []any{"acne"}}
+	_, err = Merge(entitytype.Period, nil, ok, ctx)
+	require.NoError(t, err, "14 days inclusive is allowed")
+	for name, p := range map[string]map[string]any{
+		"future":   {"startDate": "2026-10-19"},
+		"15 days":  {"startDate": "2026-10-01", "endDate": "2026-10-15"},
+		"reversed": {"startDate": "2026-10-05", "endDate": "2026-10-04"},
+		"flow":     {"startDate": "2026-10-01", "flow": "x"},
+		"mood":     {"startDate": "2026-10-01", "mood": "x"},
+		"symptom":  {"startDate": "2026-10-01", "symptoms": []any{"x"}},
+		"notarray": {"startDate": "2026-10-01", "symptoms": "cramps"},
+		"unknown":  {"startDate": "2026-10-01", "id2": "x"},
+	} {
+		_, err := Merge(entitytype.Period, nil, p, ctx)
+		require.Error(t, err, name)
+	}
+	// ending a period keeps the other fields
+	base, _ := Merge(entitytype.Period, nil, ok, ctx)
+	d, err = Merge(entitytype.Period, base, map[string]any{"mood": nil}, ctx)
+	require.NoError(t, err)
+	require.Nil(t, d["mood"])
+	require.Equal(t, "light", d["flow"])
+}
+
+func TestSettingsSundayRest(t *testing.T) {
+	d, err := Merge(entitytype.Settings, nil, DefaultSettings(), Context{})
+	require.NoError(t, err)
+	require.Equal(t, true, d["sundayRest"])
+	d, err = Merge(entitytype.Settings, d, map[string]any{"sundayRest": false}, Context{})
+	require.NoError(t, err)
+	require.Equal(t, false, d["sundayRest"])
+	_, err = Merge(entitytype.Settings, d, map[string]any{"sundayRest": "no"}, Context{})
+	require.Error(t, err)
+}
