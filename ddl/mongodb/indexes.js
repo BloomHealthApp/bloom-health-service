@@ -13,6 +13,8 @@ const d = db.getSiblingDB(dbName);
 
 // One user per lower-cased email.
 d.users.createIndex({ emailLower: 1 }, { unique: true });
+// One user per E.164 phone; partial so legacy users without a phone field do not collide.
+d.users.createIndex({ phone: 1 }, { unique: true, partialFilterExpression: { phone: { $type: "string" } } });
 
 // One membership per user per space; lookup by user on every authenticated request.
 d.memberships.createIndex({ sharedSpaceId: 1, userId: 1 }, { unique: true });
@@ -31,7 +33,9 @@ d.workoutSessions.createIndex({ spaceId: 1, "data.localDate": 1 });
 d.appliedOperations.createIndex({ createdAt: 1 }, { expireAfterSeconds: 60 * 60 * 24 * 60 });
 
 // One-time codes expire at expiresAt; refresh sessions are hashed, unique and expire at expiresAt.
+// Challenges are keyed by challengeId (_id); the (email, createdAt) index serves the resend cooldown lookup.
 d.otpChallenges.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+d.otpChallenges.createIndex({ email: 1, createdAt: 1 });
 d.refreshSessions.createIndex({ tokenHash: 1 }, { unique: true });
 d.refreshSessions.createIndex({ familyId: 1 });
 d.refreshSessions.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });

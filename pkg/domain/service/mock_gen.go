@@ -83,18 +83,34 @@ func (mr *MockIAuthServiceMockRecorder) Refresh(arg0, arg1 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Refresh", reflect.TypeOf((*MockIAuthService)(nil).Refresh), arg0, arg1)
 }
 
-// RequestOTP mocks base method.
-func (m *MockIAuthService) RequestOTP(arg0 context.Context, arg1 *request.OTPRequestReq) errors.IHttpError {
+// RequestSignIn mocks base method.
+func (m *MockIAuthService) RequestSignIn(arg0 context.Context, arg1 *request.SignInReq) (*response.ChallengeResponse, errors.IHttpError) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RequestOTP", arg0, arg1)
-	ret0, _ := ret[0].(errors.IHttpError)
-	return ret0
+	ret := m.ctrl.Call(m, "RequestSignIn", arg0, arg1)
+	ret0, _ := ret[0].(*response.ChallengeResponse)
+	ret1, _ := ret[1].(errors.IHttpError)
+	return ret0, ret1
 }
 
-// RequestOTP indicates an expected call of RequestOTP.
-func (mr *MockIAuthServiceMockRecorder) RequestOTP(arg0, arg1 interface{}) *gomock.Call {
+// RequestSignIn indicates an expected call of RequestSignIn.
+func (mr *MockIAuthServiceMockRecorder) RequestSignIn(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestOTP", reflect.TypeOf((*MockIAuthService)(nil).RequestOTP), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestSignIn", reflect.TypeOf((*MockIAuthService)(nil).RequestSignIn), arg0, arg1)
+}
+
+// RequestSignUp mocks base method.
+func (m *MockIAuthService) RequestSignUp(arg0 context.Context, arg1 *request.SignUpReq) (*response.ChallengeResponse, errors.IHttpError) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RequestSignUp", arg0, arg1)
+	ret0, _ := ret[0].(*response.ChallengeResponse)
+	ret1, _ := ret[1].(errors.IHttpError)
+	return ret0, ret1
+}
+
+// RequestSignUp indicates an expected call of RequestSignUp.
+func (mr *MockIAuthServiceMockRecorder) RequestSignUp(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestSignUp", reflect.TypeOf((*MockIAuthService)(nil).RequestSignUp), arg0, arg1)
 }
 
 // VerifyOTP mocks base method.
@@ -565,18 +581,18 @@ func (m *MockIProvisionService) EXPECT() *MockIProvisionServiceMockRecorder {
 }
 
 // EnsureAccount mocks base method.
-func (m *MockIProvisionService) EnsureAccount(arg0 context.Context, arg1, arg2 string) (*dao.User, error) {
+func (m *MockIProvisionService) EnsureAccount(arg0 context.Context, arg1, arg2, arg3, arg4 string) (*dao.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EnsureAccount", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "EnsureAccount", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(*dao.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // EnsureAccount indicates an expected call of EnsureAccount.
-func (mr *MockIProvisionServiceMockRecorder) EnsureAccount(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockIProvisionServiceMockRecorder) EnsureAccount(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnsureAccount", reflect.TypeOf((*MockIProvisionService)(nil).EnsureAccount), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnsureAccount", reflect.TypeOf((*MockIProvisionService)(nil).EnsureAccount), arg0, arg1, arg2, arg3, arg4)
 }
 
 // Provision mocks base method.

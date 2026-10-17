@@ -12,13 +12,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestOTPEmailContent(t *testing.T) {
-	subject, text, html := OTPEmail("123456", 10)
+func TestOTPEmailSignInContent(t *testing.T) {
+	subject, text, html := OTPEmail(OTPSignIn, "", "123456", 10)
 	require.Equal(t, "Your Bubu Bloom sign-in code", subject)
 	require.Contains(t, text, "123456")
 	require.Contains(t, text, "10 minutes")
+	require.Contains(t, text, "Welcome back")
 	require.Contains(t, html, "<!DOCTYPE html>")
 	require.Contains(t, html, "Bubu Bloom")
+	require.Contains(t, html, "Welcome back")
 	require.Contains(t, html, "10 minutes")
 	require.Contains(t, html, "&#8202;", "digits are spaced for readability")
 	require.NotContains(t, html, "<script")
@@ -26,8 +28,21 @@ func TestOTPEmailContent(t *testing.T) {
 	require.NotContains(t, html, "%!", "no formatting errors")
 }
 
-func TestOTPEmailEscapesCode(t *testing.T) {
-	_, _, html := OTPEmail(`<b>"&`, 5)
+func TestOTPEmailSignUpGreetsByName(t *testing.T) {
+	subject, text, html := OTPEmail(OTPSignUp, "Anu", "123456", 10)
+	require.Equal(t, "Your Bubu Bloom verification code", subject)
+	require.Contains(t, text, "Welcome, Anu!")
+	require.Contains(t, html, "Welcome, Anu!")
+	require.NotContains(t, html, "Welcome back")
+	require.NotContains(t, html, "%!", "no formatting errors")
+}
+
+func TestOTPEmailEscapesNameAndCode(t *testing.T) {
+	_, _, html := OTPEmail(OTPSignUp, `<script>alert("x")</script>&`, "123456", 5)
+	require.NotContains(t, html, "<script>")
+	require.Contains(t, html, "&lt;script&gt;")
+	require.Contains(t, html, "&amp;")
+	_, _, html = OTPEmail(OTPSignIn, "", `<b>"&`, 5)
 	require.NotContains(t, html, "<b>")
 	require.Contains(t, html, "&lt;b&gt;")
 }

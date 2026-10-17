@@ -10,9 +10,11 @@ import (
 
 // User is an account, created on first verified login.
 type User struct {
-	ID          string    `bson:"_id"`
-	Email       string    `bson:"email"`
-	EmailLower  string    `bson:"emailLower"`
+	ID         string `bson:"_id"`
+	Email      string `bson:"email"`
+	EmailLower string `bson:"emailLower"`
+	// Phone is E.164 and unique; nil (field absent) for legacy accounts created before phone sign-up.
+	Phone       *string   `bson:"phone,omitempty"`
 	DisplayName string    `bson:"displayName"`
 	Avatar      *string   `bson:"avatar"`
 	Timezone    string    `bson:"timezone"`
@@ -84,12 +86,24 @@ func (e *Entity) Clone() *Entity {
 	return &c
 }
 
-// OTPChallenge is a pending one-time code (stored hashed). The email is the document id.
+// OTP challenge purposes.
+const (
+	OTPPurposeSignUp = "signup"
+	OTPPurposeSignIn = "signin"
+)
+
+// OTPChallenge is a pending one-time code (stored hashed), addressed by its opaque ChallengeID.
+// Sign-up challenges carry the pending name and phone; the account exists only after verification.
 type OTPChallenge struct {
-	Email     string    `bson:"_id"`
-	CodeHash  string    `bson:"codeHash"`
-	ExpiresAt time.Time `bson:"expiresAt"`
-	Attempts  int       `bson:"attempts"`
+	ChallengeID  string    `bson:"_id"`
+	Purpose      string    `bson:"purpose"`
+	Email        string    `bson:"email"` // lower-cased address the code was mailed to
+	PendingName  string    `bson:"pendingName,omitempty"`
+	PendingPhone string    `bson:"pendingPhone,omitempty"`
+	CodeHash     string    `bson:"codeHash"`
+	CreatedAt    time.Time `bson:"createdAt"`
+	ExpiresAt    time.Time `bson:"expiresAt"`
+	Attempts     int       `bson:"attempts"`
 }
 
 // RefreshSession is one rotating refresh token (stored hashed) belonging to a token family.

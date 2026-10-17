@@ -5,14 +5,15 @@ import "net/http"
 
 // Machine-readable error codes from docs/api-contract.md.
 const (
-	CodeValidationFailed = "validation_failed"
-	CodeUnauthorized     = "unauthorized"
-	CodeTokenExpired     = "token_expired"
-	CodeForbidden        = "forbidden"
-	CodeNotFound         = "not_found"
-	CodeConflict         = "conflict"
-	CodeRateLimited      = "rate_limited"
-	CodeInternal         = "internal"
+	CodeValidationFailed  = "validation_failed"
+	CodeUnauthorized      = "unauthorized"
+	CodeTokenExpired      = "token_expired"
+	CodeForbidden         = "forbidden"
+	CodeNotFound          = "not_found"
+	CodeConflict          = "conflict"
+	CodeAlreadyRegistered = "already_registered"
+	CodeRateLimited       = "rate_limited"
+	CodeInternal          = "internal"
 )
 
 // IHttpError is an error that knows how to render itself as an HTTP response.
@@ -94,6 +95,11 @@ func ConflictError(message string, details map[string]any) IHttpError {
 	e := newErr(http.StatusConflict, CodeConflict, message)
 	e.Details = details
 	return e
+}
+
+// AlreadyRegisteredError is 409 already_registered (sign-up or profile update with a taken email/phone).
+func AlreadyRegisteredError(message string) IHttpError {
+	return newErr(http.StatusConflict, CodeAlreadyRegistered, message)
 }
 
 // TooManyRequestsError is a 429 error with a Retry-After header (seconds).

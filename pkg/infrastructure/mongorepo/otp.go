@@ -27,21 +27,31 @@ func (r *otpRepo) coll() *mongo.Collection { return r.db.Database().Collection(c
 func (r *otpRepo) Save(ctx context.Context, c *dao.OTPChallenge) error {
 	d := *c
 	d.Email = strings.ToLower(c.Email)
-	_, err := r.coll().ReplaceOne(ctx, byID(d.Email), d, options.Replace().SetUpsert(true))
+	_, err := r.coll().ReplaceOne(ctx, byID(d.ChallengeID), d, options.Replace().SetUpsert(true))
 	return err
 }
 
-func (r *otpRepo) Get(ctx context.Context, email string) (*dao.OTPChallenge, error) {
+func (r *otpRepo) Get(ctx context.Context, challengeID string) (*dao.OTPChallenge, error) {
 	var d dao.OTPChallenge
-	if err := r.coll().FindOne(ctx, byID(strings.ToLower(email))).Decode(&d); err != nil {
+	if err := r.coll().FindOne(ctx, byID(challengeID)).Decode(&d); err != nil {
 		return nil, mapErr(err)
 	}
 	return &d, nil
 }
 
-func (r *otpRepo) AddAttempt(ctx context.Context, email string) (int, error) {
+func (r *otpRepo) LatestByEmail(ctx context.Context, email string) (*dao.OTPChallenge, error) {
 	var d dao.OTPChallenge
-	err := r.coll().FindOneAndUpdate(ctx, byID(strings.ToLower(email)),
+	err := r.coll().FindOne(ctx, bson.D{{Key: "email", Value: strings.ToLower(email)}},
+		options.FindOne().SetSort(bson.D{{Key: "createdAt", Value: -1}})).Decode(&d)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return &d, nil
+}
+
+func (r *otpRepo) AddAttempt(ctx context.Context, challengeID string) (int, error) {
+	var d dao.OTPChallenge
+	err := r.coll().FindOneAndUpdate(ctx, byID(challengeID),
 		bson.D{{Key: "$inc", Value: bson.D{{Key: "attempts", Value: 1}}}},
 		options.FindOneAndUpdate().SetReturnDocument(options.After)).Decode(&d)
 	if err != nil {
@@ -50,7 +60,7 @@ func (r *otpRepo) AddAttempt(ctx context.Context, email string) (int, error) {
 	return d.Attempts, nil
 }
 
-func (r *otpRepo) Delete(ctx context.Context, email string) error {
-	_, err := r.coll().DeleteOne(ctx, byID(strings.ToLower(email)))
+func (r *otpRepo) Delete(ctx context.Context, challengeID string) error {
+	_, err := r.coll().DeleteOne(ctx, byID(challengeID))
 	return err
 }

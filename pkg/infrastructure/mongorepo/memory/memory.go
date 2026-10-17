@@ -43,6 +43,18 @@ func (r *userRepo) ByEmail(_ context.Context, email string) (*dao.User, error) {
 	return nil, apperrors.ErrRepoNotFound
 }
 
+func (r *userRepo) ByPhone(_ context.Context, phone string) (*dao.User, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, u := range r.users {
+		if u.Phone != nil && *u.Phone == phone {
+			c := *u
+			return &c, nil
+		}
+	}
+	return nil, apperrors.ErrRepoNotFound
+}
+
 func (r *userRepo) ByID(_ context.Context, id string) (*dao.User, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -57,7 +69,10 @@ func (r *userRepo) Save(_ context.Context, u *dao.User) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	for _, x := range r.users {
-		if x.ID != u.ID && strings.EqualFold(x.Email, u.Email) {
+		if x.ID == u.ID {
+			continue
+		}
+		if strings.EqualFold(x.Email, u.Email) || (u.Phone != nil && x.Phone != nil && *x.Phone == *u.Phone) {
 			return apperrors.ErrRepoConflict
 		}
 	}
@@ -277,24 +292,41 @@ func (r *otpRepo) Save(_ context.Context, c *dao.OTPChallenge) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	x := *c
-	r.otps[strings.ToLower(c.Email)] = &x
+	x.Email = strings.ToLower(c.Email)
+	r.otps[c.ChallengeID] = &x
 	return nil
 }
 
-func (r *otpRepo) Get(_ context.Context, email string) (*dao.OTPChallenge, error) {
+func (r *otpRepo) Get(_ context.Context, challengeID string) (*dao.OTPChallenge, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if c, ok := r.otps[strings.ToLower(email)]; ok {
+	if c, ok := r.otps[challengeID]; ok {
 		x := *c
 		return &x, nil
 	}
 	return nil, apperrors.ErrRepoNotFound
 }
 
-func (r *otpRepo) AddAttempt(_ context.Context, email string) (int, error) {
+func (r *otpRepo) LatestByEmail(_ context.Context, email string) (*dao.OTPChallenge, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	c, ok := r.otps[strings.ToLower(email)]
+	var best *dao.OTPChallenge
+	for _, c := range r.otps {
+		if c.Email == strings.ToLower(email) && (best == nil || c.CreatedAt.After(best.CreatedAt)) {
+			best = c
+		}
+	}
+	if best == nil {
+		return nil, apperrors.ErrRepoNotFound
+	}
+	x := *best
+	return &x, nil
+}
+
+func (r *otpRepo) AddAttempt(_ context.Context, challengeID string) (int, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	c, ok := r.otps[challengeID]
 	if !ok {
 		return 0, apperrors.ErrRepoNotFound
 	}
@@ -302,10 +334,10 @@ func (r *otpRepo) AddAttempt(_ context.Context, email string) (int, error) {
 	return c.Attempts, nil
 }
 
-func (r *otpRepo) Delete(_ context.Context, email string) error {
+func (r *otpRepo) Delete(_ context.Context, challengeID string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	delete(r.otps, strings.ToLower(email))
+	delete(r.otps, challengeID)
 	return nil
 }
 

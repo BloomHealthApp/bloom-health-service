@@ -39,6 +39,10 @@ func (r *userRepo) ByEmail(ctx context.Context, email string) (*dao.User, error)
 	return r.find(ctx, bson.D{{Key: "emailLower", Value: strings.ToLower(email)}})
 }
 
+func (r *userRepo) ByPhone(ctx context.Context, phone string) (*dao.User, error) {
+	return r.find(ctx, bson.D{{Key: "phone", Value: phone}})
+}
+
 func (r *userRepo) ByID(ctx context.Context, id string) (*dao.User, error) {
 	return r.find(ctx, byID(id))
 }

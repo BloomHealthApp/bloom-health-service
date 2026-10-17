@@ -7,36 +7,94 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 
 	apperrors "github.com/bubu-bloom/service/pkg/errors"
+	"github.com/bubu-bloom/service/pkg/utils"
 )
 
 // NormalizeEmail lowercases and trims an email address.
 func NormalizeEmail(e string) string { return strings.ToLower(strings.TrimSpace(e)) }
 
-// OTPRequestReq is POST /auth/otp/request.
-type OTPRequestReq struct {
+func validEmail(e string) bool {
+	_, err := mail.ParseAddress(e)
+	return err == nil && len(e) <= 254 && !strings.ContainsAny(e, " <>")
+}
+
+const phoneMsg = "phone must be a valid number (8-15 digits, optional +country code)"
+
+// SignUpReq is POST /auth/signup/request.
+type SignUpReq struct {
+	Name  string `json:"name"`
+	Phone string `json:"phone"`
 	Email string `json:"email"`
 }
 
-// Validate normalizes the email and checks its format.
-func (r *OTPRequestReq) Validate() apperrors.IHttpError {
+// Validate trims and checks name and email and requires a phone; Normalize canonicalizes the phone.
+func (r *SignUpReq) Validate() apperrors.IHttpError {
+	r.Name = strings.TrimSpace(r.Name)
 	r.Email = NormalizeEmail(r.Email)
+	r.Phone = strings.TrimSpace(r.Phone)
 	return toHTTPError(validation.ValidateStruct(r,
-		validation.Field(&r.Email, rule("a valid email is required", func(v any) bool {
-			e := v.(string)
-			_, err := mail.ParseAddress(e)
-			return err == nil && len(e) <= 254
+		validation.Field(&r.Name, rule("name must be 1-40 characters", func(v any) bool {
+			n := len([]rune(v.(string)))
+			return n >= 1 && n <= 40
+		})),
+		validation.Field(&r.Phone, rule(phoneMsg, func(v any) bool { return v.(string) != "" })),
+		validation.Field(&r.Email, rule("a valid email is required", func(v any) bool { return validEmail(v.(string)) }))))
+}
+
+// Normalize rewrites Phone to E.164 using the default country code for bare 10-digit numbers.
+func (r *SignUpReq) Normalize(defaultCC string) apperrors.IHttpError {
+	p, err := utils.NormalizePhone(r.Phone, defaultCC)
+	if err != nil {
+		return apperrors.BadRequestError(phoneMsg)
+	}
+	r.Phone = p
+	return nil
+}
+
+// SignInReq is POST /auth/signin/request. Identifier is an email (contains "@") or a phone number.
+type SignInReq struct {
+	Identifier string `json:"identifier"`
+	// IsEmail is set by Normalize.
+	IsEmail bool `json:"-"`
+}
+
+// Validate trims the identifier and checks it is present and plausible.
+func (r *SignInReq) Validate() apperrors.IHttpError {
+	r.Identifier = strings.TrimSpace(r.Identifier)
+	return toHTTPError(validation.ValidateStruct(r,
+		validation.Field(&r.Identifier, rule("identifier must be an email or a phone number", func(v any) bool {
+			s := v.(string)
+			return s != "" && len(s) <= 254
 		}))))
+}
+
+// Normalize canonicalizes Identifier (lower-cased email or E.164 phone) and sets IsEmail.
+func (r *SignInReq) Normalize(defaultCC string) apperrors.IHttpError {
+	if strings.Contains(r.Identifier, "@") {
+		e := NormalizeEmail(r.Identifier)
+		if !validEmail(e) {
+			return apperrors.BadRequestError("identifier must be an email or a phone number")
+		}
+		r.Identifier, r.IsEmail = e, true
+		return nil
+	}
+	p, err := utils.NormalizePhone(r.Identifier, defaultCC)
+	if err != nil {
+		return apperrors.BadRequestError("identifier must be an email or a phone number")
+	}
+	r.Identifier, r.IsEmail = p, false
+	return nil
 }
 
 // OTPVerifyReq is POST /auth/otp/verify. Bad input is answered with the same 401 as a wrong code.
 type OTPVerifyReq struct {
-	Email string `json:"email"`
-	Code  string `json:"code"`
+	ChallengeID string `json:"challengeId"`
+	Code        string `json:"code"`
 }
 
-// Validate normalizes the email.
+// Validate trims the fields.
 func (r *OTPVerifyReq) Validate() apperrors.IHttpError {
-	r.Email = NormalizeEmail(r.Email)
+	r.ChallengeID = strings.TrimSpace(r.ChallengeID)
 	r.Code = strings.TrimSpace(r.Code)
 	return nil
 }

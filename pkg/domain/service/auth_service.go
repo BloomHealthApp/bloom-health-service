@@ -10,7 +10,9 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -29,11 +31,19 @@ import (
 	"github.com/bubu-bloom/service/pkg/utils/clock"
 )
 
-// IAuthService implements email OTP login, short-lived JWT access tokens and rotating refresh tokens.
+// IAuthService implements email-OTP sign-up and sign-in (no passwords), short-lived JWT access tokens
+// and rotating refresh tokens.
 type IAuthService interface {
-	// RequestOTP emails a sign-in code to any valid address. The response never reveals whether the
-	// email already has an account; cooldowns return nil. The account is created on successful verify.
-	RequestOTP(ctx context.Context, req *request.OTPRequestReq) apperrors.IHttpError
+	// RequestSignUp emails a code to req.Email and returns the challenge to verify. req must already be
+	// validated and normalized (E.164 phone, lower-case email). 409 already_registered when the email or
+	// phone belongs to an account; 429 during the per-account resend cooldown. No account is created yet.
+	RequestSignUp(ctx context.Context, req *request.SignUpReq) (*response.ChallengeResponse, apperrors.IHttpError)
+	// RequestSignIn looks the account up by email or phone and mails the code to the email on file.
+	// It always returns a challenge: for an unknown identifier (or an internal failure) the challengeId
+	// is a random decoy that can never verify and nothing is sent, so accounts cannot be enumerated.
+	RequestSignIn(ctx context.Context, req *request.SignInReq) (*response.ChallengeResponse, apperrors.IHttpError)
+	// VerifyOTP consumes the challenge (single use). A sign-up challenge first creates the user, private
+	// space, default habits and settings from the pending name/phone/email.
 	VerifyOTP(ctx context.Context, req *request.OTPVerifyReq) (*response.AuthResponse, apperrors.IHttpError)
 	// Refresh rotates a refresh token. Reusing an already-rotated token revokes the whole family.
 	Refresh(ctx context.Context, req *request.RefreshTokenReq) (*response.AuthResponse, apperrors.IHttpError)
@@ -70,9 +80,9 @@ func internalErr(log logger.ILogger, ctx context.Context, msg string, err error)
 	return apperrors.InternalServerError("something went wrong")
 }
 
-func (s *authService) otpHash(email, code string) string {
+func (s *authService) otpHash(challengeID, code string) string {
 	h := hmac.New(sha256.New, s.secret)
-	h.Write([]byte("otp|" + email + "|" + code))
+	h.Write([]byte("otp|" + challengeID + "|" + code))
 	return hex.EncodeToString(h.Sum(nil))
 }
 
@@ -97,53 +107,150 @@ func randomToken() (string, error) {
 	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
-func (s *authService) RequestOTP(ctx context.Context, req *request.OTPRequestReq) apperrors.IHttpError {
-	email := req.Email
-	now := s.clock.Now()
-	if cur, err := s.otps.Get(ctx, email); err == nil {
-		issued := cur.ExpiresAt.Add(-constants.OTPTTL)
-		if now.Before(issued.Add(s.resendAfter)) {
-			return nil // cooldown: silently skip
-		}
+// cooldown returns the newest challenge mailed to email while it is still inside the resend window.
+func (s *authService) cooldown(ctx context.Context, email string) (*dao.OTPChallenge, time.Duration) {
+	cur, err := s.otps.LatestByEmail(ctx, email)
+	if err != nil {
+		return nil, 0
+	}
+	if wait := cur.CreatedAt.Add(s.resendAfter).Sub(s.clock.Now()); wait > 0 {
+		return cur, wait
+	}
+	return nil, 0
+}
+
+// sendChallenge stores a new challenge for email, retires the previous one and mails the code.
+func (s *authService) sendChallenge(ctx context.Context, purpose, email, name, phone string) (string, error) {
+	id, err := randomToken()
+	if err != nil {
+		return "", err
 	}
 	code, err := randomCode()
 	if err != nil {
-		return internalErr(s.log, ctx, "otp: code generation failed", err)
+		return "", err
 	}
-	if err := s.otps.Save(ctx, &dao.OTPChallenge{Email: email, CodeHash: s.otpHash(email, code), ExpiresAt: now.Add(constants.OTPTTL)}); err != nil {
-		return internalErr(s.log, ctx, "otp: save failed", err)
+	prev, _ := s.otps.LatestByEmail(ctx, email)
+	now := s.clock.Now()
+	ch := &dao.OTPChallenge{ChallengeID: id, Purpose: purpose, Email: email, PendingName: name, PendingPhone: phone,
+		CodeHash: s.otpHash(id, code), CreatedAt: now, ExpiresAt: now.Add(constants.OTPTTL)}
+	if err := s.otps.Save(ctx, ch); err != nil {
+		return "", fmt.Errorf("save challenge: %w", err)
 	}
-	subject, text, html := smtp.OTPEmail(code, int(constants.OTPTTL.Minutes()))
+	if prev != nil && prev.ChallengeID != id {
+		_ = s.otps.Delete(ctx, prev.ChallengeID) // only the newest code stays valid
+	}
+	kind := smtp.OTPSignIn
+	if purpose == dao.OTPPurposeSignUp {
+		kind = smtp.OTPSignUp
+	}
+	subject, text, html := smtp.OTPEmail(kind, name, code, int(constants.OTPTTL.Minutes()))
 	if err := s.mailer.Send(ctx, email, subject, text, html); err != nil {
-		return internalErr(s.log, ctx, "otp: mail send failed", err)
+		return "", fmt.Errorf("send mail: %w", err)
 	}
-	return nil
+	return id, nil
+}
+
+func (s *authService) RequestSignUp(ctx context.Context, req *request.SignUpReq) (*response.ChallengeResponse, apperrors.IHttpError) {
+	taken := apperrors.AlreadyRegisteredError("an account with this email or phone already exists")
+	if _, err := s.users.ByEmail(ctx, req.Email); err == nil {
+		return nil, taken
+	} else if !apperrors.IsNotFound(err) {
+		return nil, internalErr(s.log, ctx, "signup: email lookup failed", err)
+	}
+	if _, err := s.users.ByPhone(ctx, req.Phone); err == nil {
+		return nil, taken
+	} else if !apperrors.IsNotFound(err) {
+		return nil, internalErr(s.log, ctx, "signup: phone lookup failed", err)
+	}
+	if cur, wait := s.cooldown(ctx, req.Email); cur != nil {
+		return nil, apperrors.TooManyRequestsError("a code was just sent, please wait before requesting another",
+			strconv.Itoa(int(math.Ceil(wait.Seconds()))))
+	}
+	id, err := s.sendChallenge(ctx, dao.OTPPurposeSignUp, req.Email, req.Name, req.Phone)
+	if err != nil {
+		return nil, internalErr(s.log, ctx, "signup: could not issue code", err)
+	}
+	return &response.ChallengeResponse{Status: "sent", ChallengeID: id}, nil
+}
+
+func (s *authService) RequestSignIn(ctx context.Context, req *request.SignInReq) (*response.ChallengeResponse, apperrors.IHttpError) {
+	decoy := func() (*response.ChallengeResponse, apperrors.IHttpError) {
+		id, err := randomToken()
+		if err != nil {
+			return nil, internalErr(s.log, ctx, "signin: decoy generation failed", err)
+		}
+		return &response.ChallengeResponse{Status: "sent", ChallengeID: id}, nil
+	}
+	var (
+		u   *dao.User
+		err error
+	)
+	if req.IsEmail {
+		u, err = s.users.ByEmail(ctx, req.Identifier)
+	} else {
+		u, err = s.users.ByPhone(ctx, req.Identifier)
+	}
+	if err != nil {
+		if !apperrors.IsNotFound(err) {
+			s.log.Error(ctx, "signin: lookup failed", map[string]any{"err": err.Error()})
+		}
+		return decoy()
+	}
+	email := request.NormalizeEmail(u.Email)
+	if cur, _ := s.cooldown(ctx, email); cur != nil && cur.Purpose == dao.OTPPurposeSignIn {
+		return &response.ChallengeResponse{Status: "sent", ChallengeID: cur.ChallengeID}, nil // code already mailed
+	}
+	id, err := s.sendChallenge(ctx, dao.OTPPurposeSignIn, email, "", "")
+	if err != nil {
+		s.log.Error(ctx, "signin: could not issue code", map[string]any{"err": err.Error()})
+		return decoy() // never reveal the failure: the caller sees the same answer as for unknown accounts
+	}
+	return &response.ChallengeResponse{Status: "sent", ChallengeID: id}, nil
 }
 
 func (s *authService) VerifyOTP(ctx context.Context, req *request.OTPVerifyReq) (*response.AuthResponse, apperrors.IHttpError) {
 	invalid := apperrors.UnauthorizedError("invalid or expired code")
-	email := req.Email
-	ch, err := s.otps.Get(ctx, email)
+	if req.ChallengeID == "" {
+		return nil, invalid
+	}
+	ch, err := s.otps.Get(ctx, req.ChallengeID)
 	if err != nil {
 		return nil, invalid
 	}
 	now := s.clock.Now()
 	if now.After(ch.ExpiresAt) || ch.Attempts >= constants.OTPMaxAttempts {
-		_ = s.otps.Delete(ctx, email)
+		_ = s.otps.Delete(ctx, ch.ChallengeID)
 		return nil, invalid
 	}
-	if subtle.ConstantTimeCompare([]byte(s.otpHash(email, req.Code)), []byte(ch.CodeHash)) != 1 {
-		if n, _ := s.otps.AddAttempt(ctx, email); n >= constants.OTPMaxAttempts {
-			_ = s.otps.Delete(ctx, email)
+	if subtle.ConstantTimeCompare([]byte(s.otpHash(ch.ChallengeID, req.Code)), []byte(ch.CodeHash)) != 1 {
+		if n, _ := s.otps.AddAttempt(ctx, ch.ChallengeID); n >= constants.OTPMaxAttempts {
+			_ = s.otps.Delete(ctx, ch.ChallengeID)
 		}
 		return nil, invalid
 	}
-	if err := s.otps.Delete(ctx, email); err != nil {
+	if err := s.otps.Delete(ctx, ch.ChallengeID); err != nil {
 		return nil, internalErr(s.log, ctx, "otp: delete failed", err)
 	}
-	u, err := s.provision.EnsureAccount(ctx, email, s.defaultTZ)
-	if err != nil {
-		return nil, internalErr(s.log, ctx, "otp: account provisioning failed", err)
+	var u *dao.User
+	switch ch.Purpose {
+	case dao.OTPPurposeSignUp:
+		u, err = s.provision.EnsureAccount(ctx, ch.PendingName, ch.PendingPhone, ch.Email, s.defaultTZ)
+		if apperrors.IsConflict(err) { // phone (or email) taken between request and verify: unique-index race
+			return nil, apperrors.AlreadyRegisteredError("an account with this email or phone already exists")
+		}
+		if err != nil {
+			return nil, internalErr(s.log, ctx, "otp: account provisioning failed", err)
+		}
+	case dao.OTPPurposeSignIn:
+		u, err = s.users.ByEmail(ctx, ch.Email)
+		if apperrors.IsNotFound(err) {
+			return nil, invalid
+		}
+		if err != nil {
+			return nil, internalErr(s.log, ctx, "otp: user lookup failed", err)
+		}
+	default:
+		return nil, invalid
 	}
 	return s.issue(ctx, u, uuid.NewString())
 }

@@ -49,7 +49,11 @@ func EnsureIndexes(ctx context.Context, db drivers.IMongoDB) error {
 		_, err := d.Collection(coll).Indexes().CreateMany(ctx, models)
 		return err
 	}
-	if err := idx(constants.CollUsers, mongo.IndexModel{Keys: asc("emailLower"), Options: options.Index().SetUnique(true)}); err != nil {
+	// Unique email, plus unique phone only for users that have one (legacy users have no phone field).
+	if err := idx(constants.CollUsers,
+		mongo.IndexModel{Keys: asc("emailLower"), Options: options.Index().SetUnique(true)},
+		mongo.IndexModel{Keys: asc("phone"), Options: options.Index().SetUnique(true).
+			SetPartialFilterExpression(bson.D{{Key: "phone", Value: bson.D{{Key: "$type", Value: "string"}}}})}); err != nil {
 		return err
 	}
 	if err := idx(constants.CollMemberships,
@@ -76,7 +80,8 @@ func EnsureIndexes(ctx context.Context, db drivers.IMongoDB) error {
 		return err
 	}
 	if err := idx(constants.CollOTP,
-		mongo.IndexModel{Keys: asc("expiresAt"), Options: options.Index().SetExpireAfterSeconds(0)}); err != nil {
+		mongo.IndexModel{Keys: asc("expiresAt"), Options: options.Index().SetExpireAfterSeconds(0)},
+		mongo.IndexModel{Keys: asc("email", "createdAt")}); err != nil {
 		return err
 	}
 	return idx(constants.CollSessions,

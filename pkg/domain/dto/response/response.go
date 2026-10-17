@@ -7,6 +7,7 @@ import "github.com/bubu-bloom/service/pkg/utils/scoring"
 type UserResponse struct {
 	ID               string  `json:"id"`
 	Email            string  `json:"email"`
+	Phone            *string `json:"phone"` // E.164; null for legacy accounts
 	DisplayName      string  `json:"displayName"`
 	Avatar           *string `json:"avatar"`
 	Timezone         string  `json:"timezone"`
@@ -27,6 +28,12 @@ type AuthResponse struct {
 // StatusResponse is {"status": "..."}.
 type StatusResponse struct {
 	Status string `json:"status"`
+}
+
+// ChallengeResponse is {"status":"sent","challengeId":"..."} returned by the sign-up and sign-in requests.
+type ChallengeResponse struct {
+	Status      string `json:"status"`
+	ChallengeID string `json:"challengeId"`
 }
 
 // ItemsResponse wraps list endpoints.

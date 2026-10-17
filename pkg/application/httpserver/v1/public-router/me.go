@@ -33,6 +33,10 @@ func PatchMe(c *gin.Context) {
 		utils.RespondError(c, herr)
 		return
 	}
+	if herr := req.Normalize(di.AppLogic.GetConfig().DefaultCountryCode); herr != nil {
+		utils.RespondError(c, herr)
+		return
+	}
 	resp, herr := di.AppLogic.GetUserService().PatchMe(ctx, utils.GetActor(ctx), &req)
 	if herr != nil {
 		utils.RespondError(c, herr)

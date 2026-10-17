@@ -24,9 +24,11 @@ import (
 
 // IProvisionService creates users, spaces, memberships, settings and the default habits idempotently.
 type IProvisionService interface {
-	// EnsureAccount returns the user for a verified email, creating the user plus a private space
-	// (owner membership, default habits, default settings) on first login. Safe to call repeatedly.
-	EnsureAccount(ctx context.Context, email, timezone string) (*dao.User, error)
+	// EnsureAccount returns the user for a verified email, creating the user (with the given display
+	// name and E.164 phone) plus a private space (owner membership, default habits, default settings)
+	// on first call. An empty name falls back to the email's local part; an empty phone stores none.
+	// Returns a wrapped ErrRepoConflict when the email or phone belongs to someone else. Safe to repeat.
+	EnsureAccount(ctx context.Context, name, phone, email, timezone string) (*dao.User, error)
 	// Provision creates an owner and a viewer sharing one space. It is the only way to create a viewer
 	// membership until invitations exist; no endpoint exposes it.
 	Provision(ctx context.Context, opts serviceBos.ProvisionOptions) error
@@ -66,7 +68,7 @@ var defaultHabits = []habitDef{
 	{"default-sleep", "Bedtime by 10:00 PM", "moon", "sleep", "timeOfDay", "by", "", 1320, nil},
 }
 
-func (s *provisionService) ensureUser(ctx context.Context, p serviceBos.Person, tz string, now time.Time) (*dao.User, error) {
+func (s *provisionService) ensureUser(ctx context.Context, p serviceBos.Person, phone *string, tz string, now time.Time) (*dao.User, error) {
 	email := request.NormalizeEmail(p.Email)
 	if email == "" || !strings.Contains(email, "@") {
 		return nil, fmt.Errorf("invalid email for %s", p.Name)
@@ -78,7 +80,7 @@ func (s *provisionService) ensureUser(ctx context.Context, p serviceBos.Person, 
 	if !apperrors.IsNotFound(err) {
 		return nil, err
 	}
-	u = &dao.User{ID: uuid.NewString(), Email: email, DisplayName: p.Name, Timezone: tz, Theme: theme.CottonCandy, CreatedAt: now, UpdatedAt: now}
+	u = &dao.User{ID: uuid.NewString(), Email: email, DisplayName: p.Name, Phone: phone, Timezone: tz, Theme: theme.CottonCandy, CreatedAt: now, UpdatedAt: now}
 	return u, s.users.Save(ctx, u)
 }
 
@@ -90,11 +92,11 @@ func (s *provisionService) Provision(ctx context.Context, o serviceBos.Provision
 	if _, err := time.LoadLocation(o.Timezone); err != nil {
 		return fmt.Errorf("invalid timezone %q", o.Timezone)
 	}
-	owner, err := s.ensureUser(ctx, o.Owner, o.Timezone, now)
+	owner, err := s.ensureUser(ctx, o.Owner, nil, o.Timezone, now)
 	if err != nil {
 		return err
 	}
-	viewer, err := s.ensureUser(ctx, o.Viewer, o.Timezone, now)
+	viewer, err := s.ensureUser(ctx, o.Viewer, nil, o.Timezone, now)
 	if err != nil {
 		return err
 	}
@@ -167,7 +169,7 @@ func (s *provisionService) seedSpace(ctx context.Context, spaceID string, now ti
 	return nil
 }
 
-func (s *provisionService) EnsureAccount(ctx context.Context, email, timezone string) (*dao.User, error) {
+func (s *provisionService) EnsureAccount(ctx context.Context, name, phone, email, timezone string) (*dao.User, error) {
 	now := s.clock.Now().UTC()
 	email = request.NormalizeEmail(email)
 	if timezone == "" {
@@ -176,14 +178,20 @@ func (s *provisionService) EnsureAccount(ctx context.Context, email, timezone st
 	if _, err := time.LoadLocation(timezone); err != nil {
 		timezone = "UTC"
 	}
-	name := email
-	if i := strings.Index(email, "@"); i > 0 {
-		name = email[:i]
+	if name = strings.TrimSpace(name); name == "" {
+		name = email
+		if i := strings.Index(email, "@"); i > 0 {
+			name = email[:i]
+		}
 	}
 	if r := []rune(name); len(r) > 40 {
 		name = string(r[:40])
 	}
-	u, err := s.ensureUser(ctx, serviceBos.Person{Email: email, Name: name}, timezone, now)
+	var ph *string
+	if phone != "" {
+		ph = &phone
+	}
+	u, err := s.ensureUser(ctx, serviceBos.Person{Email: email, Name: name}, ph, timezone, now)
 	if err != nil {
 		return nil, err
 	}

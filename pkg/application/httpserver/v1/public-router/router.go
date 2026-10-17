@@ -13,7 +13,8 @@ func RegisterRoutes(v1 *gin.RouterGroup) {
 	v1.GET("/health", Health)
 
 	auth := v1.Group("/auth", middleware.LimitAuth())
-	auth.POST("/otp/request", OTPRequest)
+	auth.POST("/signup/request", SignUpRequest)
+	auth.POST("/signin/request", SignInRequest)
 	auth.POST("/otp/verify", OTPVerify)
 	auth.POST("/refresh", Refresh)
 	auth.POST("/logout", Logout)

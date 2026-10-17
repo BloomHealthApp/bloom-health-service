@@ -54,8 +54,21 @@ func (s *userService) PatchMe(ctx context.Context, actor *serviceBos.Actor, req 
 	if req.Theme.Set {
 		u.Theme = req.Theme.Value
 	}
+	if req.Phone.Set && (u.Phone == nil || *u.Phone != req.Phone.Value) {
+		taken := apperrors.AlreadyRegisteredError("an account with this phone already exists")
+		if other, err := s.users.ByPhone(ctx, req.Phone.Value); err == nil && other.ID != u.ID {
+			return nil, taken
+		} else if err != nil && !apperrors.IsNotFound(err) {
+			return nil, internalErr(s.log, ctx, "profile phone lookup failed", err)
+		}
+		v := req.Phone.Value
+		u.Phone = &v
+	}
 	u.UpdatedAt = s.clock.Now().UTC()
 	if err := s.users.Save(ctx, &u); err != nil {
+		if apperrors.IsConflict(err) { // unique-index race on phone
+			return nil, apperrors.AlreadyRegisteredError("an account with this phone already exists")
+		}
 		return nil, internalErr(s.log, ctx, "profile save failed", err)
 	}
 	r := buildUserResponse(ctx, s.users, s.memberships, &u, actor.Membership)

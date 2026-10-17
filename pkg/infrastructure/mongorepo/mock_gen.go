@@ -65,6 +65,21 @@ func (mr *MockIUserRepoMockRecorder) ByID(arg0, arg1 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ByID", reflect.TypeOf((*MockIUserRepo)(nil).ByID), arg0, arg1)
 }
 
+// ByPhone mocks base method.
+func (m *MockIUserRepo) ByPhone(arg0 context.Context, arg1 string) (*dao.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ByPhone", arg0, arg1)
+	ret0, _ := ret[0].(*dao.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ByPhone indicates an expected call of ByPhone.
+func (mr *MockIUserRepoMockRecorder) ByPhone(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ByPhone", reflect.TypeOf((*MockIUserRepo)(nil).ByPhone), arg0, arg1)
+}
+
 // Save mocks base method.
 func (m *MockIUserRepo) Save(arg0 context.Context, arg1 *dao.User) error {
 	m.ctrl.T.Helper()
@@ -397,6 +412,21 @@ func (m *MockIOTPRepo) Get(arg0 context.Context, arg1 string) (*dao.OTPChallenge
 func (mr *MockIOTPRepoMockRecorder) Get(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockIOTPRepo)(nil).Get), arg0, arg1)
+}
+
+// LatestByEmail mocks base method.
+func (m *MockIOTPRepo) LatestByEmail(arg0 context.Context, arg1 string) (*dao.OTPChallenge, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LatestByEmail", arg0, arg1)
+	ret0, _ := ret[0].(*dao.OTPChallenge)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// LatestByEmail indicates an expected call of LatestByEmail.
+func (mr *MockIOTPRepoMockRecorder) LatestByEmail(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LatestByEmail", reflect.TypeOf((*MockIOTPRepo)(nil).LatestByEmail), arg0, arg1)
 }
 
 // Save mocks base method.

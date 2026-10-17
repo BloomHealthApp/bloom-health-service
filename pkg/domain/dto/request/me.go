@@ -9,6 +9,7 @@ import (
 
 	"github.com/bubu-bloom/service/pkg/enums/theme"
 	apperrors "github.com/bubu-bloom/service/pkg/errors"
+	"github.com/bubu-bloom/service/pkg/utils"
 )
 
 // OptString distinguishes an absent field from an explicit JSON null.
@@ -34,6 +35,20 @@ type PatchMeReq struct {
 	Avatar      OptString `json:"avatar"`
 	Timezone    OptString `json:"timezone"`
 	Theme       OptString `json:"theme"`
+	Phone       OptString `json:"phone"`
+}
+
+// Normalize rewrites a supplied phone to E.164 (400 when it is not a valid number).
+func (r *PatchMeReq) Normalize(defaultCC string) apperrors.IHttpError {
+	if !r.Phone.Set {
+		return nil
+	}
+	p, err := utils.NormalizePhone(r.Phone.Value, defaultCC)
+	if err != nil {
+		return apperrors.BadRequestError("phone must be a valid number (8-15 digits, optional +country code)")
+	}
+	r.Phone.Value = p
+	return nil
 }
 
 // Validate checks every supplied field.
@@ -47,6 +62,10 @@ func (r *PatchMeReq) Validate() apperrors.IHttpError {
 		"avatar": validation.Validate(r.Avatar, rule("avatar must be a short string or null", func(v any) bool {
 			o := v.(OptString)
 			return !o.Set || o.Null || len(o.Value) <= 200
+		})),
+		"phone": validation.Validate(r.Phone, rule("phone must be a valid number (8-15 digits, optional +country code)", func(v any) bool {
+			o := v.(OptString)
+			return !o.Set || (!o.Null && o.Value != "")
 		})),
 		"theme": validation.Validate(r.Theme, rule("invalid theme", func(v any) bool {
 			o := v.(OptString)

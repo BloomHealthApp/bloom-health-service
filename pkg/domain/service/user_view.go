@@ -21,6 +21,6 @@ func buildUserResponse(ctx context.Context, users mongorepo.IUserRepo, membershi
 			}
 		}
 	}
-	return response.UserResponse{ID: u.ID, Email: u.Email, DisplayName: u.DisplayName, Avatar: u.Avatar,
+	return response.UserResponse{ID: u.ID, Email: u.Email, Phone: u.Phone, DisplayName: u.DisplayName, Avatar: u.Avatar,
 		Timezone: u.Timezone, Theme: u.Theme, Role: string(m.Role), SharedSpaceID: m.SpaceID, OwnerDisplayName: ownerName}
 }

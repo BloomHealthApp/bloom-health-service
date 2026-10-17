@@ -17,7 +17,10 @@ type EntityQuery struct {
 // IUserRepo persists users. Lookups return errors.ErrRepoNotFound when absent.
 type IUserRepo interface {
 	ByEmail(ctx context.Context, email string) (*dao.User, error)
+	// ByPhone looks up an E.164 number (legacy users have none).
+	ByPhone(ctx context.Context, phone string) (*dao.User, error)
 	ByID(ctx context.Context, id string) (*dao.User, error)
+	// Save upserts; returns errors.ErrRepoConflict when the email or phone belongs to another user.
 	Save(ctx context.Context, u *dao.User) error
 }
 
@@ -53,13 +56,15 @@ type IOpRepo interface {
 	Save(ctx context.Context, r *dao.OpRecord) error
 }
 
-// IOTPRepo stores pending one-time codes (one per email).
+// IOTPRepo stores pending one-time codes keyed by challengeId.
 type IOTPRepo interface {
 	Save(ctx context.Context, c *dao.OTPChallenge) error
-	Get(ctx context.Context, email string) (*dao.OTPChallenge, error)
+	Get(ctx context.Context, challengeID string) (*dao.OTPChallenge, error)
+	// LatestByEmail returns the newest challenge mailed to email (used for the resend cooldown).
+	LatestByEmail(ctx context.Context, email string) (*dao.OTPChallenge, error)
 	// AddAttempt atomically increments and returns the attempt counter.
-	AddAttempt(ctx context.Context, email string) (int, error)
-	Delete(ctx context.Context, email string) error
+	AddAttempt(ctx context.Context, challengeID string) (int, error)
+	Delete(ctx context.Context, challengeID string) error
 }
 
 // ISessionRepo stores rotating refresh sessions.
