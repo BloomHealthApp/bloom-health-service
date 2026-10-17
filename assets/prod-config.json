@@ -1,0 +1,8 @@
+{
+  "server": { "port": "3000", "trustProxy": false, "version": "1.0.0" },
+  "log": { "level": "info" },
+  "store": { "kind": "mongo", "mongoDb": "bubu_bloom" },
+  "auth": { "issuer": "bubu-bloom", "otpResendSeconds": 30 },
+  "mail": { "kind": "smtp", "smtpPort": "587", "from": "Bubu Bloom <no-reply@localhost>" },
+  "seed": { "ownerName": "Anu", "viewerName": "Aman", "defaultTimezone": "Asia/Kolkata" }
+}
