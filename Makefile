@@ -50,8 +50,11 @@ vet:
 test:
 	go vet ./... && go test -race -count=1 ./...
 
+# Only packages that have tests are run with coverage (newer toolchains need `covdata` for test-less packages).
+TESTED_PKGS = $(shell go list -f '{{if or .TestGoFiles .XTestGoFiles}}{{.ImportPath}}{{end}}' ./...)
+
 test-coverage:
-	go test -race -count=1 -coverprofile=coverage.out -covermode=atomic ./...
+	go test -race -count=1 -coverpkg=./pkg/...,./config/... -coverprofile=coverage.out -covermode=atomic $(TESTED_PKGS)
 	go tool cover -func=coverage.out | tail -n 1
 
 tidy:
