@@ -54,7 +54,7 @@ ddl/mongodb/indexes.js        documented index set (EnsureIndexes creates the sa
 - **Tests**: testify; services use `createXxxService(ctrl, setup)` helpers over gomock repos; HTTP behavior is covered by `pkg/application/httpserver/*_test.go` (real gin router + real services + memory repos). `api_test.go` is the original regression suite and its assertions must not be edited to make a change pass.
 
 ## Security invariants (do not weaken)
-- No signup: accounts exist only via provisioning; `otp/request` answers 202 for any valid email and never reveals membership.
+- Open sign-in: `otp/request` answers 202 for any valid email and never reveals whether an account exists; the account and its private space are created only after the code is verified.
 - OTP: 6 digits, HMAC-hashed at rest, 10 min TTL, 5 attempts, resend cooldown, per-email limits; refresh tokens hashed, rotated, family revoked on reuse; access tokens HS256 15 min.
 - Role and space are resolved from the database on every request (`IAuthService.Authenticate`); never from the token or the client. Client-supplied `role`, `userId`, `sharedSpaceId`, `createdBy`, `updatedBy` are rejected (unknown field → 400).
 - Viewer is read-only: `RequireOwner` middleware **and** service-level `requireOwner` guards.

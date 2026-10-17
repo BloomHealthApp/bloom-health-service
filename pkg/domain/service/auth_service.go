@@ -113,9 +113,8 @@ func (s *authService) RequestOTP(ctx context.Context, req *request.OTPRequestReq
 	if err := s.otps.Save(ctx, &dao.OTPChallenge{Email: email, CodeHash: s.otpHash(email, code), ExpiresAt: now.Add(constants.OTPTTL)}); err != nil {
 		return internalErr(s.log, ctx, "otp: save failed", err)
 	}
-	body := fmt.Sprintf("Your Bubu Bloom sign-in code is %s. It expires in %d minutes. If you didn't ask for it, ignore this email.",
-		code, int(constants.OTPTTL.Minutes()))
-	if err := s.mailer.Send(ctx, email, "Your Bubu Bloom code", body); err != nil {
+	subject, text, html := smtp.OTPEmail(code, int(constants.OTPTTL.Minutes()))
+	if err := s.mailer.Send(ctx, email, subject, text, html); err != nil {
 		return internalErr(s.log, ctx, "otp: mail send failed", err)
 	}
 	return nil
