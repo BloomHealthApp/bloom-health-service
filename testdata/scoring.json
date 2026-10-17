@@ -63,6 +63,58 @@
         "2026-10-13": {"water": {"value": 2000}, "sugar": {"value": 1}, "wake": {"value": 301}}
       },
       "expect": {"current": 1, "longest": 1, "percents": {"2026-10-12": 50, "2026-10-13": 66.67}}
+    },
+    {
+      "name": "neutral date unlogged neither breaks nor extends",
+      "settings": {"threshold": 80, "restDays": [], "restMode": "neutral", "neutralDates": ["2026-10-13"]},
+      "from": "2026-10-12", "to": "2026-10-14", "today": "2026-10-14",
+      "logs": {
+        "2026-10-12": {"water": {"value": 2000}, "sugar": {"value": 1}, "wake": {"value": 300}},
+        "2026-10-14": {"water": {"value": 2000}, "sugar": {"value": 1}, "wake": {"value": 300}}
+      },
+      "expect": {"current": 2, "longest": 2, "percents": {"2026-10-12": 100, "2026-10-13": 0, "2026-10-14": 100}}
+    },
+    {
+      "name": "neutral date successfully logged counts",
+      "settings": {"threshold": 80, "restDays": [], "restMode": "neutral", "neutralDates": ["2026-10-13"]},
+      "from": "2026-10-12", "to": "2026-10-14", "today": "2026-10-14",
+      "logs": {
+        "2026-10-12": {"water": {"value": 2000}, "sugar": {"value": 1}, "wake": {"value": 300}},
+        "2026-10-13": {"water": {"value": 2000}, "sugar": {"value": 1}, "wake": {"value": 300}},
+        "2026-10-14": {"water": {"value": 2000}, "sugar": {"value": 1}, "wake": {"value": 300}}
+      },
+      "expect": {"current": 3, "longest": 3, "percents": {"2026-10-13": 100}}
+    },
+    {
+      "name": "neutral dates combined with rest weekdays",
+      "settings": {"threshold": 80, "restDays": [0], "restMode": "neutral", "neutralDates": ["2026-10-13"]},
+      "from": "2026-10-10", "to": "2026-10-14", "today": "2026-10-14",
+      "logs": {
+        "2026-10-10": {"water": {"value": 2000}, "sugar": {"value": 1}, "wake": {"value": 300}},
+        "2026-10-12": {"water": {"value": 2000}, "sugar": {"value": 1}, "wake": {"value": 300}},
+        "2026-10-14": {"water": {"value": 2000}, "sugar": {"value": 1}, "wake": {"value": 300}}
+      },
+      "expect": {"current": 3, "longest": 3, "percents": {"2026-10-11": 0, "2026-10-13": 0}}
+    },
+    {
+      "name": "neutral date does not rescue an earlier miss",
+      "settings": {"threshold": 80, "restDays": [], "restMode": "neutral", "neutralDates": ["2026-10-13"]},
+      "from": "2026-10-11", "to": "2026-10-14", "today": "2026-10-14",
+      "logs": {
+        "2026-10-11": {"water": {"value": 2000}, "sugar": {"value": 1}, "wake": {"value": 300}},
+        "2026-10-14": {"water": {"value": 2000}, "sugar": {"value": 1}, "wake": {"value": 300}}
+      },
+      "expect": {"current": 1, "longest": 1, "percents": {"2026-10-12": 0}}
+    },
+    {
+      "name": "rest mode counts also counts neutral dates",
+      "settings": {"threshold": 80, "restDays": [], "restMode": "counts", "neutralDates": ["2026-10-13"]},
+      "from": "2026-10-12", "to": "2026-10-14", "today": "2026-10-14",
+      "logs": {
+        "2026-10-12": {"water": {"value": 2000}, "sugar": {"value": 1}, "wake": {"value": 300}},
+        "2026-10-14": {"water": {"value": 2000}, "sugar": {"value": 1}, "wake": {"value": 300}}
+      },
+      "expect": {"current": 3, "longest": 3, "percents": {"2026-10-13": 0}}
     }
   ]
 }

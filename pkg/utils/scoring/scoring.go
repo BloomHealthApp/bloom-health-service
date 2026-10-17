@@ -35,6 +35,9 @@ type Settings struct {
 	Threshold float64 // 0-100
 	RestDays  []int
 	RestMode  string // "neutral" (default) | "counts"
+	// NeutralDates (YYYY-MM-DD) behave exactly like rest days. The library does not know why a date is
+	// neutral (Sunday default, period days); callers compute the set.
+	NeutralDates []string
 }
 
 type Day struct {
@@ -150,6 +153,10 @@ func ComputeDays(habits []Habit, logsByDate map[string]map[string]Log, s Setting
 	if err != nil {
 		return nil, err
 	}
+	neutral := make(map[string]bool, len(s.NeutralDates))
+	for _, nd := range s.NeutralDates {
+		neutral[nd] = true
+	}
 	var out []Day
 	for d := start; !d.After(end); d = d.AddDate(0, 0, 1) {
 		ds := d.Format("2006-01-02")
@@ -158,7 +165,7 @@ func ComputeDays(habits []Habit, logsByDate map[string]map[string]Log, s Setting
 		}
 		logs := logsByDate[ds]
 		pct, _ := DailyCompletion(habits, logs, int(d.Weekday()))
-		day := Day{Date: ds, Percent: pct, Logged: len(logs) > 0, RestDay: contains(s.RestDays, int(d.Weekday()))}
+		day := Day{Date: ds, Percent: pct, Logged: len(logs) > 0, RestDay: contains(s.RestDays, int(d.Weekday())) || neutral[ds]}
 		day.Successful = day.Logged && pct >= s.Threshold && pct > 0
 		if day.RestDay && s.RestMode == "counts" {
 			day.Successful = true

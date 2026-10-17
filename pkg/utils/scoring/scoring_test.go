@@ -32,6 +32,8 @@ type fixture struct {
 			Threshold float64 `json:"threshold"`
 			RestDays  []int   `json:"restDays"`
 			RestMode  string  `json:"restMode"`
+			// NeutralDates behave like rest days (Sunday/period days are computed by the service).
+			NeutralDates []string `json:"neutralDates"`
 		} `json:"settings"`
 		From   string                           `json:"from"`
 		To     string                           `json:"to"`
@@ -63,7 +65,7 @@ func TestFixtures(t *testing.T) {
 					logs[d][id] = Log{Value: l.Value, Status: l.Status}
 				}
 			}
-			days, err := ComputeDays(habits, logs, Settings{Threshold: c.Settings.Threshold, RestDays: c.Settings.RestDays, RestMode: c.Settings.RestMode}, c.From, c.To, c.Today)
+			days, err := ComputeDays(habits, logs, Settings{Threshold: c.Settings.Threshold, RestDays: c.Settings.RestDays, RestMode: c.Settings.RestMode, NeutralDates: c.Settings.NeutralDates}, c.From, c.To, c.Today)
 			require.NoError(t, err)
 			cur, long := Streaks(days, c.Today)
 			require.Equal(t, c.Expect.Current, cur, "current")
