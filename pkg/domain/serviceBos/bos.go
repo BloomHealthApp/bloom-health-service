@@ -39,9 +39,12 @@ type ApplyResult struct {
 	Entity      *dao.Entity
 }
 
-// Page is one page of pulled changes keyed by collection name.
-type Page struct {
-	Cursor  string
-	HasMore bool
-	Changes map[string][]map[string]any
+// Person is an invited user.
+type Person struct{ Email, Name string }
+
+// ProvisionOptions describes the invite-only pair and their shared space.
+type ProvisionOptions struct {
+	Owner, Viewer Person
+	Timezone      string
+	SpaceName     string
 }

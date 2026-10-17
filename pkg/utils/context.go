@@ -7,25 +7,26 @@ import (
 	"github.com/bubu-bloom/service/pkg/domain/serviceBos"
 )
 
-type ctxKey string
+// CtxKey is the type of request-context keys.
+type CtxKey string
 
 // Keys of values stored in the request context.
 const (
-	RequestIDKey  ctxKey = "requestId"
-	DeviceIDKey   ctxKey = "deviceId"
-	ClientTypeKey ctxKey = "clientType"
-	AppVersionKey ctxKey = "appVersion"
-	TimezoneKey   ctxKey = "timezone"
-	ActorKey      ctxKey = "actor"
+	RequestIDKey  CtxKey = "requestId"
+	DeviceIDKey   CtxKey = "deviceId"
+	ClientTypeKey CtxKey = "clientType"
+	AppVersionKey CtxKey = "appVersion"
+	TimezoneKey   CtxKey = "timezone"
+	ActorKey      CtxKey = "actor"
 )
 
 // SetInContext returns a context carrying value under key.
-func SetInContext(ctx context.Context, key ctxKey, value any) context.Context {
+func SetInContext(ctx context.Context, key CtxKey, value any) context.Context {
 	return context.WithValue(ctx, key, value)
 }
 
 // GetFromContext returns the string stored under key, or "".
-func GetFromContext(ctx context.Context, key ctxKey) string {
+func GetFromContext(ctx context.Context, key CtxKey) string {
 	s, _ := ctx.Value(key).(string)
 	return s
 }
