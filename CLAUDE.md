@@ -33,14 +33,14 @@ pkg/domain/models/dao/        persisted documents (bson-tagged)
 pkg/domain/dto/{request,response}/   DTOs; every request DTO has Validate() (ozzo-validation)
 pkg/infrastructure/mongorepo/ repository interfaces + MongoDB impls; memory/ = in-memory fakes; mock_gen.go
 pkg/infrastructure/transport/smtp/   IMailer: smtp, console (dev), capture (tests)
-pkg/infrastructure/validation/ strict allowlist entity validation (habit, dailyLog, workout, settings)
+pkg/infrastructure/validation/ strict allowlist entity validation (habit, dailyLog, workout, settings, period)
 pkg/middleware/               generic-request-info, recovery, secure headers, cors, request logger, body limit, rate limit, auth/role
 pkg/errors/                   IHttpError + constructors; typed repo errors (ErrRepoNotFound, ErrRepoConflict)
-pkg/enums/<name>/             one package per enum (userrole, entitytype, trackingtype, logstatus, workouttype, theme, avatar (bubu-01..bubu-09 allowlist), ...)
+pkg/enums/<name>/             one package per enum (userrole, entitytype, trackingtype, logstatus, workouttype, theme, avatar (bubu-01..bubu-09 allowlist), gender, periodflow, periodmood, periodsymptom, ...)
 pkg/constants/                limits, TTLs, header names, collection names
 pkg/drivers/                  IMongoDB / IPinger wrapper (+ mock_gen.go)
 pkg/logger/                   ILogger (ctx-first, map fields) over slog with redaction of token/otp/secret-like keys
-pkg/utils/                    context helpers, dates, cursor, HTTP helpers; scoring/ (streak rules, fixtures in testdata/scoring.json); clock/; ratelimit/
+pkg/utils/                    context helpers, dates, cursor, HTTP helpers; scoring/ (streak rules, pure: Settings.NeutralDates behave like rest days; fixtures in testdata/scoring.json); clock/; ratelimit/
 ddl/mongodb/indexes.js        documented index set (EnsureIndexes creates the same at startup)
 ```
 
@@ -63,5 +63,12 @@ ddl/mongodb/indexes.js        documented index set (EnsureIndexes creates the sa
 - Logs never contain tokens, OTPs or wellness values (logger redacts sensitive keys; request log records route patterns only).
 - Secrets (`MONGODB_URI`, `ACCESS_TOKEN_SECRET`, `SMTP_*`) come only from the environment. Never commit real values; `assets/*-config.json` hold non-secret settings only. PROD refuses `STORE=memory` and the console mailer.
 
+## Period tracker and neutral days (privacy invariants, do not weaken)
+- Period entries (entityType `period`, collection `periods`, REST `/periods*`) are **owner-only health data**: viewers get 403 on `/periods*`, `ISyncService.Pull` filters `period` rows out for non-owners (`changes.periods` is `[]`, cursor still advances), viewer pushes are rejected, and no other endpoint returns period rows. Do not add a code path that reads `entitytype.Period` for a viewer; stats only expose the generic `restDay` flag.
+- The tracker is on when `User.IsPeriodTrackerEnabled()`: the explicit `periodTracker` setting if set, else `gender == female`. When off, `/periods*` and period ops (`ISyncService.Apply`) are refused (403 / rejected `period_tracker_disabled`) and period days stop being neutral; data is kept.
+- Cross-record rules (no overlap, one ongoing) live in `syncService.checkPeriodRules`, because they need sibling rows; field rules are in `validation.validatePeriod`.
+- Streak neutrality is computed in `statsService`: `RestDays = settings.restDays + {0 when sundayRest true/absent}`, `NeutralDates` = owner's non-deleted periods (ongoing = through today) only if the owner's tracker is enabled. The scoring library stays pure.
+- Logs must never contain period/gender data (logger redacts `period`, `gender`, `symptom`, `mood`, `flow`, `startdate`, `enddate` keys). Never log entity `Data`.
+
 ## Testing limits
-MongoDB repositories (`pkg/infrastructure/mongorepo/*.go`) have no automated tests here (no mongod/Docker in CI). Exercise them against a local `mongod` or Atlas before relying on them; the memory fakes mirror their semantics but do not prove driver behavior (BSON mapping, unique indexes, `$inc` counters).
+MongoDB repositories (`pkg/infrastructure/mongorepo/*.go`, including the new `periods` collection and its indexes) have no automated tests here (no mongod/Docker in CI). Exercise them against a local `mongod` or Atlas before relying on them; the memory fakes mirror their semantics but do not prove driver behavior (BSON mapping, unique indexes, `$inc` counters).

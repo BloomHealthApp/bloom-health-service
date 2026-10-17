@@ -66,7 +66,7 @@ Default habits (seeded, ids stable slugs `default-wakeup`, …): wake up by 05:0
 - Duration derived from timestamps minus `pausedSeconds`; server validates `endedAt >= startedAt`.
 
 ## Stats (server cross-check)
-`GET /stats/summary?from&to` → `{currentStreak, longestStreak, days: [{localDate, completionPercent, successful (bool), restDay (bool)}], workoutCount, workoutSeconds, milestones: int[]}` computed with the same algorithm as the app's `lib/scoring`, using the owner's settings and neutral days (see above) for every caller; `restDay` is true for any neutral day and its reason is never exposed (viewers get the owner's numbers). Shared fixtures: `bubu-bloom-service/testdata/scoring.json` (copy lives in app `src/lib/__fixtures__/scoring.json`).
+`GET /stats/summary?from&to` → `{currentStreak, longestStreak, days: [{localDate, completionPercent, successful (bool), restDay (bool)}], workoutCount, workoutSeconds, milestones: int[]}` computed with the same algorithm as the app's `lib/scoring`, using the owner's settings and neutral days (see above) for every caller; `restDay` is true for any neutral day and its reason is never exposed (viewers get the owner's numbers). Shared fixtures: `bubu-bloom-service/testdata/scoring.json` (`settings.neutralDates` lists extra neutral dates; the scoring lib itself knows nothing about Sundays or periods, the caller computes them) (copy lives in app `src/lib/__fixtures__/scoring.json`).
 
 ## Sync (offline-first)
 Client keeps SQLite cache + `syncOperations` queue; direct REST writes above are also valid for online-only use; the app uses push/pull.
@@ -74,7 +74,7 @@ Client keeps SQLite cache + `syncOperations` queue; direct REST writes above are
 `POST /sync/push` (owner only; viewer → 403)
 ```json
 {"deviceId":"uuid","operations":[
-  {"operationId":"uuid","entityType":"habit|dailyLog|workout|settings","entityId":"...","op":"upsert|delete","baseVersion":0,"payload":{...},"clientTimestamp":"..."}
+  {"operationId":"uuid","entityType":"habit|dailyLog|workout|settings|period","entityId":"...","op":"upsert|delete","baseVersion":0,"payload":{...},"clientTimestamp":"..."}
 ]}
 ```
 → `200 {"results":[{"operationId","status":"applied|duplicate|conflict|rejected","entity":{...}?,"reason":"..."?}]}`
@@ -83,7 +83,7 @@ Client keeps SQLite cache + `syncOperations` queue; direct REST writes above are
 - `rejected`: validation/authorization failure for that op, not retryable (`reason` code).
 - Max 100 operations per request; processed in order.
 
-`GET /sync/pull?cursor=<opaque|empty>&limit=500` → `{"cursor":"<opaque>","hasMore":bool,"changes":{"habits":[],"dailyLogs":[],"workouts":[],"settings":[]}}`; includes tombstones (`deletedAt != null`). Cursor is monotonic server sequence; client persists it only after applying a full page transactionally. Both roles may pull (scoped to their shared space).
+`GET /sync/pull?cursor=<opaque|empty>&limit=500` → `{"cursor":"<opaque>","hasMore":bool,"changes":{"habits":[],"dailyLogs":[],"workouts":[],"settings":[],"periods":[]}}`; includes tombstones (`deletedAt != null`). `periods` is only populated for the owner (always `[]` for viewers). Cursor is monotonic server sequence; client persists it only after applying a full page transactionally. Both roles may pull (scoped to their shared space).
 Viewer freshness: pull on app foreground, tab focus, pull-to-refresh, and every 30 s while Home is focused. No websockets in v1.
 
 Client retry: exponential backoff 2s→5min with jitter on network/5xx; never retry `rejected`; mark `failed` after 8 attempts (user can retry manually). Status chip: `synced | pending(n) | failed(n) | offline`.
@@ -92,4 +92,4 @@ Client retry: exponential backoff 2s→5min with jitter on network/5xx; never re
 `GET /health` → `{status:"ok", time, version}` (no auth, no DB detail).
 
 ## Security notes
-No DB URIs/secrets in the app. Access token 15 min (HS256/EdDSA via env key), refresh rotation, rate limits on `/auth/*` (per IP + per email). Logs never contain tokens, OTPs or wellness values.
+No DB URIs/secrets in the app. Access token 15 min (HS256/EdDSA via env key), refresh rotation, rate limits on `/auth/*` (per IP + per email). Logs never contain tokens, OTPs, wellness values or period/gender data. Period data is stored in the same MongoDB as everything else (not end-to-end encrypted); privacy is enforced by server-side filtering.
