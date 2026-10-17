@@ -14,6 +14,7 @@ import (
 
 	"github.com/bubu-bloom/service/assets"
 	"github.com/bubu-bloom/service/pkg/constants"
+	"github.com/bubu-bloom/service/pkg/utils"
 )
 
 // Store is the typed service configuration.
@@ -38,6 +39,8 @@ type Store struct {
 
 	// DefaultTZ is the timezone assigned to new accounts until the app reports the device timezone.
 	DefaultTZ string
+	// DefaultCountryCode ("+91") is prefixed to bare 10-digit phone numbers.
+	DefaultCountryCode string
 
 	// Secrets and deployment-specific values: environment only, never in the JSON files.
 	MongoURI     string
@@ -49,16 +52,17 @@ type Store struct {
 
 // envBindings maps viper keys to the environment variables that may override them.
 var envBindings = map[string]string{
-	"server.port":             "PORT",
-	"server.trustProxy":       "TRUST_PROXY",
-	"log.level":               "LOG_LEVEL",
-	"store.kind":              "STORE",
-	"store.mongoDb":           "MONGODB_DB",
-	"auth.issuer":             "AUTH_ISSUER",
-	"mail.kind":               "MAILER",
-	"mail.smtpPort":           "SMTP_PORT",
-	"mail.from":               "MAIL_FROM",
-	"account.defaultTimezone": "DEFAULT_TIMEZONE",
+	"server.port":                "PORT",
+	"server.trustProxy":          "TRUST_PROXY",
+	"log.level":                  "LOG_LEVEL",
+	"store.kind":                 "STORE",
+	"store.mongoDb":              "MONGODB_DB",
+	"auth.issuer":                "AUTH_ISSUER",
+	"mail.kind":                  "MAILER",
+	"mail.smtpPort":              "SMTP_PORT",
+	"mail.from":                  "MAIL_FROM",
+	"account.defaultTimezone":    "DEFAULT_TIMEZONE",
+	"account.defaultCountryCode": "DEFAULT_COUNTRY_CODE",
 }
 
 // NewConfig reads the file for ACTIVE_ENV (default DEV), applies env overrides and validates.
@@ -98,9 +102,12 @@ func NewConfig() (*Store, error) {
 		StoreKind: strings.ToLower(v.GetString("store.kind")), MongoDB: v.GetString("store.mongoDb"),
 		Issuer: v.GetString("auth.issuer"), OTPResendAfter: time.Duration(v.GetInt("auth.otpResendSeconds")) * time.Second,
 		Mailer: strings.ToLower(v.GetString("mail.kind")), SMTPPort: v.GetString("mail.smtpPort"), MailFrom: v.GetString("mail.from"),
-		DefaultTZ: v.GetString("account.defaultTimezone"),
-		MongoURI:  os.Getenv("MONGODB_URI"), AccessSecret: os.Getenv("ACCESS_TOKEN_SECRET"),
+		DefaultTZ: v.GetString("account.defaultTimezone"), DefaultCountryCode: strings.TrimSpace(v.GetString("account.defaultCountryCode")),
+		MongoURI: os.Getenv("MONGODB_URI"), AccessSecret: os.Getenv("ACCESS_TOKEN_SECRET"),
 		SMTPHost: os.Getenv("SMTP_HOST"), SMTPUser: os.Getenv("SMTP_USER"), SMTPPass: os.Getenv("SMTP_PASS"),
+	}
+	if c.DefaultCountryCode == "" {
+		c.DefaultCountryCode = utils.DefaultCountryCode
 	}
 	return c, c.Validate()
 }
@@ -123,6 +130,9 @@ func (c *Store) Validate() error {
 		if c.Mailer != "smtp" {
 			return errors.New("MAILER=smtp is required in PROD (console mailer prints OTP codes)")
 		}
+	}
+	if c.DefaultCountryCode != "" && !utils.ValidCountryCode(c.DefaultCountryCode) {
+		return fmt.Errorf("DEFAULT_COUNTRY_CODE must look like +91, got %q", c.DefaultCountryCode)
 	}
 	if c.Mailer == "smtp" && c.SMTPHost == "" {
 		return errors.New("SMTP_HOST is required when MAILER=smtp")
