@@ -21,8 +21,10 @@ type Store struct {
 	ActiveEnv  string // DEV | STAG | PROD
 	Port       string
 	TrustProxy bool
-	Version    string
-	LogLevel   string
+	// CORSOrigins lists allowed browser origins; empty (default) disables CORS headers.
+	CORSOrigins []string
+	Version     string
+	LogLevel    string
 
 	StoreKind string // mongo | memory
 	MongoDB   string
@@ -95,7 +97,7 @@ func NewConfig() (*Store, error) {
 	}
 	c := &Store{
 		ActiveEnv: env, Port: v.GetString("server.port"), TrustProxy: v.GetBool("server.trustProxy"),
-		Version: v.GetString("server.version"), LogLevel: v.GetString("log.level"),
+		CORSOrigins: splitList(v.GetString("server.corsOrigins")), Version: v.GetString("server.version"), LogLevel: v.GetString("log.level"),
 		StoreKind: strings.ToLower(v.GetString("store.kind")), MongoDB: v.GetString("store.mongoDb"),
 		Issuer: v.GetString("auth.issuer"), OTPResendAfter: time.Duration(v.GetInt("auth.otpResendSeconds")) * time.Second,
 		Mailer: strings.ToLower(v.GetString("mail.kind")), SMTPPort: v.GetString("mail.smtpPort"), MailFrom: v.GetString("mail.from"),
@@ -130,4 +132,14 @@ func (c *Store) Validate() error {
 		return errors.New("SMTP_HOST is required when MAILER=smtp")
 	}
 	return nil
+}
+
+func splitList(s string) []string {
+	var out []string
+	for _, p := range strings.Split(s, ",") {
+		if p = strings.TrimSpace(p); p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
 }
