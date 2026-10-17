@@ -36,7 +36,7 @@ pkg/infrastructure/transport/smtp/   IMailer: smtp, console (dev), capture (test
 pkg/infrastructure/validation/ strict allowlist entity validation (habit, dailyLog, workout, settings)
 pkg/middleware/               generic-request-info, recovery, secure headers, cors, request logger, body limit, rate limit, auth/role
 pkg/errors/                   IHttpError + constructors; typed repo errors (ErrRepoNotFound, ErrRepoConflict)
-pkg/enums/<name>/             one package per enum (userrole, entitytype, trackingtype, logstatus, workouttype, theme, ...)
+pkg/enums/<name>/             one package per enum (userrole, entitytype, trackingtype, logstatus, workouttype, theme, avatar (bubu-01..bubu-09 allowlist), ...)
 pkg/constants/                limits, TTLs, header names, collection names
 pkg/drivers/                  IMongoDB / IPinger wrapper (+ mock_gen.go)
 pkg/logger/                   ILogger (ctx-first, map fields) over slog with redaction of token/otp/secret-like keys
