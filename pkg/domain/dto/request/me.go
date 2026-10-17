@@ -7,6 +7,7 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 
+	"github.com/bubu-bloom/service/pkg/enums/avatar"
 	"github.com/bubu-bloom/service/pkg/enums/theme"
 	apperrors "github.com/bubu-bloom/service/pkg/errors"
 	"github.com/bubu-bloom/service/pkg/utils"
@@ -59,9 +60,9 @@ func (r *PatchMeReq) Validate() apperrors.IHttpError {
 			n := len([]rune(o.Value))
 			return !o.Set || (!o.Null && n >= 1 && n <= 40)
 		})),
-		"avatar": validation.Validate(r.Avatar, rule("avatar must be a short string or null", func(v any) bool {
+		"avatar": validation.Validate(r.Avatar, rule("avatar must be null or one of bubu-01 to bubu-09", func(v any) bool {
 			o := v.(OptString)
-			return !o.Set || o.Null || len(o.Value) <= 200
+			return !o.Set || o.Null || avatar.IsValid(o.Value)
 		})),
 		"phone": validation.Validate(r.Phone, rule("phone must be a valid number (8-15 digits, optional +country code)", func(v any) bool {
 			o := v.(OptString)

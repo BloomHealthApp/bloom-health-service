@@ -15,6 +15,7 @@ type UserResponse struct {
 	Role             string  `json:"role"`
 	SharedSpaceID    string  `json:"sharedSpaceId"`
 	OwnerDisplayName string  `json:"ownerDisplayName"`
+	OwnerAvatar      *string `json:"ownerAvatar"` // the space owner's avatar (own avatar for an owner)
 }
 
 // AuthResponse is returned by OTP verify and refresh.
