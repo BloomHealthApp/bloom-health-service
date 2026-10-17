@@ -8,17 +8,53 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestOTPRequestValidate(t *testing.T) {
-	for email, ok := range map[string]bool{"Anu@Example.com ": true, "nope": false, "": false, strings.Repeat("a", 250) + "@x.io": false} {
-		r := OTPRequestReq{Email: email}
+func TestSignUpValidateAndNormalize(t *testing.T) {
+	good := SignUpReq{Name: "  Anu  ", Phone: " 98765 43210 ", Email: "Anu@Example.com "}
+	require.Nil(t, good.Validate())
+	require.Nil(t, good.Normalize("+91"))
+	require.Equal(t, SignUpReq{Name: "Anu", Phone: "+919876543210", Email: "anu@example.com"}, good)
+
+	bad := map[string]SignUpReq{
+		"name must be 1-40 characters":                                       {Name: " ", Phone: "9876543210", Email: "a@b.io"},
+		"name must be 1-40 characters ":                                      {Name: strings.Repeat("x", 41), Phone: "9876543210", Email: "a@b.io"},
+		"a valid email is required":                                          {Name: "A", Phone: "9876543210", Email: "nope"},
+		"a valid email is required ":                                         {Name: "A", Phone: "9876543210", Email: strings.Repeat("a", 250) + "@x.io"},
+		"phone must be a valid number (8-15 digits, optional +country code)": {Name: "A", Phone: "", Email: "a@b.io"},
+	}
+	for want, r := range bad {
 		herr := r.Validate()
-		require.Equal(t, ok, herr == nil, email)
-		if ok {
-			require.Equal(t, "anu@example.com", r.Email)
-		} else {
-			require.Equal(t, "a valid email is required", herr.Error())
+		require.NotNil(t, herr, want)
+		require.Equal(t, strings.TrimSpace(want), herr.Error())
+	}
+	badPhone := SignUpReq{Name: "A", Phone: "12345", Email: "a@b.io"}
+	require.Nil(t, badPhone.Validate())
+	require.NotNil(t, badPhone.Normalize("+91"))
+}
+
+func TestSignInNormalize(t *testing.T) {
+	cases := []struct {
+		in, want string
+		isEmail  bool
+		ok       bool
+	}{
+		{" Anu@Example.com ", "anu@example.com", true, true},
+		{"98765 43210", "+919876543210", false, true},
+		{"+1 (415) 555-2671", "+14155552671", false, true},
+		{"not-a-number", "", false, false},
+		{"bad@", "", false, false},
+	}
+	for _, tc := range cases {
+		r := SignInReq{Identifier: tc.in}
+		require.Nil(t, r.Validate(), tc.in)
+		herr := r.Normalize("+91")
+		require.Equal(t, tc.ok, herr == nil, tc.in)
+		if tc.ok {
+			require.Equal(t, tc.want, r.Identifier)
+			require.Equal(t, tc.isEmail, r.IsEmail)
 		}
 	}
+	empty := SignInReq{Identifier: "  "}
+	require.NotNil(t, empty.Validate())
 }
 
 func TestPatchMeValidate(t *testing.T) {
@@ -28,6 +64,9 @@ func TestPatchMeValidate(t *testing.T) {
 		`{"displayName":""}`:       "displayName must be 1-40 characters",
 		`{"displayName":null}`:     "displayName must be 1-40 characters",
 		`{"theme":"neon"}`:         "invalid theme",
+		`{"phone":null}`:           "phone must be a valid number (8-15 digits, optional +country code)",
+		`{"phone":""}`:             "phone must be a valid number (8-15 digits, optional +country code)",
+		`{"phone":"98765 43210"}`:  "",
 		`{"timezone":"Mars/Base"}`: "timezone must be a valid IANA zone",
 		`{"timezone":"Local"}`:     "timezone must be a valid IANA zone",
 	}

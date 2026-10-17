@@ -106,12 +106,17 @@ type Message struct{ To, Subject, Body, HTML string }
 type CaptureMailer struct {
 	mu       sync.Mutex
 	Messages []Message
+	// Err, when set, makes Send fail without recording (simulates an SMTP outage).
+	Err error
 }
 
 // Send records the message.
 func (c *CaptureMailer) Send(_ context.Context, to, subject, text, html string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	if c.Err != nil {
+		return c.Err
+	}
 	c.Messages = append(c.Messages, Message{to, subject, text, html})
 	return nil
 }

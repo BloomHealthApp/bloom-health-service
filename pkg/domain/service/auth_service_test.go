@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"regexp"
 	"testing"
 	"time"
@@ -39,8 +40,6 @@ func createAuthService(ctrl *gomock.Controller, setup func(m *authMocks)) (IAuth
 		otps: mongorepo.NewMockIOTPRepo(ctrl), sessions: mongorepo.NewMockISessionRepo(ctrl),
 		mailer: &smtp.CaptureMailer{}, provision: NewMockIProvisionService(ctrl), clock: clock.NewFake(),
 	}
-	// Verified emails are provisioned on first login; the default stub returns the existing Anu account.
-	m.provision.EXPECT().EnsureAccount(gomock.Any(), gomock.Any(), gomock.Any()).Return(anu, nil).AnyTimes()
 	if setup != nil {
 		setup(m)
 	}
@@ -60,69 +59,217 @@ func expectUserResponse(m *authMocks) {
 	m.users.EXPECT().ByID(gomock.Any(), "u-anu").Return(anu, nil).AnyTimes()
 }
 
-func TestRequestOTP(t *testing.T) {
-	ctx := context.Background()
-	t.Run("new email gets a code without creating an account", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		svc, m := createAuthService(ctrl, func(m *authMocks) {
-			m.otps.EXPECT().Get(gomock.Any(), "stranger@example.com").Return(nil, apperrors.ErrRepoNotFound)
-			m.otps.EXPECT().Save(gomock.Any(), gomock.Any()).Return(nil)
-		})
-		require.Nil(t, svc.RequestOTP(ctx, &request.OTPRequestReq{Email: "stranger@example.com"}))
-		msgs := m.mailer.Snapshot()
-		require.Len(t, msgs, 1)
-		require.Equal(t, "stranger@example.com", msgs[0].To)
-	})
-	t.Run("known email stores only a hash and mails the code", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		var saved *dao.OTPChallenge
-		svc, m := createAuthService(ctrl, func(m *authMocks) {
-			m.otps.EXPECT().Get(gomock.Any(), anu.Email).Return(nil, apperrors.ErrRepoNotFound)
-			m.otps.EXPECT().Save(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, c *dao.OTPChallenge) error {
-				saved = c
-				return nil
-			})
-		})
-		require.Nil(t, svc.RequestOTP(ctx, &request.OTPRequestReq{Email: anu.Email}))
-		msgs := m.mailer.Snapshot()
-		require.Len(t, msgs, 1)
-		code := codeRegexp.FindString(msgs[0].Body)
-		require.Len(t, code, 6)
-		require.NotContains(t, saved.CodeHash, code)
-		require.WithinDuration(t, m.clock.Now().Add(10*time.Minute), saved.ExpiresAt, 5*time.Second)
-	})
-	t.Run("resend cooldown silently skips", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		svc, m := createAuthService(ctrl, func(m *authMocks) {
-			m.otps.EXPECT().Get(gomock.Any(), anu.Email).Return(&dao.OTPChallenge{Email: anu.Email, ExpiresAt: m.clock.Now().Add(9*time.Minute + 50*time.Second)}, nil)
-		})
-		require.Nil(t, svc.RequestOTP(ctx, &request.OTPRequestReq{Email: anu.Email}))
-		require.Empty(t, m.mailer.Snapshot())
+var (
+	anuPhone = "+919876543210"
+	anuFull  = &dao.User{ID: "u-anu", Email: "anu@example.com", Phone: &anuPhone, DisplayName: "Anu", Timezone: "UTC", Theme: "cottonCandy"}
+)
+
+func requireStatus(t *testing.T, herr apperrors.IHttpError, status int, code string) {
+	t.Helper()
+	require.NotNil(t, herr)
+	got, _ := herr.Get()
+	require.Equal(t, status, got)
+	require.Equal(t, code, herr.GetCode())
+}
+
+// expectNewChallenge registers the repo calls of issuing a challenge and captures what was saved.
+func expectNewChallenge(m *authMocks, saved *dao.OTPChallenge) {
+	m.otps.EXPECT().LatestByEmail(gomock.Any(), gomock.Any()).Return(nil, apperrors.ErrRepoNotFound).AnyTimes()
+	m.otps.EXPECT().Save(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, c *dao.OTPChallenge) error {
+		*saved = *c
+		return nil
 	})
 }
 
-// issueOTP runs RequestOTP and returns the challenge that was stored plus the mailed code.
-func issueOTP(t *testing.T, ctrl *gomock.Controller) (IAuthService, *authMocks, *dao.OTPChallenge, string) {
+func TestRequestSignUp(t *testing.T) {
+	ctx := context.Background()
+	req := func() *request.SignUpReq {
+		return &request.SignUpReq{Name: "Anu <b>", Phone: "+919876543210", Email: "anu@example.com"}
+	}
+	t.Run("stores a signup challenge with pending data, mails the code, creates no account", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		var saved dao.OTPChallenge
+		svc, m := createAuthService(ctrl, func(m *authMocks) {
+			m.users.EXPECT().ByEmail(gomock.Any(), "anu@example.com").Return(nil, apperrors.ErrRepoNotFound)
+			m.users.EXPECT().ByPhone(gomock.Any(), "+919876543210").Return(nil, apperrors.ErrRepoNotFound)
+			expectNewChallenge(m, &saved)
+			// no provision / users.Save expectations: gomock fails the test if an account is created
+		})
+		resp, herr := svc.RequestSignUp(ctx, req())
+		require.Nil(t, herr)
+		require.Equal(t, "sent", resp.Status)
+		require.Equal(t, saved.ChallengeID, resp.ChallengeID)
+		require.Equal(t, dao.OTPPurposeSignUp, saved.Purpose)
+		require.Equal(t, "anu@example.com", saved.Email)
+		require.Equal(t, "Anu <b>", saved.PendingName)
+		require.Equal(t, "+919876543210", saved.PendingPhone)
+		require.WithinDuration(t, m.clock.Now().Add(10*time.Minute), saved.ExpiresAt, 5*time.Second)
+		msgs := m.mailer.Snapshot()
+		require.Len(t, msgs, 1)
+		require.Equal(t, "anu@example.com", msgs[0].To)
+		code := codeRegexp.FindString(msgs[0].Body)
+		require.Len(t, code, 6)
+		require.NotContains(t, saved.CodeHash, code, "only a hash is stored")
+		require.Contains(t, msgs[0].HTML, "Welcome, Anu &lt;b&gt;!", "name is HTML-escaped")
+	})
+	t.Run("email already registered", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		svc, m := createAuthService(ctrl, func(m *authMocks) {
+			m.users.EXPECT().ByEmail(gomock.Any(), "anu@example.com").Return(anuFull, nil)
+		})
+		_, herr := svc.RequestSignUp(ctx, req())
+		requireStatus(t, herr, 409, "already_registered")
+		require.Empty(t, m.mailer.Snapshot())
+	})
+	t.Run("phone already registered", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		svc, m := createAuthService(ctrl, func(m *authMocks) {
+			m.users.EXPECT().ByEmail(gomock.Any(), "anu@example.com").Return(nil, apperrors.ErrRepoNotFound)
+			m.users.EXPECT().ByPhone(gomock.Any(), "+919876543210").Return(anuFull, nil)
+		})
+		_, herr := svc.RequestSignUp(ctx, req())
+		requireStatus(t, herr, 409, "already_registered")
+		require.Empty(t, m.mailer.Snapshot())
+	})
+	t.Run("resend cooldown is 429 with Retry-After", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		svc, m := createAuthService(ctrl, func(m *authMocks) {
+			m.users.EXPECT().ByEmail(gomock.Any(), gomock.Any()).Return(nil, apperrors.ErrRepoNotFound)
+			m.users.EXPECT().ByPhone(gomock.Any(), gomock.Any()).Return(nil, apperrors.ErrRepoNotFound)
+			m.otps.EXPECT().LatestByEmail(gomock.Any(), "anu@example.com").Return(&dao.OTPChallenge{ChallengeID: "c1", CreatedAt: m.clock.Now().Add(-5 * time.Second)}, nil)
+		})
+		_, herr := svc.RequestSignUp(ctx, req())
+		requireStatus(t, herr, 429, "rate_limited")
+		require.NotEmpty(t, herr.GetHeaders()["Retry-After"])
+		require.Empty(t, m.mailer.Snapshot())
+	})
+	t.Run("mail failure is a 500", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		var saved dao.OTPChallenge
+		svc, m := createAuthService(ctrl, func(m *authMocks) {
+			m.users.EXPECT().ByEmail(gomock.Any(), gomock.Any()).Return(nil, apperrors.ErrRepoNotFound)
+			m.users.EXPECT().ByPhone(gomock.Any(), gomock.Any()).Return(nil, apperrors.ErrRepoNotFound)
+			expectNewChallenge(m, &saved)
+		})
+		m.mailer.Err = errors.New("smtp down")
+		_, herr := svc.RequestSignUp(ctx, req())
+		requireStatus(t, herr, 500, "internal")
+	})
+}
+
+func TestRequestSignIn(t *testing.T) {
+	ctx := context.Background()
+	t.Run("by email mails the code to that account", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		var saved dao.OTPChallenge
+		svc, m := createAuthService(ctrl, func(m *authMocks) {
+			m.users.EXPECT().ByEmail(gomock.Any(), "anu@example.com").Return(anuFull, nil)
+			expectNewChallenge(m, &saved)
+		})
+		resp, herr := svc.RequestSignIn(ctx, &request.SignInReq{Identifier: "anu@example.com", IsEmail: true})
+		require.Nil(t, herr)
+		require.Equal(t, saved.ChallengeID, resp.ChallengeID)
+		require.Equal(t, dao.OTPPurposeSignIn, saved.Purpose)
+		msgs := m.mailer.Snapshot()
+		require.Len(t, msgs, 1)
+		require.Equal(t, "anu@example.com", msgs[0].To)
+		require.Contains(t, msgs[0].HTML, "Welcome back")
+		require.NotContains(t, saved.CodeHash, codeRegexp.FindString(msgs[0].Body))
+	})
+	t.Run("by phone mails the mapped email, not the phone", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		var saved dao.OTPChallenge
+		svc, m := createAuthService(ctrl, func(m *authMocks) {
+			m.users.EXPECT().ByPhone(gomock.Any(), anuPhone).Return(anuFull, nil)
+			expectNewChallenge(m, &saved)
+		})
+		_, herr := svc.RequestSignIn(ctx, &request.SignInReq{Identifier: anuPhone})
+		require.Nil(t, herr)
+		msgs := m.mailer.Snapshot()
+		require.Len(t, msgs, 1)
+		require.Equal(t, "anu@example.com", msgs[0].To)
+		require.Equal(t, "anu@example.com", saved.Email)
+	})
+	t.Run("unknown identifier gets a decoy, nothing stored or sent", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		svc, m := createAuthService(ctrl, func(m *authMocks) {
+			m.users.EXPECT().ByPhone(gomock.Any(), "+10000000000").Return(nil, apperrors.ErrRepoNotFound).Times(2)
+			// no otps.Save expectation: storing a challenge would fail the test
+		})
+		a, herr := svc.RequestSignIn(ctx, &request.SignInReq{Identifier: "+10000000000"})
+		require.Nil(t, herr)
+		b, _ := svc.RequestSignIn(ctx, &request.SignInReq{Identifier: "+10000000000"})
+		require.Equal(t, "sent", a.Status)
+		require.NotEmpty(t, a.ChallengeID)
+		require.NotEqual(t, a.ChallengeID, b.ChallengeID, "decoys are random")
+		require.Empty(t, m.mailer.Snapshot())
+	})
+	t.Run("cooldown returns the live challenge and sends nothing", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		svc, m := createAuthService(ctrl, func(m *authMocks) {
+			m.users.EXPECT().ByEmail(gomock.Any(), "anu@example.com").Return(anuFull, nil)
+			m.otps.EXPECT().LatestByEmail(gomock.Any(), "anu@example.com").Return(
+				&dao.OTPChallenge{ChallengeID: "live", Purpose: dao.OTPPurposeSignIn, CreatedAt: m.clock.Now().Add(-5 * time.Second)}, nil)
+		})
+		resp, herr := svc.RequestSignIn(ctx, &request.SignInReq{Identifier: "anu@example.com", IsEmail: true})
+		require.Nil(t, herr)
+		require.Equal(t, "live", resp.ChallengeID)
+		require.Empty(t, m.mailer.Snapshot())
+	})
+	t.Run("a new challenge retires the previous one", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		svc, _ := createAuthService(ctrl, func(m *authMocks) {
+			m.users.EXPECT().ByEmail(gomock.Any(), "anu@example.com").Return(anuFull, nil)
+			m.otps.EXPECT().LatestByEmail(gomock.Any(), "anu@example.com").Return(
+				&dao.OTPChallenge{ChallengeID: "old", Purpose: dao.OTPPurposeSignIn, CreatedAt: m.clock.Now().Add(-time.Minute)}, nil).Times(2)
+			m.otps.EXPECT().Save(gomock.Any(), gomock.Any()).Return(nil)
+			m.otps.EXPECT().Delete(gomock.Any(), "old").Return(nil)
+		})
+		_, herr := svc.RequestSignIn(ctx, &request.SignInReq{Identifier: "anu@example.com", IsEmail: true})
+		require.Nil(t, herr)
+	})
+	t.Run("mail failure looks like success (decoy)", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		var saved dao.OTPChallenge
+		svc, m := createAuthService(ctrl, func(m *authMocks) {
+			m.users.EXPECT().ByEmail(gomock.Any(), "anu@example.com").Return(anuFull, nil)
+			expectNewChallenge(m, &saved)
+		})
+		m.mailer.Err = errors.New("smtp down")
+		resp, herr := svc.RequestSignIn(ctx, &request.SignInReq{Identifier: "anu@example.com", IsEmail: true})
+		require.Nil(t, herr)
+		require.NotEmpty(t, resp.ChallengeID)
+		require.NotEqual(t, saved.ChallengeID, resp.ChallengeID)
+	})
+}
+
+// issueChallenge runs RequestSignIn for Anu and returns the stored challenge plus the mailed code.
+func issueChallenge(t *testing.T, ctrl *gomock.Controller, purpose string) (IAuthService, *authMocks, *dao.OTPChallenge, string) {
 	t.Helper()
 	var saved dao.OTPChallenge
-	svc, m := createAuthService(ctrl, func(m *authMocks) {
-		m.otps.EXPECT().Get(gomock.Any(), anu.Email).Return(nil, apperrors.ErrRepoNotFound).Times(1)
-		m.otps.EXPECT().Save(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, c *dao.OTPChallenge) error {
-			saved = *c
-			return nil
-		})
-	})
-	require.Nil(t, svc.RequestOTP(context.Background(), &request.OTPRequestReq{Email: anu.Email}))
+	svc, m := createAuthService(ctrl, func(m *authMocks) { expectNewChallenge(m, &saved) })
+	ctx := context.Background()
+	if purpose == dao.OTPPurposeSignUp {
+		m.users.EXPECT().ByEmail(gomock.Any(), anu.Email).Return(nil, apperrors.ErrRepoNotFound)
+		m.users.EXPECT().ByPhone(gomock.Any(), anuPhone).Return(nil, apperrors.ErrRepoNotFound)
+		_, herr := svc.RequestSignUp(ctx, &request.SignUpReq{Name: "Anu", Phone: anuPhone, Email: anu.Email})
+		require.Nil(t, herr)
+	} else {
+		m.users.EXPECT().ByEmail(gomock.Any(), anu.Email).Return(anuFull, nil)
+		_, herr := svc.RequestSignIn(ctx, &request.SignInReq{Identifier: anu.Email, IsEmail: true})
+		require.Nil(t, herr)
+	}
 	return svc, m, &saved, codeRegexp.FindString(m.mailer.Snapshot()[0].Body)
 }
 
 func TestVerifyOTP(t *testing.T) {
 	ctx := context.Background()
-	t.Run("correct code is single use and issues tokens", func(t *testing.T) {
+	t.Run("signin: correct code is single use and issues tokens", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
-		svc, m, ch, code := issueOTP(t, ctrl)
-		m.otps.EXPECT().Get(gomock.Any(), anu.Email).Return(ch, nil)
-		m.otps.EXPECT().Delete(gomock.Any(), anu.Email).Return(nil)
+		svc, m, ch, code := issueChallenge(t, ctrl, dao.OTPPurposeSignIn)
+		m.otps.EXPECT().Get(gomock.Any(), ch.ChallengeID).Return(ch, nil)
+		m.otps.EXPECT().Delete(gomock.Any(), ch.ChallengeID).Return(nil)
+		m.users.EXPECT().ByEmail(gomock.Any(), anu.Email).Return(anu, nil) // legacy user: no phone
 		var sess *dao.RefreshSession
 		m.sessions.EXPECT().Save(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, s *dao.RefreshSession) error {
 			sess = s
@@ -130,52 +277,110 @@ func TestVerifyOTP(t *testing.T) {
 		})
 		m.memberships.EXPECT().ForUser(gomock.Any(), anu.ID).Return(anuMember, nil)
 		expectUserResponse(m)
-		resp, herr := svc.VerifyOTP(ctx, &request.OTPVerifyReq{Email: anu.Email, Code: code})
+		resp, herr := svc.VerifyOTP(ctx, &request.OTPVerifyReq{ChallengeID: ch.ChallengeID, Code: code})
 		require.Nil(t, herr)
 		require.Equal(t, 900, resp.ExpiresIn)
 		require.Equal(t, "owner", resp.User.Role)
+		require.Nil(t, resp.User.Phone, "legacy account has a null phone")
 		require.NotEqual(t, resp.RefreshToken, sess.TokenHash, "refresh token is stored hashed")
 		require.Equal(t, sha(resp.RefreshToken), sess.TokenHash)
 	})
+	t.Run("signup: creates the account from the pending data", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		svc, m, ch, code := issueChallenge(t, ctrl, dao.OTPPurposeSignUp)
+		m.otps.EXPECT().Get(gomock.Any(), ch.ChallengeID).Return(ch, nil)
+		m.otps.EXPECT().Delete(gomock.Any(), ch.ChallengeID).Return(nil)
+		m.provision.EXPECT().EnsureAccount(gomock.Any(), "Anu", anuPhone, anu.Email, gomock.Any()).Return(anuFull, nil)
+		m.sessions.EXPECT().Save(gomock.Any(), gomock.Any()).Return(nil)
+		m.memberships.EXPECT().ForUser(gomock.Any(), anu.ID).Return(anuMember, nil)
+		expectUserResponse(m)
+		resp, herr := svc.VerifyOTP(ctx, &request.OTPVerifyReq{ChallengeID: ch.ChallengeID, Code: code})
+		require.Nil(t, herr)
+		require.Equal(t, anuPhone, *resp.User.Phone)
+	})
+	t.Run("signup: unique-index race maps to 409", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		svc, m, ch, code := issueChallenge(t, ctrl, dao.OTPPurposeSignUp)
+		m.otps.EXPECT().Get(gomock.Any(), ch.ChallengeID).Return(ch, nil)
+		m.otps.EXPECT().Delete(gomock.Any(), ch.ChallengeID).Return(nil)
+		m.provision.EXPECT().EnsureAccount(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, apperrors.ErrRepoConflict)
+		_, herr := svc.VerifyOTP(ctx, &request.OTPVerifyReq{ChallengeID: ch.ChallengeID, Code: code})
+		requireStatus(t, herr, 409, "already_registered")
+	})
+	t.Run("unknown challenge id is rejected", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		svc, _ := createAuthService(ctrl, func(m *authMocks) {
+			m.otps.EXPECT().Get(gomock.Any(), "decoy").Return(nil, apperrors.ErrRepoNotFound)
+		})
+		_, herr := svc.VerifyOTP(ctx, &request.OTPVerifyReq{ChallengeID: "decoy", Code: "123456"})
+		requireStatus(t, herr, 401, "unauthorized")
+		_, herr = svc.VerifyOTP(ctx, &request.OTPVerifyReq{Code: "123456"})
+		requireStatus(t, herr, 401, "unauthorized")
+	})
 	t.Run("wrong code counts an attempt and is rejected", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
-		svc, m, ch, _ := issueOTP(t, ctrl)
-		m.otps.EXPECT().Get(gomock.Any(), anu.Email).Return(ch, nil)
-		m.otps.EXPECT().AddAttempt(gomock.Any(), anu.Email).Return(1, nil)
-		_, herr := svc.VerifyOTP(ctx, &request.OTPVerifyReq{Email: anu.Email, Code: "000000"})
+		svc, m, ch, _ := issueChallenge(t, ctrl, dao.OTPPurposeSignIn)
+		m.otps.EXPECT().Get(gomock.Any(), ch.ChallengeID).Return(ch, nil)
+		m.otps.EXPECT().AddAttempt(gomock.Any(), ch.ChallengeID).Return(1, nil)
+		_, herr := svc.VerifyOTP(ctx, &request.OTPVerifyReq{ChallengeID: ch.ChallengeID, Code: "000000"})
+		requireStatus(t, herr, 401, "unauthorized")
+	})
+	t.Run("code is bound to its challenge", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		svc, m, ch, code := issueChallenge(t, ctrl, dao.OTPPurposeSignIn)
+		other := *ch
+		other.ChallengeID = "other-challenge"
+		m.otps.EXPECT().Get(gomock.Any(), "other-challenge").Return(&other, nil)
+		m.otps.EXPECT().AddAttempt(gomock.Any(), "other-challenge").Return(1, nil)
+		_, herr := svc.VerifyOTP(ctx, &request.OTPVerifyReq{ChallengeID: "other-challenge", Code: code})
 		require.NotNil(t, herr)
-		status, _ := herr.Get()
-		require.Equal(t, 401, status)
 	})
 	t.Run("fifth wrong attempt burns the challenge", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
-		svc, m, ch, _ := issueOTP(t, ctrl)
-		m.otps.EXPECT().Get(gomock.Any(), anu.Email).Return(ch, nil)
-		m.otps.EXPECT().AddAttempt(gomock.Any(), anu.Email).Return(5, nil)
-		m.otps.EXPECT().Delete(gomock.Any(), anu.Email).Return(nil)
-		_, herr := svc.VerifyOTP(ctx, &request.OTPVerifyReq{Email: anu.Email, Code: "000000"})
+		svc, m, ch, _ := issueChallenge(t, ctrl, dao.OTPPurposeSignIn)
+		m.otps.EXPECT().Get(gomock.Any(), ch.ChallengeID).Return(ch, nil)
+		m.otps.EXPECT().AddAttempt(gomock.Any(), ch.ChallengeID).Return(5, nil)
+		m.otps.EXPECT().Delete(gomock.Any(), ch.ChallengeID).Return(nil)
+		_, herr := svc.VerifyOTP(ctx, &request.OTPVerifyReq{ChallengeID: ch.ChallengeID, Code: "000000"})
+		require.NotNil(t, herr)
+	})
+	t.Run("challenge already at the attempt limit is deleted and rejected", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		svc, m, ch, code := issueChallenge(t, ctrl, dao.OTPPurposeSignIn)
+		ch.Attempts = 5
+		m.otps.EXPECT().Get(gomock.Any(), ch.ChallengeID).Return(ch, nil)
+		m.otps.EXPECT().Delete(gomock.Any(), ch.ChallengeID).Return(nil)
+		_, herr := svc.VerifyOTP(ctx, &request.OTPVerifyReq{ChallengeID: ch.ChallengeID, Code: code})
 		require.NotNil(t, herr)
 	})
 	t.Run("expired challenge is deleted and rejected", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
-		svc, m, ch, code := issueOTP(t, ctrl)
+		svc, m, ch, code := issueChallenge(t, ctrl, dao.OTPPurposeSignIn)
 		m.clock.SetOffset(11 * time.Minute)
-		m.otps.EXPECT().Get(gomock.Any(), anu.Email).Return(ch, nil)
-		m.otps.EXPECT().Delete(gomock.Any(), anu.Email).Return(nil)
-		_, herr := svc.VerifyOTP(ctx, &request.OTPVerifyReq{Email: anu.Email, Code: code})
+		m.otps.EXPECT().Get(gomock.Any(), ch.ChallengeID).Return(ch, nil)
+		m.otps.EXPECT().Delete(gomock.Any(), ch.ChallengeID).Return(nil)
+		_, herr := svc.VerifyOTP(ctx, &request.OTPVerifyReq{ChallengeID: ch.ChallengeID, Code: code})
 		require.NotNil(t, herr)
+	})
+	t.Run("signin for an account deleted meanwhile is rejected", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		svc, m, ch, code := issueChallenge(t, ctrl, dao.OTPPurposeSignIn)
+		m.otps.EXPECT().Get(gomock.Any(), ch.ChallengeID).Return(ch, nil)
+		m.otps.EXPECT().Delete(gomock.Any(), ch.ChallengeID).Return(nil)
+		m.users.EXPECT().ByEmail(gomock.Any(), anu.Email).Return(nil, apperrors.ErrRepoNotFound)
+		_, herr := svc.VerifyOTP(ctx, &request.OTPVerifyReq{ChallengeID: ch.ChallengeID, Code: code})
+		requireStatus(t, herr, 401, "unauthorized")
 	})
 	t.Run("user without membership gets 403 after verification", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
-		svc, m, ch, code := issueOTP(t, ctrl)
-		m.otps.EXPECT().Get(gomock.Any(), anu.Email).Return(ch, nil)
-		m.otps.EXPECT().Delete(gomock.Any(), anu.Email).Return(nil)
+		svc, m, ch, code := issueChallenge(t, ctrl, dao.OTPPurposeSignIn)
+		m.otps.EXPECT().Get(gomock.Any(), ch.ChallengeID).Return(ch, nil)
+		m.otps.EXPECT().Delete(gomock.Any(), ch.ChallengeID).Return(nil)
+		m.users.EXPECT().ByEmail(gomock.Any(), anu.Email).Return(anu, nil)
 		m.sessions.EXPECT().Save(gomock.Any(), gomock.Any()).Return(nil)
 		m.memberships.EXPECT().ForUser(gomock.Any(), anu.ID).Return(nil, apperrors.ErrRepoNotFound)
-		_, herr := svc.VerifyOTP(ctx, &request.OTPVerifyReq{Email: anu.Email, Code: code})
-		require.NotNil(t, herr)
-		status, _ := herr.Get()
-		require.Equal(t, 403, status)
+		_, herr := svc.VerifyOTP(ctx, &request.OTPVerifyReq{ChallengeID: ch.ChallengeID, Code: code})
+		requireStatus(t, herr, 403, "forbidden")
 	})
 }
 
@@ -310,15 +515,13 @@ func TestAuthenticate(t *testing.T) {
 	})
 }
 
-// mintForTest obtains a real access token by driving the OTP flow against the same mocks.
+// mintForTest obtains a real access token by driving the sign-in flow against the same mocks.
 func mintForTest(t *testing.T, svc IAuthService, m *authMocks) string {
 	t.Helper()
 	ctx := context.Background()
 	var ch dao.OTPChallenge
-	m.otps.EXPECT().Get(gomock.Any(), anu.Email).DoAndReturn(func(context.Context, string) (*dao.OTPChallenge, error) {
-		if ch.Email == "" {
-			return nil, apperrors.ErrRepoNotFound
-		}
+	m.otps.EXPECT().LatestByEmail(gomock.Any(), anu.Email).Return(nil, apperrors.ErrRepoNotFound).AnyTimes()
+	m.otps.EXPECT().Get(gomock.Any(), gomock.Any()).DoAndReturn(func(context.Context, string) (*dao.OTPChallenge, error) {
 		c := ch
 		return &c, nil
 	}).AnyTimes()
@@ -326,14 +529,16 @@ func mintForTest(t *testing.T, svc IAuthService, m *authMocks) string {
 		ch = *c
 		return nil
 	}).AnyTimes()
-	m.otps.EXPECT().Delete(gomock.Any(), anu.Email).Return(nil).AnyTimes()
+	m.otps.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	m.sessions.EXPECT().Save(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	m.memberships.EXPECT().ForUser(gomock.Any(), anu.ID).Return(anuMember, nil).Times(1)
 	m.memberships.EXPECT().MembersOfSpace(gomock.Any(), "space1").Return([]dao.Membership{*anuMember}, nil).AnyTimes()
+	m.users.EXPECT().ByEmail(gomock.Any(), anu.Email).Return(anu, nil).Times(2)
 	m.users.EXPECT().ByID(gomock.Any(), anu.ID).Return(anu, nil).Times(1)
-	require.Nil(t, svc.RequestOTP(ctx, &request.OTPRequestReq{Email: anu.Email}))
+	resp0, herr := svc.RequestSignIn(ctx, &request.SignInReq{Identifier: anu.Email, IsEmail: true})
+	require.Nil(t, herr)
 	code := codeRegexp.FindString(m.mailer.Snapshot()[len(m.mailer.Snapshot())-1].Body)
-	resp, herr := svc.VerifyOTP(ctx, &request.OTPVerifyReq{Email: anu.Email, Code: code})
+	resp, herr := svc.VerifyOTP(ctx, &request.OTPVerifyReq{ChallengeID: resp0.ChallengeID, Code: code})
 	require.Nil(t, herr)
 	return resp.AccessToken
 }
