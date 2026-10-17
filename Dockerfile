@@ -3,10 +3,12 @@ WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 go build -trimpath -o /out/server ./cmd/server && CGO_ENABLED=0 go build -trimpath -o /out/seed ./cmd/seed
+RUN CGO_ENABLED=0 go build -trimpath -o /out/http-server ./cmd && CGO_ENABLED=0 go build -trimpath -o /out/seed ./cmd/seed
 
+# Configuration files are embedded in the binary (assets/*-config.json); secrets come from the environment.
 FROM gcr.io/distroless/static-debian12:nonroot
-COPY --from=build /out/server /out/seed /
+COPY --from=build /out/http-server /out/seed /
 USER nonroot
+ENV ACTIVE_ENV=PROD
 EXPOSE 3000
-ENTRYPOINT ["/server"]
+ENTRYPOINT ["/http-server"]

@@ -1,44 +1,54 @@
 # Bubu Bloom Service
 
-Go (chi) REST + sync API for the Bubu Bloom wellness tracker. MongoDB Atlas is the cloud source of truth; the mobile app (`../bubu-bloom-app`) never talks to MongoDB directly. Contract: [`../docs/api-contract.md`](../docs/api-contract.md).
+Go (gin) REST + sync API for the Bubu Bloom wellness tracker. MongoDB Atlas is the cloud source of truth; the mobile app (`../bubu-bloom-app`) never talks to MongoDB directly. Contract: [`docs/api-contract.md`](docs/api-contract.md) (identical to `../docs/api-contract.md`).
 
-> Spec deviation: the original spec suggested Node/Express; this service is Go by explicit decision.
+The service follows a clean-architecture layout: **handlers → interface-based services → repository interfaces**, wired with google/wire. See [`CLAUDE.md`](CLAUDE.md) for conventions.
 
 ## Layout
 ```
-cmd/server        HTTP server        cmd/seed   idempotent invite-only provisioning
-internal/config   env config         internal/store    Store interface: memory (tests/dev) + MongoDB
-internal/auth     OTP + JWT + rotating refresh tokens
-internal/entities strict allowlist validation (blocks mass-assignment)
-internal/service  apply/sync/pull/stats logic    internal/scoring  completion + streak rules
-internal/httpapi  router, middleware, handlers + integration tests
-testdata/scoring.json  shared scoring fixtures (copied into the app)
+cmd/http-server.go   HTTP server        cmd/seed   idempotent invite-only provisioning
+config/ + assets/    viper config, per-env JSON (dev|stag|prod), secrets only from env
+pkg/application/httpserver   gin router, middleware chain, /v1 handlers
+pkg/domain           services (+ gomock mocks), DTOs (ozzo validation), business objects, DAOs
+pkg/infrastructure   mongorepo (Mongo repos + memory fakes), smtp mailer, entity validation
+pkg/di               wire container and AppLogic accessor
+pkg/middleware       request info, recovery, secure headers, CORS, logging, body limit, rate limit, auth
+pkg/{errors,enums,constants,drivers,logger,utils}
+ddl/mongodb/indexes.js   documented indexes
+testdata/scoring.json    shared scoring fixtures (copied into the app)
 ```
 
 ## Run locally
 ```
 cp .env.example .env   # edit; export the variables (e.g. `set -a; source .env; set +a`)
-# Quick start without MongoDB (ephemeral):
-STORE=memory ACCESS_TOKEN_SECRET=$(openssl rand -base64 48) OWNER_EMAIL=anu@example.com VIEWER_EMAIL=aman@example.com go run ./cmd/server
-# With Atlas: set MONGODB_URI, then
-go run ./cmd/seed && go run ./cmd/server
+# Quick start without MongoDB (ephemeral, auto-seeds OWNER_EMAIL/VIEWER_EMAIL):
+ACTIVE_ENV=DEV STORE=memory ACCESS_TOKEN_SECRET=$(openssl rand -base64 48) \
+  OWNER_EMAIL=anu@example.com VIEWER_EMAIL=aman@example.com make run
+# With Atlas: set STORE=mongo and MONGODB_URI, then
+make seed && make run
 ```
-With `MAILER=console` the OTP code is printed in the server log (dev only; production refuses to start with it).
+With `MAILER=console` (default in DEV) the OTP code is printed in the server log (dev only; PROD refuses to start with it).
 
-Sign in: `POST /v1/auth/otp/request {"email":"anu@example.com"}` → read code from log → `POST /v1/auth/otp/verify`.
+Sign in: `POST /v1/auth/otp/request {"email":"anu@example.com"}` → read the code from the log → `POST /v1/auth/otp/verify {"email","code"}` → use `accessToken` as `Authorization: Bearer ...`.
+
+## Configuration
+`ACTIVE_ENV` (`DEV` default, `STAG`, `PROD`) selects `assets/<env>-config.json` (embedded in the binary). Environment variables override file values (`PORT`, `STORE`, `MONGODB_DB`, `AUTH_ISSUER`, `MAILER`, `SMTP_PORT`, `MAIL_FROM`, `TRUST_PROXY`, `CORS_ORIGINS`, `LOG_LEVEL`, `OWNER_NAME`, `VIEWER_NAME`, `DEFAULT_TIMEZONE`). Secrets are read **only** from the environment: `MONGODB_URI`, `ACCESS_TOKEN_SECRET` (>= 32 chars), `SMTP_HOST`/`SMTP_USER`/`SMTP_PASS`, plus `OWNER_EMAIL`/`VIEWER_EMAIL` for provisioning.
+
+## Commands
+`make build | run | seed | wire | mock-service | mock-mongorepo | mock-drivers | mock-smtp | mock-all | test | test-coverage`.
+`make wire` and the `mock-*` targets regenerate `pkg/di/wire_gen.go` and the `mock_gen.go` files (committed). CI (`.github/workflows/ci.yml`) runs `go vet ./...` and `go test -race ./...`.
 
 ## Tests
-`make test` (`go vet` + `go test -race`). Covers scoring fixtures, validation, OTP/refresh rotation + reuse detection, viewer read-only, outsider 403, cross-space isolation, mass-assignment, optimistic versions, sync idempotency/conflict/LWW/pull.
-The MongoDB store implementation compiles but is **not covered by automated tests** (no MongoDB in CI here); exercise it against Atlas or a local `mongod` before relying on it.
+`make test`. Covers scoring fixtures, entity validation, DTO validation, the original HTTP integration suite run through the gin router with in-memory repos (OTP/refresh rotation + reuse detection, viewer read-only, outsider 403, cross-space isolation, mass-assignment, optimistic versions, sync idempotency/conflict/LWW/pull), error-envelope/rate-limit contract tests, and gomock unit tests for the auth, sync and viewer-guard services.
+The MongoDB repositories compile but are **not covered by automated tests** (no MongoDB in CI here); exercise them against Atlas or a local `mongod` before relying on them.
 
 ## Atlas / deployment notes
-- Create a dedicated DB user with `readWrite` on the `bubu_bloom` database only.
-- Restrict Atlas Network Access to your host's egress IPs (avoid 0.0.0.0/0).
-- Indexes are created on startup (`EnsureIndexes`): unique memberships, unique `habitId+localDate` logs, TTL on OTPs / refresh sessions / applied operations.
-- No multi-document transactions are used; writes rely on single-document compare-and-swap on `version`, so any Atlas tier works.
-- Store `MONGODB_URI`, `ACCESS_TOKEN_SECRET`, SMTP creds in the host's secret manager. `.env` is git-ignored.
-- `Dockerfile` builds a distroless image. Put it behind TLS and set `TRUST_PROXY=true` only if a trusted proxy sets `X-Forwarded-For`.
-- Mailer: `console` and `smtp` implemented; add a provider (e.g. Resend HTTP API) by implementing `mailer.Mailer`.
+- Create a dedicated DB user with `readWrite` on the `bubu_bloom` database only; restrict Atlas Network Access to your host's egress IPs.
+- Indexes are created on startup (`EnsureIndexes`); `ddl/mongodb/indexes.js` documents the same set and can be run with `mongosh` to provision up front.
+- No multi-document transactions: writes use single-document compare-and-swap on `version`, so any Atlas tier works.
+- Store `MONGODB_URI`, `ACCESS_TOKEN_SECRET`, SMTP credentials in the host's secret manager. `.env` is git-ignored.
+- `Dockerfile` builds a distroless image (`ACTIVE_ENV=PROD` by default). Put it behind TLS and set `TRUST_PROXY=true` only if a trusted proxy sets `X-Forwarded-For`.
+- Mailer: `console` and `smtp` implemented; add a provider (e.g. an HTTP API) by implementing `smtp.IMailer`.
 
 ## Security model
-Invite-only (no signup endpoint; only seeded emails get codes, responses never reveal membership), 6-digit OTP hashed with HMAC, 10 min TTL, 5 attempts, resend cooldown, per-IP/per-email rate limits; 15 min HS256 access tokens; rotating refresh tokens (hashed at rest, family revoked on reuse); role and space resolved from the database on every request; strict JSON (unknown fields rejected); logs exclude tokens, OTPs and wellness values.
+Invite-only (no signup endpoint; only seeded emails get codes, responses never reveal membership), 6-digit OTP hashed with HMAC, 10 min TTL, 5 attempts, resend cooldown, per-IP/per-email rate limits; 15 min HS256 access tokens; rotating refresh tokens (hashed at rest, family revoked on reuse); role and space resolved from the database on every request; strict JSON (unknown fields rejected, 1 MiB limit); logs exclude tokens, OTPs and wellness values.
