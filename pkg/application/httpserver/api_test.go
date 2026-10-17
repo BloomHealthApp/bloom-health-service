@@ -84,16 +84,31 @@ func setup(t *testing.T) *env {
 
 var codeRe = regexp.MustCompile(`\b(\d{6})\b`)
 
-func (e *env) login(email string) (access, refresh string) {
+// login signs an existing account in by identifier (email or phone): signin/request, read the code
+// from the captured mail, otp/verify.
+func (e *env) login(identifier string) (access, refresh string) {
 	e.t.Helper()
 	e.mail.Messages = nil
-	st, _ := e.do("POST", "/v1/auth/otp/request", "", map[string]any{"email": email})
+	st, resp := e.do("POST", "/v1/auth/signin/request", "", map[string]any{"identifier": identifier})
 	require.Equal(e.t, 202, st)
 	require.Len(e.t, e.mail.Messages, 1)
 	code := codeRe.FindString(e.mail.Messages[0].Body)
-	st, body := e.do("POST", "/v1/auth/otp/verify", "", map[string]any{"email": email, "code": code})
+	st, body := e.do("POST", "/v1/auth/otp/verify", "", map[string]any{"challengeId": resp["challengeId"], "code": code})
 	require.Equal(e.t, 200, st, body)
 	return body["accessToken"].(string), body["refreshToken"].(string)
+}
+
+// signup creates a new account through signup/request + otp/verify and returns the verify body.
+func (e *env) signup(name, phone, email string) map[string]any {
+	e.t.Helper()
+	e.mail.Messages = nil
+	st, resp := e.do("POST", "/v1/auth/signup/request", "", map[string]any{"name": name, "phone": phone, "email": email})
+	require.Equal(e.t, 202, st, resp)
+	require.Len(e.t, e.mail.Messages, 1)
+	code := codeRe.FindString(e.mail.Messages[0].Body)
+	st, body := e.do("POST", "/v1/auth/otp/verify", "", map[string]any{"challengeId": resp["challengeId"], "code": code})
+	require.Equal(e.t, 200, st, body)
+	return body
 }
 
 func (e *env) do(method, path, token string, body any) (int, map[string]any) {
@@ -131,8 +146,8 @@ func today() string { return time.Now().UTC().Format("2006-01-02") }
 func TestAuthFlow(t *testing.T) {
 	e := setup(t)
 
-	// any email may sign in: a brand-new address gets a code and, once verified, a private owner account
-	st, _ := e.do("POST", "/v1/auth/otp/request", "", map[string]any{"email": "stranger@example.com"})
+	// a new address signs up: it gets a code and, once verified, a private owner account
+	st, _ := e.do("POST", "/v1/auth/signup/request", "", map[string]any{"name": "Stranger", "phone": "9123456780", "email": "stranger@example.com"})
 	require.Equal(t, 202, st)
 	require.Len(t, e.mail.Messages, 1)
 	_, err := e.repos.Users.ByEmail(context.Background(), "stranger@example.com")
@@ -140,8 +155,8 @@ func TestAuthFlow(t *testing.T) {
 	e.mail.Messages = nil
 
 	// wrong code
-	e.do("POST", "/v1/auth/otp/request", "", map[string]any{"email": "anu@example.com"})
-	st, _ = e.do("POST", "/v1/auth/otp/verify", "", map[string]any{"email": "anu@example.com", "code": "000000"})
+	_, req := e.do("POST", "/v1/auth/signin/request", "", map[string]any{"identifier": "anu@example.com"})
+	st, _ = e.do("POST", "/v1/auth/otp/verify", "", map[string]any{"challengeId": req["challengeId"], "code": "000000"})
 	require.Equal(t, 401, st)
 
 	access, refresh := e.login("anu@example.com")
@@ -163,12 +178,12 @@ func TestAuthFlow(t *testing.T) {
 
 func TestOTPAttemptsAndSingleUse(t *testing.T) {
 	e := setup(t)
-	e.do("POST", "/v1/auth/otp/request", "", map[string]any{"email": "anu@example.com"})
+	_, req := e.do("POST", "/v1/auth/signin/request", "", map[string]any{"identifier": "anu@example.com"})
 	code := codeRe.FindString(e.mail.Messages[0].Body)
 	// correct code works once only
-	st, _ := e.do("POST", "/v1/auth/otp/verify", "", map[string]any{"email": "anu@example.com", "code": code})
+	st, _ := e.do("POST", "/v1/auth/otp/verify", "", map[string]any{"challengeId": req["challengeId"], "code": code})
 	require.Equal(t, 200, st)
-	st, _ = e.do("POST", "/v1/auth/otp/verify", "", map[string]any{"email": "anu@example.com", "code": code})
+	st, _ = e.do("POST", "/v1/auth/otp/verify", "", map[string]any{"challengeId": req["challengeId"], "code": code})
 	require.Equal(t, 401, st)
 }
 
@@ -195,7 +210,7 @@ func TestExpiredToken(t *testing.T) {
 
 func TestNewUserGetsPrivateSpace(t *testing.T) {
 	e := setup(t)
-	newTok, _ := e.login("newcomer@example.com")
+	newTok := e.signup("Newcomer", "9000000001", "newcomer@example.com")["accessToken"].(string)
 	st, me := e.do("GET", "/v1/me", newTok, nil)
 	require.Equal(t, 200, st)
 	require.Equal(t, "owner", me["role"])

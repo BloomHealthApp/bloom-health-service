@@ -1,6 +1,7 @@
 package httpserver_test
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 	"strings"
@@ -37,18 +38,23 @@ func TestErrorEnvelopeAndStatusCodes(t *testing.T) {
 	require.Equal(t, 404, resp.StatusCode)
 	require.JSONEq(t, `{"error":{"code":"not_found","message":"no such route"}}`, body)
 
-	resp, body = raw(t, e, "DELETE", "/v1/auth/otp/request", "", "")
+	resp, body = raw(t, e, "DELETE", "/v1/auth/signin/request", "", "")
 	require.Equal(t, 405, resp.StatusCode)
 	require.JSONEq(t, `{"error":{"code":"validation_failed","message":"method not allowed"}}`, body)
 
 	// strict JSON: unknown fields, trailing data and empty bodies are 400 validation_failed
-	for _, b := range []string{`{"email":"anu@example.com","x":1}`, `{"email":"anu@example.com"} {}`, ``, `not json`} {
-		resp, body = raw(t, e, "POST", "/v1/auth/otp/request", "", b)
+	for _, b := range []string{`{"identifier":"anu@example.com","x":1}`, `{"identifier":"anu@example.com"} {}`, ``, `not json`} {
+		resp, body = raw(t, e, "POST", "/v1/auth/signin/request", "", b)
 		require.Equal(t, 400, resp.StatusCode, b)
 		require.Contains(t, body, `"code":"validation_failed"`)
 	}
-	resp, _ = raw(t, e, "POST", "/v1/auth/otp/request", "", `{"email":"not-an-email"}`)
+	for _, b := range []string{`{"identifier":"not-an-email@"}`, `{"identifier":"12345"}`, `{"identifier":""}`} {
+		resp, _ = raw(t, e, "POST", "/v1/auth/signin/request", "", b)
+		require.Equal(t, 400, resp.StatusCode, b)
+	}
+	resp, body = raw(t, e, "POST", "/v1/auth/signup/request", "", `{"name":"A","phone":"9876543210","email":"a@b.io","role":"owner"}`)
 	require.Equal(t, 400, resp.StatusCode)
+	require.Contains(t, body, `"code":"validation_failed"`)
 }
 
 func TestHealthEndpoints(t *testing.T) {
@@ -61,18 +67,39 @@ func TestHealthEndpoints(t *testing.T) {
 	}
 }
 
-func TestPerEmailRateLimitDoesNotRevealAndVerifyReturns429(t *testing.T) {
+func TestPerIdentifierRateLimitDoesNotRevealAndVerifyReturns429(t *testing.T) {
 	e := setup(t)
-	// request: burst of 3 per email, further requests still answer 202 but send nothing new
+	// signin request: burst of 3 per identifier, further requests still answer 202 (decoy challenge)
+	// but send nothing new
 	for i := 0; i < 6; i++ {
-		resp, body := raw(t, e, "POST", "/v1/auth/otp/request", "", `{"email":"anu@example.com"}`)
+		resp, body := raw(t, e, "POST", "/v1/auth/signin/request", "", `{"identifier":"anu@example.com"}`)
 		require.Equal(t, 202, resp.StatusCode)
-		require.JSONEq(t, `{"status":"sent"}`, body)
+		var parsed map[string]string
+		require.NoError(t, json.Unmarshal([]byte(body), &parsed))
+		require.Equal(t, "sent", parsed["status"])
+		require.NotEmpty(t, parsed["challengeId"])
+		require.Len(t, parsed, 2)
 	}
-	// verify: burst of 3 per email, then 429 with Retry-After
+	require.Len(t, e.mail.Messages, 3, "mails stop at the per-identifier burst")
+}
+
+func TestSignUpPerIdentifierRateLimitReturns429(t *testing.T) {
+	e := setup(t)
+	// sign-up already reveals registration (409), so over-limit is an honest 429
+	var sr *http.Response
+	for i := 0; i < 4; i++ {
+		sr, _ = raw(t, e, "POST", "/v1/auth/signup/request", "", `{"name":"A","phone":"9111111111","email":"fresh@example.com"}`)
+	}
+	require.Equal(t, 429, sr.StatusCode)
+	require.Equal(t, "60", sr.Header.Get("Retry-After"))
+}
+
+func TestVerifyPerChallengeRateLimitReturns429(t *testing.T) {
+	e := setup(t)
+	// verify: burst of 3 per challenge, then 429 with Retry-After
 	var last *http.Response
 	for i := 0; i < 4; i++ {
-		last, _ = raw(t, e, "POST", "/v1/auth/otp/verify", "", `{"email":"anu@example.com","code":"000000"}`)
+		last, _ = raw(t, e, "POST", "/v1/auth/otp/verify", "", `{"challengeId":"some-challenge","code":"000000"}`)
 	}
 	require.Equal(t, 429, last.StatusCode)
 	require.Equal(t, "60", last.Header.Get("Retry-After"))

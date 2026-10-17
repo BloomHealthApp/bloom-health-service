@@ -1,6 +1,6 @@
 # CLAUDE.md — bubu-bloom-service
 
-Go REST + offline-sync API for the Bubu Bloom wellness tracker (any email can sign in; each new user gets a private space as **owner**; **viewer** access exists in the data model but has no invite endpoint yet). Public contract: `docs/api-contract.md` (paths `/v1/...`, error body `{"error":{code,message,details}}`) — it must not change without updating the contract and the app. Module path: `github.com/bubu-bloom/service`. Store: MongoDB (Atlas); `STORE=memory` for tests/dev.
+Go REST + offline-sync API for the Bubu Bloom wellness tracker (passwordless: sign up with name/phone/email, sign in with phone or email, always via an emailed code; each new user gets a private space as **owner**; **viewer** access exists in the data model but has no invite endpoint yet). Public contract: `docs/api-contract.md` (paths `/v1/...`, error body `{"error":{code,message,details}}`) — it must not change without updating the contract and the app. Module path: `github.com/bubu-bloom/service`. Store: MongoDB (Atlas); `STORE=memory` for tests/dev.
 
 The service uses a layered clean architecture (handlers → interface-based services → repository interfaces, Wire DI, `IHttpError`, header middleware, viper env config, Makefile mock/wire targets).
 
@@ -54,11 +54,12 @@ ddl/mongodb/indexes.js        documented index set (EnsureIndexes creates the sa
 - **Tests**: testify; services use `createXxxService(ctrl, setup)` helpers over gomock repos; HTTP behavior is covered by `pkg/application/httpserver/*_test.go` (real gin router + real services + memory repos). `api_test.go` is the original regression suite and its assertions must not be edited to make a change pass.
 
 ## Security invariants (do not weaken)
-- Open sign-in: `otp/request` answers 202 for any valid email and never reveals whether an account exists; the account and its private space are created only after the code is verified.
-- OTP: 6 digits, HMAC-hashed at rest, 10 min TTL, 5 attempts, resend cooldown, per-email limits; refresh tokens hashed, rotated, family revoked on reuse; access tokens HS256 15 min.
+- Auth is OTP-only (no passwords). `signin/request` answers 202 `{status, challengeId}` for every well-formed identifier (email or phone) and never reveals whether an account exists: unknown identifiers get a random decoy `challengeId` and no mail; the code is always mailed to the email on the account. `signup/request` returns `409 already_registered` for a taken email/phone (accepted trade-off, rate limited). The account, private space, default habits and settings are created only after a sign-up challenge is verified; the pending name/phone live in the challenge, never in `users`.
+- Phone: normalized to E.164 by `utils.NormalizePhone` (default country code from `DEFAULT_COUNTRY_CODE`, `+91`), unique via a partial unique index on `users.phone` (legacy users have no phone field); unique-index races map to `ErrRepoConflict` -> 409 `already_registered`. Phones are unverified lookup keys.
+- OTP: 6 digits, HMAC-hashed at rest (bound to the challengeId), keyed by `challengeId` (single use, deleted on success), 10 min TTL, 5 attempts, resend cooldown per account (`IOTPRepo.LatestByEmail`), per-identifier and per-challenge limits; refresh tokens hashed, rotated, family revoked on reuse; access tokens HS256 15 min.
 - Role and space are resolved from the database on every request (`IAuthService.Authenticate`); never from the token or the client. Client-supplied `role`, `userId`, `sharedSpaceId`, `createdBy`, `updatedBy` are rejected (unknown field → 400).
 - Viewer is read-only: `RequireOwner` middleware **and** service-level `requireOwner` guards.
-- Strict JSON (`DisallowUnknownFields`, no trailing data), 1 MiB body limit, secure response headers, rate limits (per IP, per IP on `/auth`, per email).
+- Strict JSON (`DisallowUnknownFields`, no trailing data), 1 MiB body limit, secure response headers, rate limits (per IP, per IP on `/auth`, per normalized email/phone, per challenge on verify).
 - Logs never contain tokens, OTPs or wellness values (logger redacts sensitive keys; request log records route patterns only).
 - Secrets (`MONGODB_URI`, `ACCESS_TOKEN_SECRET`, `SMTP_*`) come only from the environment. Never commit real values; `assets/*-config.json` hold non-secret settings only. PROD refuses `STORE=memory` and the console mailer.
 

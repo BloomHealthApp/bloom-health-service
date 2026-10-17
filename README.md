@@ -29,17 +29,18 @@ make run
 ```
 With `MAILER=console` (default in DEV) the OTP code is printed in the server log (dev only; PROD refuses to start with it).
 
-Sign in: `POST /v1/auth/otp/request {"email":"anu@example.com"}` → read the code from the log → `POST /v1/auth/otp/verify {"email","code"}` → use `accessToken` as `Authorization: Bearer ...`.
+Sign up: `POST /v1/auth/signup/request {"name":"Anu","phone":"98765 43210","email":"anu@example.com"}` → `202 {"status":"sent","challengeId":"..."}` → read the code from the log → `POST /v1/auth/otp/verify {"challengeId","code"}` (creates the account) → use `accessToken` as `Authorization: Bearer ...`.
+Sign in: `POST /v1/auth/signin/request {"identifier":"anu@example.com"}` (email **or** phone; the code is mailed to the email on the account) → same `otp/verify`. There are no passwords.
 
 ## Configuration
-`ACTIVE_ENV` (`DEV` default, `STAG`, `PROD`) selects `assets/<env>-config.json` (embedded in the binary). Environment variables override file values (`PORT`, `STORE`, `MONGODB_DB`, `AUTH_ISSUER`, `MAILER`, `SMTP_PORT`, `MAIL_FROM`, `TRUST_PROXY`, `CORS_ORIGINS`, `LOG_LEVEL`, `DEFAULT_TIMEZONE`). Secrets are read **only** from the environment: `MONGODB_URI`, `ACCESS_TOKEN_SECRET` (>= 32 chars), `SMTP_HOST`/`SMTP_USER`/`SMTP_PASS`.
+`ACTIVE_ENV` (`DEV` default, `STAG`, `PROD`) selects `assets/<env>-config.json` (embedded in the binary). Environment variables override file values (`PORT`, `STORE`, `MONGODB_DB`, `AUTH_ISSUER`, `MAILER`, `SMTP_PORT`, `MAIL_FROM`, `TRUST_PROXY`, `CORS_ORIGINS`, `LOG_LEVEL`, `DEFAULT_TIMEZONE`, `DEFAULT_COUNTRY_CODE`). `DEFAULT_COUNTRY_CODE` (default `+91`) is prefixed to bare 10-digit phone numbers. Secrets are read **only** from the environment: `MONGODB_URI`, `ACCESS_TOKEN_SECRET` (>= 32 chars), `SMTP_HOST`/`SMTP_USER`/`SMTP_PASS`.
 
 ## Commands
 `make build | run | wire | mock-service | mock-mongorepo | mock-drivers | mock-smtp | mock-all | test | test-coverage`.
 `make wire` and the `mock-*` targets regenerate `pkg/di/wire_gen.go` and the `mock_gen.go` files (committed). CI (`.github/workflows/ci.yml`) runs `go vet ./...` and `go test -race ./...`.
 
 ## Tests
-`make test`. Covers scoring fixtures, entity validation, DTO validation, the original HTTP integration suite run through the gin router with in-memory repos (OTP/refresh rotation + reuse detection, viewer read-only, outsider 403, cross-space isolation, mass-assignment, optimistic versions, sync idempotency/conflict/LWW/pull), error-envelope/rate-limit contract tests, and gomock unit tests for the auth, sync and viewer-guard services.
+`make test`. Covers scoring fixtures, entity validation, DTO validation, the original HTTP integration suite run through the gin router with in-memory repos (sign-up/sign-in by challenge, phone uniqueness and normalization, decoy challenges, OTP/refresh rotation + reuse detection, viewer read-only, outsider 403, cross-space isolation, mass-assignment, optimistic versions, sync idempotency/conflict/LWW/pull), error-envelope/rate-limit contract tests, and gomock unit tests for the auth, sync and viewer-guard services.
 The MongoDB repositories compile but are **not covered by automated tests** (no MongoDB in CI here); exercise them against Atlas or a local `mongod` before relying on them.
 
 ## Atlas / deployment notes
@@ -51,4 +52,4 @@ The MongoDB repositories compile but are **not covered by automated tests** (no 
 - Mailer: `console` and `smtp` implemented; add a provider (e.g. an HTTP API) by implementing `smtp.IMailer`.
 
 ## Security model
-Open sign-in (any email can request a code; the account and a private space are created only after the code is verified; responses never reveal whether an account exists), 6-digit OTP hashed with HMAC, 10 min TTL, 5 attempts, resend cooldown, per-IP/per-email rate limits; 15 min HS256 access tokens; rotating refresh tokens (hashed at rest, family revoked on reuse); role and space resolved from the database on every request; strict JSON (unknown fields rejected, 1 MiB limit); logs exclude tokens, OTPs and wellness values.
+Passwordless sign-up (name, phone, email) and sign-in (phone or email) with an emailed code and an opaque `challengeId`; the account and a private space are created only after the sign-up code is verified; sign-in always answers 202 (unknown identifiers get a random decoy challenge and no mail), while sign-up reports `409 already_registered` for a taken email/phone (rate limited); phone numbers are unverified lookup keys (E.164, unique), the code always goes to the email on file; 6-digit OTP hashed with HMAC, 10 min TTL, 5 attempts, resend cooldown, per-IP/per-email rate limits; 15 min HS256 access tokens; rotating refresh tokens (hashed at rest, family revoked on reuse); role and space resolved from the database on every request; strict JSON (unknown fields rejected, 1 MiB limit); logs exclude tokens, OTPs and wellness values.
