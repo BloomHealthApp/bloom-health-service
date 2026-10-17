@@ -6,7 +6,7 @@ The service follows a clean-architecture layout: **handlers → interface-based 
 
 ## Layout
 ```
-cmd/http-server.go   HTTP server
+cmd/server/main.go    HTTP server
 config/ + assets/    viper config, per-env JSON (dev|stag|prod), secrets only from env
 pkg/application/httpserver   gin router, middleware chain, /v1 handlers
 pkg/domain           services (+ gomock mocks), DTOs (ozzo validation), business objects, DAOs

@@ -10,7 +10,7 @@ import (
 	"github.com/bubu-bloom/service/pkg/utils/ratelimit"
 )
 
-// AppLogic is set once at startup (cmd/http-server.go) or per test.
+// AppLogic is set once at startup (cmd/server/main.go) or per test.
 var AppLogic AppInterface
 
 // AppInterface exposes every dependency the HTTP layer needs.

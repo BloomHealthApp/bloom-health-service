@@ -3,7 +3,7 @@ WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 go build -trimpath -o /out/http-server ./cmd
+RUN CGO_ENABLED=0 go build -trimpath -o /out/http-server ./cmd/server
 
 # Configuration files are embedded in the binary (assets/*-config.json); secrets come from the environment.
 FROM gcr.io/distroless/static-debian12:nonroot

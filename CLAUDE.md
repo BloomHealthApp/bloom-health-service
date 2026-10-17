@@ -7,7 +7,7 @@ The service uses a layered clean architecture (handlers → interface-based serv
 ## Commands
 ```
 make build            # bin/http-server
-make run              # go run ./cmd  (ACTIVE_ENV=DEV, see .env.example)
+make run              # go run ./cmd/server  (ACTIVE_ENV=DEV, see .env.example)
 make wire             # regenerate pkg/di/wire_gen.go from pkg/di/container.go
 make mock-service     # pkg/domain/service/mock_gen.go
 make mock-mongorepo   # pkg/infrastructure/mongorepo/mock_gen.go
@@ -18,11 +18,11 @@ make test-coverage    # coverage.out + total
 Regenerate wire/mocks and commit `wire_gen.go` / `mock_gen.go` whenever a constructor signature or an interface changes. Tools install themselves (`make install-tools`: mockgen v1.6.0, wire).
 
 Local run without MongoDB:
-`ACTIVE_ENV=DEV STORE=memory ACCESS_TOKEN_SECRET=$(openssl rand -base64 48) go run ./cmd` — the OTP is printed in the log (console mailer).
+`ACTIVE_ENV=DEV STORE=memory ACCESS_TOKEN_SECRET=$(openssl rand -base64 48) go run ./cmd/server` — the OTP is printed in the log (console mailer).
 
 ## Layout
 ```
-cmd/http-server.go            entrypoint: wire graph, gin server, graceful shutdown
+cmd/server/main.go             entrypoint: wire graph, gin server, graceful shutdown
 config/                       viper loader (config.Store); assets/{dev,stag,prod}-config.json embedded via assets/embed.go
 pkg/application/httpserver/   router.go (middleware chain, 404/405) + v1/public-router/*.go (handlers)
 pkg/di/                       container.go (wire sets, build tag wireinject), wire_gen.go (generated),

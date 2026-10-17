@@ -17,10 +17,10 @@ install-tools:
 	@test -x $(WIRE) || go install github.com/google/wire/cmd/wire@latest
 
 build:
-	CGO_ENABLED=0 go build -trimpath -o $(BIN_DIR)/http-server ./cmd
+	CGO_ENABLED=0 go build -trimpath -o $(BIN_DIR)/http-server ./cmd/server
 
 run:
-	go run ./cmd
+	go run ./cmd/server
 
 # Regenerates pkg/di/wire_gen.go from pkg/di/container.go.
 wire: install-tools
