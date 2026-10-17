@@ -23,7 +23,9 @@ type ILogger interface {
 
 type slogLogger struct{ l *slog.Logger }
 
-var sensitiveParts = []string{"token", "otp", "code", "secret", "password", "pass", "authorization", "hash", "uri"}
+var sensitiveParts = []string{"token", "otp", "code", "secret", "password", "pass", "authorization", "hash", "uri",
+	// private health/profile data (period tracker, gender) must never reach logs
+	"period", "gender", "symptom", "mood", "flow", "startdate", "enddate"}
 
 const redacted = "[REDACTED]"
 

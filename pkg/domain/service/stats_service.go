@@ -7,11 +7,13 @@ import (
 	"github.com/bubu-bloom/service/pkg/constants"
 	"github.com/bubu-bloom/service/pkg/domain/dto/request"
 	"github.com/bubu-bloom/service/pkg/domain/dto/response"
+	"github.com/bubu-bloom/service/pkg/domain/models/dao"
 	"github.com/bubu-bloom/service/pkg/domain/serviceBos"
 	"github.com/bubu-bloom/service/pkg/enums/entitytype"
 	"github.com/bubu-bloom/service/pkg/enums/userrole"
 	apperrors "github.com/bubu-bloom/service/pkg/errors"
 	"github.com/bubu-bloom/service/pkg/infrastructure/mongorepo"
+	"github.com/bubu-bloom/service/pkg/infrastructure/validation"
 	"github.com/bubu-bloom/service/pkg/logger"
 	"github.com/bubu-bloom/service/pkg/utils"
 	"github.com/bubu-bloom/service/pkg/utils/clock"
@@ -36,17 +38,47 @@ func NewStatsService(log logger.ILogger, entities mongorepo.IEntityRepo, users m
 	return &statsService{log: log, entities: entities, users: users, memberships: memberships, clock: clk}
 }
 
-// ownerTimezone is the timezone that defines "today" for a space (the owner's).
-func (s *statsService) ownerTimezone(ctx context.Context, spaceID string) string {
+// spaceOwner is the owner of a space (nil if it cannot be resolved). Its timezone defines "today"
+// and its period tracker setting decides whether period days are neutral.
+func (s *statsService) spaceOwner(ctx context.Context, spaceID string) *dao.User {
 	members, _ := s.memberships.MembersOfSpace(ctx, spaceID)
 	for _, m := range members {
 		if m.Role == userrole.Owner {
 			if u, err := s.users.ByID(ctx, m.UserID); err == nil {
-				return u.Timezone
+				return u
 			}
 		}
 	}
-	return "UTC"
+	return nil
+}
+
+// periodNeutralDates expands the owner's non-deleted periods into YYYY-MM-DD dates (an ongoing period
+// lasts through today). Only the dates leave this function; no flow, symptoms, mood or notes.
+func periodNeutralDates(periods []dao.Entity, today string) []string {
+	seen := map[string]bool{}
+	var out []string
+	for _, p := range periods {
+		start, end := validation.PeriodRange(p.Data)
+		st, err := time.Parse(utils.DateLayout, start)
+		if err != nil {
+			continue
+		}
+		if end == "" || end > today {
+			end = today
+		}
+		en, err := time.Parse(utils.DateLayout, end)
+		if err != nil {
+			continue
+		}
+		for d := st; !d.After(en); d = d.AddDate(0, 0, 1) {
+			ds := d.Format(utils.DateLayout)
+			if !seen[ds] {
+				seen[ds] = true
+				out = append(out, ds)
+			}
+		}
+	}
+	return out
 }
 
 func (s *statsService) Summary(ctx context.Context, a *serviceBos.Actor, req *request.RangeReq) (*response.SummaryResponse, apperrors.IHttpError) {
@@ -58,7 +90,11 @@ func (s *statsService) Summary(ctx context.Context, a *serviceBos.Actor, req *re
 }
 
 func (s *statsService) summary(ctx context.Context, spaceID string, req *request.RangeReq) (*response.SummaryResponse, error) {
-	tz := s.ownerTimezone(ctx, spaceID)
+	owner := s.spaceOwner(ctx, spaceID)
+	tz := "UTC"
+	if owner != nil {
+		tz = owner.Timezone
+	}
 	today := scoring.LocalDate(s.clock.Now(), tz)
 	from, to := req.From, req.To
 	if to == "" {
@@ -117,6 +153,19 @@ func (s *statsService) summary(ctx context.Context, spaceID string, req *request
 			}
 		}
 	}
+	// Sunday is a rest day unless the owner turned it off (absent = on).
+	if v, ok := sundayRest(ctx, s.entities, spaceID); ok && v {
+		settings.RestDays = appendUnique(settings.RestDays, 0)
+	}
+	// Period days are neutral only for an owner whose tracker is enabled. The reason is never exposed:
+	// days[].restDay is the same flag as for Sundays.
+	if owner.IsPeriodTrackerEnabled() {
+		periods, err := s.entities.List(ctx, spaceID, entitytype.Period, mongorepo.EntityQuery{})
+		if err != nil {
+			return nil, err
+		}
+		settings.NeutralDates = periodNeutralDates(periods, today)
+	}
 	all, err := scoring.ComputeDays(habits, byDate, settings, earliest, today, today)
 	if err != nil {
 		return nil, err
@@ -143,4 +192,25 @@ func (s *statsService) summary(ctx context.Context, spaceID string, req *request
 		}
 	}
 	return sum, nil
+}
+
+// sundayRest reads settings.sundayRest; an absent field (legacy settings or no settings record) means true.
+func sundayRest(ctx context.Context, entities mongorepo.IEntityRepo, spaceID string) (value, ok bool) {
+	se, err := entities.Get(ctx, spaceID, entitytype.Settings, constants.SettingsID)
+	if err != nil {
+		return true, true
+	}
+	if v, present := se.Data["sundayRest"].(bool); present {
+		return v, true
+	}
+	return true, true
+}
+
+func appendUnique(xs []int, v int) []int {
+	for _, x := range xs {
+		if x == v {
+			return xs
+		}
+	}
+	return append(xs, v)
 }
