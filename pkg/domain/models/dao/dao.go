@@ -14,13 +14,29 @@ type User struct {
 	Email      string `bson:"email"`
 	EmailLower string `bson:"emailLower"`
 	// Phone is E.164 and unique; nil (field absent) for legacy accounts created before phone sign-up.
-	Phone       *string   `bson:"phone,omitempty"`
-	DisplayName string    `bson:"displayName"`
-	Avatar      *string   `bson:"avatar"`
-	Timezone    string    `bson:"timezone"`
-	Theme       string    `bson:"theme"`
-	CreatedAt   time.Time `bson:"createdAt"`
-	UpdatedAt   time.Time `bson:"updatedAt"`
+	Phone       *string `bson:"phone,omitempty"`
+	DisplayName string  `bson:"displayName"`
+	Avatar      *string `bson:"avatar"`
+	// Gender is one of pkg/enums/gender; nil (null) for legacy accounts or when not provided.
+	Gender *string `bson:"gender,omitempty"`
+	// PeriodTracker is the explicit period-tracker setting; nil means "default for the gender"
+	// (on for female). Use IsPeriodTrackerEnabled for the effective value.
+	PeriodTracker *bool     `bson:"periodTracker,omitempty"`
+	Timezone      string    `bson:"timezone"`
+	Theme         string    `bson:"theme"`
+	CreatedAt     time.Time `bson:"createdAt"`
+	UpdatedAt     time.Time `bson:"updatedAt"`
+}
+
+// IsPeriodTrackerEnabled is the effective tracker setting: the explicit choice if set, else gender == female.
+func (u *User) IsPeriodTrackerEnabled() bool {
+	if u == nil {
+		return false
+	}
+	if u.PeriodTracker != nil {
+		return *u.PeriodTracker
+	}
+	return u.Gender != nil && *u.Gender == "female"
 }
 
 // Space is the shared space owner and viewer collaborate in.
@@ -101,6 +117,7 @@ type OTPChallenge struct {
 	PendingName   string    `bson:"pendingName,omitempty"`
 	PendingPhone  string    `bson:"pendingPhone,omitempty"`
 	PendingAvatar string    `bson:"pendingAvatar,omitempty"` // optional avatar id chosen at sign-up
+	PendingGender string    `bson:"pendingGender,omitempty"` // optional gender chosen at sign-up
 	CodeHash      string    `bson:"codeHash"`
 	CreatedAt     time.Time `bson:"createdAt"`
 	ExpiresAt     time.Time `bson:"expiresAt"`

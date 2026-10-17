@@ -48,6 +48,22 @@ func (s *userService) PatchMe(ctx context.Context, actor *serviceBos.Actor, req 
 			u.Avatar = &v
 		}
 	}
+	if req.Gender.Set {
+		if req.Gender.Null {
+			u.Gender = nil
+		} else {
+			v := req.Gender.Value
+			u.Gender = &v
+		}
+	}
+	if req.PeriodTrackerEnabled.Set {
+		if req.PeriodTrackerEnabled.Null {
+			u.PeriodTracker = nil
+		} else {
+			v := req.PeriodTrackerEnabled.Value
+			u.PeriodTracker = &v
+		}
+	}
 	if req.Timezone.Set {
 		u.Timezone = req.Timezone.Value
 	}

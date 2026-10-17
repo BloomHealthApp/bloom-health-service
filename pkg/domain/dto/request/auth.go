@@ -7,6 +7,7 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 
 	"github.com/bubu-bloom/service/pkg/enums/avatar"
+	"github.com/bubu-bloom/service/pkg/enums/gender"
 	apperrors "github.com/bubu-bloom/service/pkg/errors"
 	"github.com/bubu-bloom/service/pkg/utils"
 )
@@ -28,6 +29,8 @@ type SignUpReq struct {
 	Email string `json:"email"`
 	// Avatar is optional: absent or null means no avatar, otherwise an id from pkg/enums/avatar.
 	Avatar *string `json:"avatar"`
+	// Gender is optional: absent or null means not provided, otherwise an id from pkg/enums/gender.
+	Gender *string `json:"gender"`
 }
 
 // Validate trims and checks name and email and requires a phone; Normalize canonicalizes the phone.
@@ -45,6 +48,10 @@ func (r *SignUpReq) Validate() apperrors.IHttpError {
 		validation.Field(&r.Avatar, rule("avatar must be null or one of bubu-01 to bubu-09", func(v any) bool {
 			a, _ := v.(*string)
 			return a == nil || avatar.IsValid(*a)
+		})),
+		validation.Field(&r.Gender, rule("gender must be null or one of female, male, other, prefer_not_to_say", func(v any) bool {
+			g, _ := v.(*string)
+			return g == nil || gender.Valid(*g)
 		}))))
 }
 

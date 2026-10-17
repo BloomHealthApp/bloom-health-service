@@ -22,5 +22,6 @@ func buildUserResponse(ctx context.Context, users mongorepo.IUserRepo, membershi
 		}
 	}
 	return response.UserResponse{ID: u.ID, Email: u.Email, Phone: u.Phone, DisplayName: u.DisplayName, Avatar: u.Avatar,
-		Timezone: u.Timezone, Theme: u.Theme, Role: string(m.Role), SharedSpaceID: m.SpaceID, OwnerDisplayName: ownerName, OwnerAvatar: ownerAvatar}
+		Timezone: u.Timezone, Theme: u.Theme, Role: string(m.Role), SharedSpaceID: m.SpaceID, OwnerDisplayName: ownerName, OwnerAvatar: ownerAvatar,
+		Gender: u.Gender, PeriodTrackerEnabled: u.IsPeriodTrackerEnabled()}
 }

@@ -16,6 +16,9 @@ type UserResponse struct {
 	SharedSpaceID    string  `json:"sharedSpaceId"`
 	OwnerDisplayName string  `json:"ownerDisplayName"`
 	OwnerAvatar      *string `json:"ownerAvatar"` // the space owner's avatar (own avatar for an owner)
+	Gender           *string `json:"gender"`      // female|male|other|prefer_not_to_say|null
+	// PeriodTrackerEnabled is the effective setting: explicit user choice, else gender == female.
+	PeriodTrackerEnabled bool `json:"periodTrackerEnabled"`
 }
 
 // AuthResponse is returned by OTP verify and refresh.

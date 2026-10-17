@@ -8,6 +8,7 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 
 	"github.com/bubu-bloom/service/pkg/enums/avatar"
+	"github.com/bubu-bloom/service/pkg/enums/gender"
 	"github.com/bubu-bloom/service/pkg/enums/theme"
 	apperrors "github.com/bubu-bloom/service/pkg/errors"
 	"github.com/bubu-bloom/service/pkg/utils"
@@ -30,6 +31,23 @@ func (o *OptString) UnmarshalJSON(b []byte) error {
 	return json.Unmarshal(b, &o.Value)
 }
 
+// OptBool distinguishes an absent field from an explicit JSON null.
+type OptBool struct {
+	Set   bool
+	Null  bool
+	Value bool
+}
+
+// UnmarshalJSON records presence; non-bool, non-null values are decode errors (400).
+func (o *OptBool) UnmarshalJSON(b []byte) error {
+	o.Set = true
+	if bytes.Equal(bytes.TrimSpace(b), []byte("null")) {
+		o.Null = true
+		return nil
+	}
+	return json.Unmarshal(b, &o.Value)
+}
+
 // PatchMeReq is PATCH /me. Unknown fields (role, userId, ...) are rejected by strict binding.
 type PatchMeReq struct {
 	DisplayName OptString `json:"displayName"`
@@ -37,6 +55,10 @@ type PatchMeReq struct {
 	Timezone    OptString `json:"timezone"`
 	Theme       OptString `json:"theme"`
 	Phone       OptString `json:"phone"`
+	// Gender is null or one of pkg/enums/gender.
+	Gender OptString `json:"gender"`
+	// PeriodTrackerEnabled is a bool, or null to reset to the gender default.
+	PeriodTrackerEnabled OptBool `json:"periodTrackerEnabled"`
 }
 
 // Normalize rewrites a supplied phone to E.164 (400 when it is not a valid number).
@@ -63,6 +85,10 @@ func (r *PatchMeReq) Validate() apperrors.IHttpError {
 		"avatar": validation.Validate(r.Avatar, rule("avatar must be null or one of bubu-01 to bubu-09", func(v any) bool {
 			o := v.(OptString)
 			return !o.Set || o.Null || avatar.IsValid(o.Value)
+		})),
+		"gender": validation.Validate(r.Gender, rule("gender must be null or one of female, male, other, prefer_not_to_say", func(v any) bool {
+			o := v.(OptString)
+			return !o.Set || o.Null || gender.Valid(o.Value)
 		})),
 		"phone": validation.Validate(r.Phone, rule("phone must be a valid number (8-15 digits, optional +country code)", func(v any) bool {
 			o := v.(OptString)
