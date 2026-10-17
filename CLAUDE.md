@@ -2,7 +2,7 @@
 
 Go REST + offline-sync API for the Bubu Bloom wellness tracker (two invite-only users: one **owner** who writes, one **viewer** who reads). Public contract: `docs/api-contract.md` (paths `/v1/...`, error body `{"error":{code,message,details}}`) — it must not change without updating the contract and the app. Module path: `github.com/bubu-bloom/service`. Store: MongoDB (Atlas); `STORE=memory` for tests/dev.
 
-The layering follows the mashvara-service architecture (handlers → interface-based services → repository interfaces, Wire DI, `IHttpError`, header middleware, viper env config, Makefile mock/wire targets). Code is original; no proprietary modules are used.
+The service uses a layered clean architecture (handlers → interface-based services → repository interfaces, Wire DI, `IHttpError`, header middleware, viper env config, Makefile mock/wire targets).
 
 ## Commands
 ```
