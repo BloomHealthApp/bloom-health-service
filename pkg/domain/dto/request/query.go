@@ -3,9 +3,9 @@ package request
 import (
 	"time"
 
-	"github.com/bubu-bloom/service/pkg/constants"
-	apperrors "github.com/bubu-bloom/service/pkg/errors"
-	"github.com/bubu-bloom/service/pkg/utils"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/constants"
+	apperrors "github.com/BloomHealthApp/bloom-health-service/pkg/errors"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/utils"
 )
 
 // RangeReq is the from/to query used by logs, workouts and stats.

@@ -4,14 +4,14 @@ import (
 	"context"
 	"sort"
 
-	"github.com/bubu-bloom/service/pkg/domain/dto/request"
-	"github.com/bubu-bloom/service/pkg/domain/dto/response"
-	"github.com/bubu-bloom/service/pkg/domain/models/dao"
-	"github.com/bubu-bloom/service/pkg/domain/serviceBos"
-	"github.com/bubu-bloom/service/pkg/enums/entitytype"
-	apperrors "github.com/bubu-bloom/service/pkg/errors"
-	"github.com/bubu-bloom/service/pkg/infrastructure/mongorepo"
-	"github.com/bubu-bloom/service/pkg/logger"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/dto/request"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/dto/response"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/models/dao"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/serviceBos"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/enums/entitytype"
+	apperrors "github.com/BloomHealthApp/bloom-health-service/pkg/errors"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/infrastructure/mongorepo"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/logger"
 )
 
 // IPeriodService manages the private period tracker. Every method is owner-only and additionally

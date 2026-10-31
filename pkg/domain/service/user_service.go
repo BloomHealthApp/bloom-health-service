@@ -3,13 +3,13 @@ package service
 import (
 	"context"
 
-	"github.com/bubu-bloom/service/pkg/domain/dto/request"
-	"github.com/bubu-bloom/service/pkg/domain/dto/response"
-	"github.com/bubu-bloom/service/pkg/domain/serviceBos"
-	apperrors "github.com/bubu-bloom/service/pkg/errors"
-	"github.com/bubu-bloom/service/pkg/infrastructure/mongorepo"
-	"github.com/bubu-bloom/service/pkg/logger"
-	"github.com/bubu-bloom/service/pkg/utils/clock"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/dto/request"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/dto/response"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/serviceBos"
+	apperrors "github.com/BloomHealthApp/bloom-health-service/pkg/errors"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/infrastructure/mongorepo"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/logger"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/utils/clock"
 )
 
 // IUserService manages the caller's own profile (allowed for both roles).

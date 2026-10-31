@@ -9,16 +9,16 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bubu-bloom/service/pkg/domain/dto/request"
-	"github.com/bubu-bloom/service/pkg/domain/models/dao"
-	"github.com/bubu-bloom/service/pkg/domain/serviceBos"
-	"github.com/bubu-bloom/service/pkg/enums/entitytype"
-	"github.com/bubu-bloom/service/pkg/enums/opstatus"
-	"github.com/bubu-bloom/service/pkg/enums/userrole"
-	apperrors "github.com/bubu-bloom/service/pkg/errors"
-	"github.com/bubu-bloom/service/pkg/infrastructure/mongorepo"
-	"github.com/bubu-bloom/service/pkg/logger"
-	"github.com/bubu-bloom/service/pkg/utils/clock"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/dto/request"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/models/dao"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/serviceBos"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/enums/entitytype"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/enums/opstatus"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/enums/userrole"
+	apperrors "github.com/BloomHealthApp/bloom-health-service/pkg/errors"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/infrastructure/mongorepo"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/logger"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/utils/clock"
 )
 
 type syncMocks struct {

@@ -8,7 +8,7 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 
-	apperrors "github.com/bubu-bloom/service/pkg/errors"
+	apperrors "github.com/BloomHealthApp/bloom-health-service/pkg/errors"
 )
 
 // toHTTPError turns an ozzo validation result into a 400 carrying the first message (ordered by field).

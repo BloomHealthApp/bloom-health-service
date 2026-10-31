@@ -12,9 +12,9 @@ import (
 
 	"github.com/spf13/viper"
 
-	"github.com/bubu-bloom/service/assets"
-	"github.com/bubu-bloom/service/pkg/constants"
-	"github.com/bubu-bloom/service/pkg/utils"
+	"github.com/BloomHealthApp/bloom-health-service/assets"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/constants"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/utils"
 )
 
 // Store is the typed service configuration.

@@ -8,18 +8,18 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/bubu-bloom/service/pkg/constants"
-	"github.com/bubu-bloom/service/pkg/domain/dto/request"
-	"github.com/bubu-bloom/service/pkg/domain/models/dao"
-	"github.com/bubu-bloom/service/pkg/domain/serviceBos"
-	"github.com/bubu-bloom/service/pkg/enums/entitytype"
-	"github.com/bubu-bloom/service/pkg/enums/theme"
-	"github.com/bubu-bloom/service/pkg/enums/userrole"
-	apperrors "github.com/bubu-bloom/service/pkg/errors"
-	"github.com/bubu-bloom/service/pkg/infrastructure/mongorepo"
-	"github.com/bubu-bloom/service/pkg/infrastructure/validation"
-	"github.com/bubu-bloom/service/pkg/logger"
-	"github.com/bubu-bloom/service/pkg/utils/clock"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/constants"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/dto/request"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/models/dao"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/serviceBos"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/enums/entitytype"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/enums/theme"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/enums/userrole"
+	apperrors "github.com/BloomHealthApp/bloom-health-service/pkg/errors"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/infrastructure/mongorepo"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/infrastructure/validation"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/logger"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/utils/clock"
 )
 
 // IProvisionService creates users, spaces, memberships, settings and the default habits idempotently.

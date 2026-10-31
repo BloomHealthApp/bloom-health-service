@@ -8,10 +8,10 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 
-	"github.com/bubu-bloom/service/pkg/constants"
-	"github.com/bubu-bloom/service/pkg/drivers"
-	"github.com/bubu-bloom/service/pkg/enums/entitytype"
-	apperrors "github.com/bubu-bloom/service/pkg/errors"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/constants"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/drivers"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/enums/entitytype"
+	apperrors "github.com/BloomHealthApp/bloom-health-service/pkg/errors"
 )
 
 // EntityCollections maps an entity type to its collection.

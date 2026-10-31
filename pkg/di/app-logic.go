@@ -3,11 +3,11 @@
 package di
 
 import (
-	"github.com/bubu-bloom/service/config"
-	"github.com/bubu-bloom/service/pkg/domain/service"
-	"github.com/bubu-bloom/service/pkg/logger"
-	"github.com/bubu-bloom/service/pkg/utils/clock"
-	"github.com/bubu-bloom/service/pkg/utils/ratelimit"
+	"github.com/BloomHealthApp/bloom-health-service/config"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/service"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/logger"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/utils/clock"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/utils/ratelimit"
 )
 
 // AppLogic is set once at startup (cmd/server/main.go) or per test.

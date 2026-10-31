@@ -5,7 +5,7 @@ package mongorepo
 import (
 	"context"
 
-	"github.com/bubu-bloom/service/pkg/domain/models/dao"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/models/dao"
 )
 
 // EntityQuery filters entities by an optional inclusive localDate range stored in Data["localDate"].

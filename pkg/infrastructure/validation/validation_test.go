@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/bubu-bloom/service/pkg/enums/entitytype"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/enums/entitytype"
 )
 
 func TestHabitRejectsUnknownAndServerFields(t *testing.T) {

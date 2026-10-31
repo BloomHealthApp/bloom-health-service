@@ -14,8 +14,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/bubu-bloom/service/config"
-	"github.com/bubu-bloom/service/pkg/logger"
+	"github.com/BloomHealthApp/bloom-health-service/config"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/logger"
 )
 
 // IMailer sends a plain-text email.
@@ -59,21 +59,21 @@ func (s *smtpMailer) Send(_ context.Context, to, subject, text, html string) err
 	return smtp.SendMail(s.host+":"+s.port, auth, fromAddr, []string{to}, msg)
 }
 
-// formatFrom returns the From header (display name "Bubu Bloom" added when missing) and the bare address.
+// formatFrom returns the From header (display name "Bloom Health" added when missing) and the bare address.
 func formatFrom(from string) (header, addr string) {
 	a, err := mail.ParseAddress(from)
 	if err != nil {
 		return from, from
 	}
 	if a.Name == "" {
-		a.Name = "Bubu Bloom"
+		a.Name = "Bloom Health"
 	}
 	return a.String(), a.Address
 }
 
 // buildMessage renders a multipart/alternative message (text first, HTML preferred) with base64 bodies.
 func buildMessage(from, to, subject, text, html string) ([]byte, error) {
-	boundary := "bubu-" + hex.EncodeToString(randBytes(12))
+	boundary := "bloom-" + hex.EncodeToString(randBytes(12))
 	var b strings.Builder
 	b.WriteString("From: " + from + "\r\n")
 	b.WriteString("To: " + to + "\r\n")

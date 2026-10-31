@@ -3,6 +3,6 @@
   "log": { "level": "info" },
   "store": { "kind": "mongo", "mongoDb": "bubu_bloom_stag" },
   "auth": { "issuer": "bubu-bloom", "otpResendSeconds": 30 },
-  "mail": { "kind": "smtp", "smtpPort": "587", "from": "Bubu Bloom <no-reply@localhost>" },
+  "mail": { "kind": "smtp", "smtpPort": "587", "from": "Bloom Health <no-reply@localhost>" },
   "account": { "defaultTimezone": "Asia/Kolkata", "defaultCountryCode": "+91" }
 }

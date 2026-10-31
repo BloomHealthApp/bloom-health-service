@@ -6,10 +6,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
-	"github.com/bubu-bloom/service/pkg/di"
-	"github.com/bubu-bloom/service/pkg/domain/dto/request"
-	apperrors "github.com/bubu-bloom/service/pkg/errors"
-	"github.com/bubu-bloom/service/pkg/utils"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/di"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/dto/request"
+	apperrors "github.com/BloomHealthApp/bloom-health-service/pkg/errors"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/utils"
 )
 
 // SignUpRequest is POST /v1/auth/signup/request: 202 {status, challengeId}, 409 already_registered.

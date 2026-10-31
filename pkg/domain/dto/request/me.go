@@ -7,11 +7,11 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 
-	"github.com/bubu-bloom/service/pkg/enums/avatar"
-	"github.com/bubu-bloom/service/pkg/enums/gender"
-	"github.com/bubu-bloom/service/pkg/enums/theme"
-	apperrors "github.com/bubu-bloom/service/pkg/errors"
-	"github.com/bubu-bloom/service/pkg/utils"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/enums/avatar"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/enums/gender"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/enums/theme"
+	apperrors "github.com/BloomHealthApp/bloom-health-service/pkg/errors"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/utils"
 )
 
 // OptString distinguishes an absent field from an explicit JSON null.

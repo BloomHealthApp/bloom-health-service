@@ -11,8 +11,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/bubu-bloom/service/pkg/application/httpserver"
-	"github.com/bubu-bloom/service/pkg/di"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/application/httpserver"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/di"
 )
 
 func main() {

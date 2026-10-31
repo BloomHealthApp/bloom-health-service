@@ -10,9 +10,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bubu-bloom/service/pkg/domain/models/dao"
-	apperrors "github.com/bubu-bloom/service/pkg/errors"
-	"github.com/bubu-bloom/service/pkg/infrastructure/mongorepo"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/models/dao"
+	apperrors "github.com/BloomHealthApp/bloom-health-service/pkg/errors"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/infrastructure/mongorepo"
 )
 
 // Pinger is an always-healthy drivers.IPinger.

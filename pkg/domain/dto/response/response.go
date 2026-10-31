@@ -1,7 +1,7 @@
 // Package response holds the response DTOs. JSON field names follow docs/api-contract.md.
 package response
 
-import "github.com/bubu-bloom/service/pkg/utils/scoring"
+import "github.com/BloomHealthApp/bloom-health-service/pkg/utils/scoring"
 
 // UserResponse is the `user` object of the contract.
 type UserResponse struct {

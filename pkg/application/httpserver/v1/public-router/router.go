@@ -5,7 +5,7 @@ package publicrouter
 import (
 	"github.com/gin-gonic/gin"
 
-	"github.com/bubu-bloom/service/pkg/middleware"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/middleware"
 )
 
 // RegisterRoutes mounts the public API on the /v1 group.

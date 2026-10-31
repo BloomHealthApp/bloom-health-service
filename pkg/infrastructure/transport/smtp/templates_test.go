@@ -14,12 +14,12 @@ import (
 
 func TestOTPEmailSignInContent(t *testing.T) {
 	subject, text, html := OTPEmail(OTPSignIn, "", "123456", 10)
-	require.Equal(t, "Your Bubu Bloom sign-in code", subject)
+	require.Equal(t, "Your Bloom Health sign-in code", subject)
 	require.Contains(t, text, "123456")
 	require.Contains(t, text, "10 minutes")
 	require.Contains(t, text, "Welcome back")
 	require.Contains(t, html, "<!DOCTYPE html>")
-	require.Contains(t, html, "Bubu Bloom")
+	require.Contains(t, html, "Bloom Health")
 	require.Contains(t, html, "Welcome back")
 	require.Contains(t, html, "10 minutes")
 	require.Contains(t, html, "&#8202;", "digits are spaced for readability")
@@ -30,7 +30,7 @@ func TestOTPEmailSignInContent(t *testing.T) {
 
 func TestOTPEmailSignUpGreetsByName(t *testing.T) {
 	subject, text, html := OTPEmail(OTPSignUp, "Anu", "123456", 10)
-	require.Equal(t, "Your Bubu Bloom verification code", subject)
+	require.Equal(t, "Your Bloom Health verification code", subject)
 	require.Contains(t, text, "Welcome, Anu!")
 	require.Contains(t, html, "Welcome, Anu!")
 	require.NotContains(t, html, "Welcome back")
@@ -49,8 +49,8 @@ func TestOTPEmailEscapesNameAndCode(t *testing.T) {
 
 func TestBuildMessageIsValidMultipart(t *testing.T) {
 	from, _ := formatFrom("apcode15@gmail.com")
-	require.Equal(t, `"Bubu Bloom" <apcode15@gmail.com>`, from)
-	raw, err := buildMessage(from, "user@example.com", "Your Bubu Bloom sign-in code", "plain 123456", "<p>html 123456 🌸</p>")
+	require.Equal(t, `"Bloom Health" <apcode15@gmail.com>`, from)
+	raw, err := buildMessage(from, "user@example.com", "Your Bloom Health sign-in code", "plain 123456", "<p>html 123456 🌸</p>")
 	require.NoError(t, err)
 
 	m, err := mail.ReadMessage(strings.NewReader(string(raw)))
@@ -83,7 +83,7 @@ func TestBuildMessageIsValidMultipart(t *testing.T) {
 }
 
 func TestFormatFromKeepsDisplayName(t *testing.T) {
-	h, addr := formatFrom("Bubu Bloom <apcode15@gmail.com>")
+	h, addr := formatFrom("Bloom Health <apcode15@gmail.com>")
 	require.Equal(t, "apcode15@gmail.com", addr)
-	require.Contains(t, h, "Bubu Bloom")
+	require.Contains(t, h, "Bloom Health")
 }

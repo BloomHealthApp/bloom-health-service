@@ -1,4 +1,4 @@
-module github.com/bubu-bloom/service
+module github.com/BloomHealthApp/bloom-health-service
 
 go 1.26.0
 
