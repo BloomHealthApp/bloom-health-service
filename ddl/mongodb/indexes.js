@@ -1,4 +1,4 @@
-// Documented MongoDB index set for Bubu Bloom. The service creates the same indexes at startup
+// Documented MongoDB index set for Bloom Health. The service creates the same indexes at startup
 // (pkg/infrastructure/mongorepo/common.go: EnsureIndexes); run this script manually to provision a
 // database up front, e.g. when the application user has no createIndex privilege:
 //

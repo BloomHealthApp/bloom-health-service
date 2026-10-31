@@ -1,4 +1,4 @@
-// Command http-server runs the Bubu Bloom REST + sync API.
+// Command http-server runs the Bloom Health REST + sync API.
 package main
 
 import (
