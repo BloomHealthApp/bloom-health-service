@@ -26,7 +26,8 @@ import (
 type IProvisionService interface {
 	// EnsureAccount returns the user for a verified email, creating the user (with the given display
 	// name and E.164 phone) plus a private space (owner membership, default habits, default settings)
-	// on first call. An empty avatarID or genderID stores none (null). An empty name falls back to the email's local part; an empty phone stores none.
+	// on first call. An empty avatarID or genderID stores none (null). An empty name falls back to the
+	// email's local part; an empty phone stores none.
 	// Returns a wrapped ErrRepoConflict when the email or phone belongs to someone else. Safe to repeat.
 	EnsureAccount(ctx context.Context, name, phone, avatarID, genderID, email, timezone string) (*dao.User, error)
 	// Provision creates an owner and a viewer sharing one space. It is the only way to create a viewer
@@ -43,7 +44,6 @@ type provisionService struct {
 	clock       clock.Clock
 }
 
-// NewProvisionService wires the provisioning service.
 func NewProvisionService(log logger.ILogger, users mongorepo.IUserRepo, spaces mongorepo.ISpaceRepo,
 	memberships mongorepo.IMembershipRepo, entities mongorepo.IEntityRepo, clk clock.Clock) IProvisionService {
 	return &provisionService{log: log, users: users, spaces: spaces, memberships: memberships, entities: entities, clock: clk}

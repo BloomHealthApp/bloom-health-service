@@ -10,10 +10,8 @@ const (
 	Custom    = "custom"
 )
 
-// Values lists every allowed value.
 func Values() []string { return []string{Morning, Nutrition, Fitness, Hydration, Sleep, Custom} }
 
-// Valid reports whether s is an allowed value.
 func Valid(s string) bool {
 	for _, v := range Values() {
 		if v == s {

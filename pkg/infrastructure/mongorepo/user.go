@@ -20,7 +20,6 @@ type userRepo struct {
 	log logger.ILogger
 }
 
-// NewUserRepo returns the MongoDB-backed IUserRepo.
 func NewUserRepo(db drivers.IMongoDB, log logger.ILogger) IUserRepo {
 	return &userRepo{db: db, log: log}
 }

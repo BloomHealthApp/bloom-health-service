@@ -24,7 +24,6 @@ type entityRepo struct {
 	log logger.ILogger
 }
 
-// NewEntityRepo returns the MongoDB-backed IEntityRepo (one collection per entity type).
 func NewEntityRepo(db drivers.IMongoDB, log logger.ILogger) IEntityRepo {
 	return &entityRepo{db: db, log: log}
 }

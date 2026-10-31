@@ -19,7 +19,6 @@ type sessionRepo struct {
 	log logger.ILogger
 }
 
-// NewSessionRepo returns the MongoDB-backed ISessionRepo.
 func NewSessionRepo(db drivers.IMongoDB, log logger.ILogger) ISessionRepo {
 	return &sessionRepo{db: db, log: log}
 }

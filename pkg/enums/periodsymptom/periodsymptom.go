@@ -14,7 +14,6 @@ const (
 	TenderBreasts = "tender_breasts"
 )
 
-// Values lists every allowed value.
 func Values() []string {
 	return []string{Cramps, Headache, Bloating, Fatigue, MoodSwings, Backache, Acne, Nausea, Cravings, TenderBreasts}
 }

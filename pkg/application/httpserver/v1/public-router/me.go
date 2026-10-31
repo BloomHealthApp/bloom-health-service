@@ -10,7 +10,6 @@ import (
 	"github.com/BloomHealthApp/bloom-health-service/pkg/utils"
 )
 
-// GetMe is GET /v1/me.
 func GetMe(c *gin.Context) {
 	ctx := c.Request.Context()
 	resp, herr := di.AppLogic.GetUserService().GetMe(ctx, utils.GetActor(ctx))

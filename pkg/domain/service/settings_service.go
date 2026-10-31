@@ -28,7 +28,6 @@ type settingsService struct {
 	clock    clock.Clock
 }
 
-// NewSettingsService wires the settings service.
 func NewSettingsService(log logger.ILogger, entities mongorepo.IEntityRepo, sync ISyncService, clk clock.Clock) ISettingsService {
 	return &settingsService{log: log, entities: entities, sync: sync, clock: clk}
 }

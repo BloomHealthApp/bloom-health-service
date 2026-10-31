@@ -25,7 +25,6 @@ type userService struct {
 	clock       clock.Clock
 }
 
-// NewUserService wires the user service.
 func NewUserService(log logger.ILogger, users mongorepo.IUserRepo, memberships mongorepo.IMembershipRepo, clk clock.Clock) IUserService {
 	return &userService{log: log, users: users, memberships: memberships, clock: clk}
 }

@@ -26,7 +26,6 @@ func ListWorkouts(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// CreateWorkout is POST /v1/workouts.
 func CreateWorkout(c *gin.Context) {
 	ctx := c.Request.Context()
 	req, ok := bindCreate(c)

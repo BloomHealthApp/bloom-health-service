@@ -25,9 +25,6 @@ import (
 	"github.com/BloomHealthApp/bloom-health-service/pkg/utils/clock"
 )
 
-// These are the integration tests of the original chi implementation, run unchanged through the gin
-// router, the real services and in-memory repositories: they prove contract parity of the refactor.
-
 type env struct {
 	t     *testing.T
 	repos *di.Repositories

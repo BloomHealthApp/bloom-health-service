@@ -18,7 +18,6 @@ type opRepo struct {
 	log logger.ILogger
 }
 
-// NewOpRepo returns the MongoDB-backed IOpRepo.
 func NewOpRepo(db drivers.IMongoDB, log logger.ILogger) IOpRepo { return &opRepo{db: db, log: log} }
 
 type opDoc struct {

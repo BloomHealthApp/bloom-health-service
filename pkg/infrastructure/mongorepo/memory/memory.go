@@ -21,14 +21,11 @@ type Pinger struct{}
 // Ping always succeeds.
 func (Pinger) Ping(context.Context) error { return nil }
 
-// ---- users ----
-
 type userRepo struct {
 	mu    sync.Mutex
 	users map[string]*dao.User
 }
 
-// NewUserRepo returns an in-memory IUserRepo.
 func NewUserRepo() mongorepo.IUserRepo { return &userRepo{users: map[string]*dao.User{}} }
 
 func (r *userRepo) ByEmail(_ context.Context, email string) (*dao.User, error) {
@@ -82,14 +79,11 @@ func (r *userRepo) Save(_ context.Context, u *dao.User) error {
 	return nil
 }
 
-// ---- spaces ----
-
 type spaceRepo struct {
 	mu     sync.Mutex
 	spaces map[string]*dao.Space
 }
 
-// NewSpaceRepo returns an in-memory ISpaceRepo.
 func NewSpaceRepo() mongorepo.ISpaceRepo { return &spaceRepo{spaces: map[string]*dao.Space{}} }
 
 func (r *spaceRepo) ByID(_ context.Context, id string) (*dao.Space, error) {
@@ -110,14 +104,11 @@ func (r *spaceRepo) Save(_ context.Context, s *dao.Space) error {
 	return nil
 }
 
-// ---- memberships ----
-
 type membershipRepo struct {
 	mu sync.Mutex
 	m  map[string]*dao.Membership
 }
 
-// NewMembershipRepo returns an in-memory IMembershipRepo.
 func NewMembershipRepo() mongorepo.IMembershipRepo {
 	return &membershipRepo{m: map[string]*dao.Membership{}}
 }
@@ -159,15 +150,12 @@ func (r *membershipRepo) Save(_ context.Context, mm *dao.Membership) error {
 	return nil
 }
 
-// ---- entities ----
-
 type entityRepo struct {
 	mu       sync.Mutex
 	entities map[string]*dao.Entity
 	seq      map[string]int64
 }
 
-// NewEntityRepo returns an in-memory IEntityRepo.
 func NewEntityRepo() mongorepo.IEntityRepo {
 	return &entityRepo{entities: map[string]*dao.Entity{}, seq: map[string]int64{}}
 }
@@ -241,14 +229,11 @@ func (r *entityRepo) Changes(_ context.Context, space string, after int64, limit
 	return out, nil
 }
 
-// ---- operations ----
-
 type opRepo struct {
 	mu  sync.Mutex
 	ops map[string]*dao.OpRecord
 }
 
-// NewOpRepo returns an in-memory IOpRepo.
 func NewOpRepo() mongorepo.IOpRepo { return &opRepo{ops: map[string]*dao.OpRecord{}} }
 
 func (r *opRepo) Get(_ context.Context, id string) (*dao.OpRecord, error) {
@@ -278,14 +263,11 @@ func cloneOp(rec *dao.OpRecord) *dao.OpRecord {
 	return &c
 }
 
-// ---- OTP ----
-
 type otpRepo struct {
 	mu   sync.Mutex
 	otps map[string]*dao.OTPChallenge
 }
 
-// NewOTPRepo returns an in-memory IOTPRepo.
 func NewOTPRepo() mongorepo.IOTPRepo { return &otpRepo{otps: map[string]*dao.OTPChallenge{}} }
 
 func (r *otpRepo) Save(_ context.Context, c *dao.OTPChallenge) error {
@@ -341,14 +323,11 @@ func (r *otpRepo) Delete(_ context.Context, challengeID string) error {
 	return nil
 }
 
-// ---- sessions ----
-
 type sessionRepo struct {
 	mu       sync.Mutex
 	sessions map[string]*dao.RefreshSession
 }
 
-// NewSessionRepo returns an in-memory ISessionRepo.
 func NewSessionRepo() mongorepo.ISessionRepo {
 	return &sessionRepo{sessions: map[string]*dao.RefreshSession{}}
 }

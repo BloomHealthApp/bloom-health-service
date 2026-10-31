@@ -33,7 +33,6 @@ type statsService struct {
 	clock       clock.Clock
 }
 
-// NewStatsService wires the stats service.
 func NewStatsService(log logger.ILogger, entities mongorepo.IEntityRepo, users mongorepo.IUserRepo, memberships mongorepo.IMembershipRepo, clk clock.Clock) IStatsService {
 	return &statsService{log: log, entities: entities, users: users, memberships: memberships, clock: clk}
 }

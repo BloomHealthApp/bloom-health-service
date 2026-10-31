@@ -30,7 +30,6 @@ type periodService struct {
 	w        *entityWriter
 }
 
-// NewPeriodService wires the period service.
 func NewPeriodService(log logger.ILogger, entities mongorepo.IEntityRepo, sync ISyncService) IPeriodService {
 	return &periodService{log: log, entities: entities, w: &entityWriter{log: log, typ: entitytype.Period, entities: entities, sync: sync}}
 }

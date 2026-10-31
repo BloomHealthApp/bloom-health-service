@@ -9,7 +9,6 @@ const (
 	Anxious   = "anxious"
 )
 
-// Values lists every allowed value.
 func Values() []string { return []string{Happy, Calm, Sad, Irritable, Anxious} }
 
 // Valid reports whether s is an allowed value (exact, case-sensitive).

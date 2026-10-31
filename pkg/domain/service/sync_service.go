@@ -20,9 +20,7 @@ import (
 	"github.com/BloomHealthApp/bloom-health-service/pkg/utils/scoring"
 )
 
-// ISyncService is the single write path for every entity (REST writes and offline sync both use it):
-// authorization, operationId idempotency, validation, compare-and-swap on version and conflict
-// resolution live here.
+// ISyncService is the single write path for every entity, used by REST writes and offline sync.
 type ISyncService interface {
 	// Apply executes one write for an owner. A non-owner yields a rejected "forbidden" result.
 	// Business outcomes (conflict, rejected) are results; only infrastructure failures are errors.
@@ -38,7 +36,6 @@ type syncService struct {
 	clock    clock.Clock
 }
 
-// NewSyncService wires the sync service.
 func NewSyncService(log logger.ILogger, entities mongorepo.IEntityRepo, ops mongorepo.IOpRepo, clk clock.Clock) ISyncService {
 	return &syncService{log: log, entities: entities, ops: ops, clock: clk}
 }
