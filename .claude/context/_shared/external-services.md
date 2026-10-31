@@ -33,7 +33,8 @@ The app's fallback URL is `http://localhost:8080`, but this service defaults to 
 ## Build and delivery
 | Tool | Notes |
 |---|---|
-| GitHub Actions (`.github/workflows/ci.yml`) | vet, race tests and build, on push to `main` and on pull requests |
+| GitHub Actions (`.github/workflows/ci.yml`, `gitleaks.yml`) | vet, race tests, build and govulncheck, plus a full-history secret scan, on push to `main` and on pull requests. Actions are pinned to full SHAs |
+| Dependabot (`.github/dependabot.yml`) | Weekly updates for Go modules, Actions and the Docker base images |
 | Docker (`Dockerfile`) | Distroless image, `ACTIVE_ENV=PROD`, exposes 3000 |
 
 ## Main Go libraries

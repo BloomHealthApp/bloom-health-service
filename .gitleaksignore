@@ -1,0 +1,3 @@
+# Fake JWT secret in API test fixtures, not a real credential.
+7bc17f3fa3ec4e919c2464cb3f816189523b3a27:pkg/application/httpserver/api_test.go:generic-api-key:40
+d7c151e3aeb42f3a47f65e278f9ca2e2cbbbd054:internal/httpapi/api_test.go:generic-api-key:33

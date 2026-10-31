@@ -48,8 +48,8 @@ func TestOTPEmailEscapesNameAndCode(t *testing.T) {
 }
 
 func TestBuildMessageIsValidMultipart(t *testing.T) {
-	from, _ := formatFrom("apcode15@gmail.com")
-	require.Equal(t, `"Bloom Health" <apcode15@gmail.com>`, from)
+	from, _ := formatFrom("no-reply@example.com")
+	require.Equal(t, `"Bloom Health" <no-reply@example.com>`, from)
 	raw, err := buildMessage(from, "user@example.com", "Your Bloom Health sign-in code", "plain 123456", "<p>html 123456 🌸</p>")
 	require.NoError(t, err)
 
@@ -83,7 +83,7 @@ func TestBuildMessageIsValidMultipart(t *testing.T) {
 }
 
 func TestFormatFromKeepsDisplayName(t *testing.T) {
-	h, addr := formatFrom("Bloom Health <apcode15@gmail.com>")
-	require.Equal(t, "apcode15@gmail.com", addr)
+	h, addr := formatFrom("Bloom Health <no-reply@example.com>")
+	require.Equal(t, "no-reply@example.com", addr)
 	require.Contains(t, h, "Bloom Health")
 }
