@@ -82,7 +82,7 @@ func (r *PatchMeReq) Validate() apperrors.IHttpError {
 			n := len([]rune(o.Value))
 			return !o.Set || (!o.Null && n >= 1 && n <= 40)
 		})),
-		"avatar": validation.Validate(r.Avatar, rule("avatar must be null or one of bubu-01 to bubu-09", func(v any) bool {
+		"avatar": validation.Validate(r.Avatar, rule("avatar must be null or one of bubu-01 to bubu-15", func(v any) bool {
 			o := v.(OptString)
 			return !o.Set || o.Null || avatar.IsValid(o.Value)
 		})),
