@@ -8,9 +8,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/time/rate"
 
-	"github.com/bubu-bloom/service/pkg/di"
-	"github.com/bubu-bloom/service/pkg/domain/dto/request"
-	"github.com/bubu-bloom/service/pkg/utils/ratelimit"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/di"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/dto/request"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/utils/ratelimit"
 )
 
 // relaxLimits lifts the per-IP/per-identifier auth limits (covered by contract_test.go) so a test can

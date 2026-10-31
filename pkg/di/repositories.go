@@ -4,12 +4,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/bubu-bloom/service/config"
-	"github.com/bubu-bloom/service/pkg/constants"
-	"github.com/bubu-bloom/service/pkg/drivers"
-	"github.com/bubu-bloom/service/pkg/infrastructure/mongorepo"
-	"github.com/bubu-bloom/service/pkg/infrastructure/mongorepo/memory"
-	"github.com/bubu-bloom/service/pkg/logger"
+	"github.com/BloomHealthApp/bloom-health-service/config"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/constants"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/drivers"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/infrastructure/mongorepo"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/infrastructure/mongorepo/memory"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/logger"
 )
 
 // Repositories bundles every repository plus the health pinger of the selected backend.

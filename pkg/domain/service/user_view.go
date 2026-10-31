@@ -3,10 +3,10 @@ package service
 import (
 	"context"
 
-	"github.com/bubu-bloom/service/pkg/domain/dto/response"
-	"github.com/bubu-bloom/service/pkg/domain/models/dao"
-	"github.com/bubu-bloom/service/pkg/enums/userrole"
-	"github.com/bubu-bloom/service/pkg/infrastructure/mongorepo"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/dto/response"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/models/dao"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/enums/userrole"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/infrastructure/mongorepo"
 )
 
 // buildUserResponse renders the contract's `user` object, resolving the owner's display name.

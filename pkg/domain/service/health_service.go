@@ -4,12 +4,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/bubu-bloom/service/config"
-	"github.com/bubu-bloom/service/pkg/domain/dto/response"
-	"github.com/bubu-bloom/service/pkg/drivers"
-	apperrors "github.com/bubu-bloom/service/pkg/errors"
-	"github.com/bubu-bloom/service/pkg/logger"
-	"github.com/bubu-bloom/service/pkg/utils/clock"
+	"github.com/BloomHealthApp/bloom-health-service/config"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/dto/response"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/drivers"
+	apperrors "github.com/BloomHealthApp/bloom-health-service/pkg/errors"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/logger"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/utils/clock"
 )
 
 // IHealthService reports liveness without exposing any database detail.

@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/bubu-bloom/service/pkg/di"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/di"
 )
 
 // RequestLogger logs one line per request. It records the route pattern, never paths, queries or bodies.

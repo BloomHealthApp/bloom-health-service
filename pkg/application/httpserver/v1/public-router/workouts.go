@@ -5,9 +5,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/bubu-bloom/service/pkg/di"
-	"github.com/bubu-bloom/service/pkg/domain/dto/request"
-	"github.com/bubu-bloom/service/pkg/utils"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/di"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/dto/request"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/utils"
 )
 
 // ListWorkouts is GET /v1/workouts?from&to.

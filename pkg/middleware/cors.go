@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/bubu-bloom/service/pkg/di"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/di"
 )
 
 // CORS answers browser preflight requests for the configured origins. With no origins configured

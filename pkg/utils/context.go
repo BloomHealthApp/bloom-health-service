@@ -4,7 +4,7 @@ package utils
 import (
 	"context"
 
-	"github.com/bubu-bloom/service/pkg/domain/serviceBos"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/serviceBos"
 )
 
 // CtxKey is the type of request-context keys.

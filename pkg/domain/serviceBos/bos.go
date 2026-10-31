@@ -4,7 +4,7 @@ package serviceBos
 import (
 	"time"
 
-	"github.com/bubu-bloom/service/pkg/domain/models/dao"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/models/dao"
 )
 
 // Actor is the authenticated user with membership resolved from the database on every request.

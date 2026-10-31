@@ -9,8 +9,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/bubu-bloom/service/config"
-	"github.com/bubu-bloom/service/pkg/utils"
+	"github.com/BloomHealthApp/bloom-health-service/config"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/utils"
 )
 
 // ILogger is the logging contract used by every layer. The context supplies the request id.

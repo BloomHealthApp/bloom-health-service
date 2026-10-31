@@ -8,8 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
-	"github.com/bubu-bloom/service/pkg/constants"
-	"github.com/bubu-bloom/service/pkg/utils"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/constants"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/utils"
 )
 
 var safeID = regexp.MustCompile(`^[A-Za-z0-9._-]{1,64}$`)

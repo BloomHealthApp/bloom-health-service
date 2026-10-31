@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/bubu-bloom/service/pkg/constants"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/constants"
 )
 
 // BodyLimit caps request bodies at 1 MiB; reads beyond it fail and are answered with 400.

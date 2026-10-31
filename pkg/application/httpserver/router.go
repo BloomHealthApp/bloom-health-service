@@ -4,10 +4,10 @@ package httpserver
 import (
 	"github.com/gin-gonic/gin"
 
-	publicrouter "github.com/bubu-bloom/service/pkg/application/httpserver/v1/public-router"
-	apperrors "github.com/bubu-bloom/service/pkg/errors"
-	"github.com/bubu-bloom/service/pkg/middleware"
-	"github.com/bubu-bloom/service/pkg/utils"
+	publicrouter "github.com/BloomHealthApp/bloom-health-service/pkg/application/httpserver/v1/public-router"
+	apperrors "github.com/BloomHealthApp/bloom-health-service/pkg/errors"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/middleware"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/utils"
 )
 
 // NewRouter builds the engine. It reads dependencies from di.AppLogic, which must be set first.

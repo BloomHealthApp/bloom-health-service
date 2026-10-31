@@ -5,7 +5,7 @@ package dao
 import (
 	"time"
 
-	"github.com/bubu-bloom/service/pkg/enums/userrole"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/enums/userrole"
 )
 
 // User is an account, created on first verified login.

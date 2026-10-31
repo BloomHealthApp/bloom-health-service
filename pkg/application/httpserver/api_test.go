@@ -15,14 +15,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bubu-bloom/service/config"
-	"github.com/bubu-bloom/service/pkg/application/httpserver"
-	"github.com/bubu-bloom/service/pkg/di"
-	"github.com/bubu-bloom/service/pkg/domain/models/dao"
-	"github.com/bubu-bloom/service/pkg/domain/serviceBos"
-	"github.com/bubu-bloom/service/pkg/infrastructure/transport/smtp"
-	"github.com/bubu-bloom/service/pkg/logger"
-	"github.com/bubu-bloom/service/pkg/utils/clock"
+	"github.com/BloomHealthApp/bloom-health-service/config"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/application/httpserver"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/di"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/models/dao"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/serviceBos"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/infrastructure/transport/smtp"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/logger"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/utils/clock"
 )
 
 // These are the integration tests of the original chi implementation, run unchanged through the gin
@@ -38,7 +38,7 @@ type env struct {
 }
 
 const secret = "0123456789abcdef0123456789abcdef-test"
-const issuer = "bubu-test"
+const issuer = "bloom-test"
 
 // tokenMinter signs access tokens for any stored user. The outsider test needs a valid token for a
 // user without membership, which the real login flow (correctly) refuses to issue.

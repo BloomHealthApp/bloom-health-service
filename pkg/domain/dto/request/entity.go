@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 
-	apperrors "github.com/bubu-bloom/service/pkg/errors"
+	apperrors "github.com/BloomHealthApp/bloom-health-service/pkg/errors"
 )
 
 // CreateEntityReq is POST /habits and POST /workouts. The payload is validated field by field by the

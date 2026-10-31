@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	apperrors "github.com/bubu-bloom/service/pkg/errors"
+	apperrors "github.com/BloomHealthApp/bloom-health-service/pkg/errors"
 )
 
 // RespondError writes the error envelope (and any extra headers) and aborts the handler chain.

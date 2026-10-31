@@ -3,9 +3,9 @@ package request
 import (
 	"time"
 
-	"github.com/bubu-bloom/service/pkg/constants"
-	apperrors "github.com/bubu-bloom/service/pkg/errors"
-	"github.com/bubu-bloom/service/pkg/utils"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/constants"
+	apperrors "github.com/BloomHealthApp/bloom-health-service/pkg/errors"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/utils"
 )
 
 // PushOp is one operation of POST /sync/push.

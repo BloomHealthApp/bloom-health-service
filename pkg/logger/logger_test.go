@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/bubu-bloom/service/pkg/utils"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/utils"
 )
 
 func TestSensitiveFieldsAreRedacted(t *testing.T) {

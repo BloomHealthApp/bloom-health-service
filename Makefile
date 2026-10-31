@@ -1,4 +1,4 @@
-MODULE      := github.com/bubu-bloom/service
+MODULE      := github.com/BloomHealthApp/bloom-health-service
 BIN_DIR     := bin
 GOBIN       := $(shell go env GOPATH)/bin
 MOCKGEN     := $(GOBIN)/mockgen
