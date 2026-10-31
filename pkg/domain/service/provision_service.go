@@ -80,7 +80,7 @@ func (s *provisionService) ensureUser(ctx context.Context, p serviceBos.Person, 
 	if !apperrors.IsNotFound(err) {
 		return nil, err
 	}
-	u = &dao.User{ID: uuid.NewString(), Email: email, DisplayName: p.Name, Phone: phone, Avatar: avatarID, Gender: genderID, Timezone: tz, Theme: theme.CottonCandy, CreatedAt: now, UpdatedAt: now}
+	u = &dao.User{ID: uuid.NewString(), Email: email, DisplayName: p.Name, Phone: phone, Avatar: avatarID, Gender: genderID, Timezone: tz, Theme: theme.ForestTrail, CreatedAt: now, UpdatedAt: now}
 	return u, s.users.Save(ctx, u)
 }
 

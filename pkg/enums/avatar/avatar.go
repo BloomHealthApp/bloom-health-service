@@ -1,10 +1,10 @@
-// Package avatar enumerates the allowed profile avatar ids (bubu-01 ... bubu-09).
+// Package avatar enumerates the allowed profile avatar ids (bubu-01 ... bubu-15).
 package avatar
 
 import "fmt"
 
 // Count is the number of available avatars.
-const Count = 9
+const Count = 15
 
 // All returns every allowed avatar id in order.
 func All() []string {

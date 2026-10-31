@@ -30,7 +30,7 @@ func TestPatchMeAvatar(t *testing.T) {
 	require.Nil(t, me["avatar"])
 	require.Nil(t, me["ownerAvatar"])
 
-	bad := []any{"evil", "bubu-00", "bubu-10", "BUBU-01", " bubu-01", "bubu-01 ", "", "http://x/y.png", strings.Repeat("a", 500), 3, true}
+	bad := []any{"evil", "bubu-00", "bubu-16", "BUBU-01", " bubu-01", "bubu-01 ", "", "http://x/y.png", strings.Repeat("a", 500), 3, true}
 	for _, v := range bad {
 		st, body := e.do("PATCH", "/v1/me", anu, map[string]any{"avatar": v})
 		require.Equal(t, 400, st, "%v", v)
@@ -99,7 +99,7 @@ func TestSignUpWithOptionalAvatar(t *testing.T) {
 func TestSignUpInvalidAvatarIs400AndSendsNoMail(t *testing.T) {
 	e := setup(t)
 	e.relaxLimits()
-	for _, v := range []any{"evil", "bubu-10", "", "BUBU-01", 7, strings.Repeat("a", 300)} {
+	for _, v := range []any{"evil", "bubu-16", "", "BUBU-01", 7, strings.Repeat("a", 300)} {
 		e.mail.Messages = nil
 		st, body := e.do("POST", "/v1/auth/signup/request", "", map[string]any{"name": "Bad", "phone": "9876511111", "email": "bad@example.com", "avatar": v})
 		require.Equal(t, 400, st, "%v", v)

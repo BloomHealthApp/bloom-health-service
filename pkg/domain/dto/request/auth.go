@@ -45,7 +45,7 @@ func (r *SignUpReq) Validate() apperrors.IHttpError {
 		})),
 		validation.Field(&r.Phone, rule(phoneMsg, func(v any) bool { return v.(string) != "" })),
 		validation.Field(&r.Email, rule("a valid email is required", func(v any) bool { return validEmail(v.(string)) })),
-		validation.Field(&r.Avatar, rule("avatar must be null or one of bubu-01 to bubu-09", func(v any) bool {
+		validation.Field(&r.Avatar, rule("avatar must be null or one of bubu-01 to bubu-15", func(v any) bool {
 			a, _ := v.(*string)
 			return a == nil || avatar.IsValid(*a)
 		})),
