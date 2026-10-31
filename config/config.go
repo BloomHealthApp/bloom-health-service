@@ -54,6 +54,7 @@ type Store struct {
 var envBindings = map[string]string{
 	"server.port":                "PORT",
 	"server.trustProxy":          "TRUST_PROXY",
+	"server.corsOrigins":         "CORS_ORIGINS",
 	"log.level":                  "LOG_LEVEL",
 	"store.kind":                 "STORE",
 	"store.mongoDb":              "MONGODB_DB",
