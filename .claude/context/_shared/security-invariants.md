@@ -1,0 +1,10 @@
+# Security invariants (do not weaken)
+
+- Auth is OTP-only (no passwords). `signin/request` answers 202 `{status, challengeId}` for every well-formed identifier (email or phone) and never reveals whether an account exists: unknown identifiers get a random decoy `challengeId` and no mail; the code is always mailed to the email on the account. `signup/request` returns `409 already_registered` for a taken email/phone (accepted trade-off, rate limited). The account, private space, default habits and settings are created only after a sign-up challenge is verified; the pending name/phone live in the challenge, never in `users`.
+- Phone: normalized to E.164 by `utils.NormalizePhone` (default country code from `DEFAULT_COUNTRY_CODE`, `+91`), unique via a partial unique index on `users.phone` (legacy users have no phone field); unique-index races map to `ErrRepoConflict` -> 409 `already_registered`. Phones are unverified lookup keys.
+- OTP: 6 digits, HMAC-hashed at rest (bound to the challengeId), keyed by `challengeId` (single use, deleted on success), 10 min TTL, 5 attempts, resend cooldown per account (`IOTPRepo.LatestByEmail`), per-identifier and per-challenge limits; refresh tokens hashed, rotated, family revoked on reuse; access tokens HS256 15 min.
+- Role and space are resolved from the database on every request (`IAuthService.Authenticate`); never from the token or the client. Client-supplied `role`, `userId`, `sharedSpaceId`, `createdBy`, `updatedBy` are rejected (unknown field → 400).
+- Viewer is read-only: `RequireOwner` middleware **and** service-level `requireOwner` guards.
+- Strict JSON (`DisallowUnknownFields`, no trailing data), 1 MiB body limit, secure response headers, rate limits (per IP, per IP on `/auth`, per normalized email/phone, per challenge on verify).
+- Logs never contain tokens, OTPs or wellness values (logger redacts sensitive keys; request log records route patterns only).
+- Secrets (`MONGODB_URI`, `ACCESS_TOKEN_SECRET`, `SMTP_*`) come only from the environment. Never commit real values; `assets/*-config.json` hold non-secret settings only. PROD refuses `STORE=memory` and the console mailer.
