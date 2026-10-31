@@ -68,7 +68,6 @@ type authService struct {
 	resendAfter time.Duration
 }
 
-// NewAuthService wires the auth service.
 func NewAuthService(log logger.ILogger, cfg *config.Store, users mongorepo.IUserRepo, memberships mongorepo.IMembershipRepo,
 	otps mongorepo.IOTPRepo, sessions mongorepo.ISessionRepo, mailer smtp.IMailer, provision IProvisionService, clk clock.Clock) IAuthService {
 	return &authService{log: log, users: users, memberships: memberships, otps: otps, sessions: sessions, mailer: mailer,

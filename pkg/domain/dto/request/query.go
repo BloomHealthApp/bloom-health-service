@@ -43,5 +43,4 @@ func (r *RangeReq) Validate() apperrors.IHttpError {
 // ListHabitsReq is GET /habits.
 type ListHabitsReq struct{ IncludeInactive bool }
 
-// Validate is a no-op.
 func (r *ListHabitsReq) Validate() apperrors.IHttpError { return nil }

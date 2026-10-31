@@ -19,7 +19,6 @@ type otpRepo struct {
 	log logger.ILogger
 }
 
-// NewOTPRepo returns the MongoDB-backed IOTPRepo.
 func NewOTPRepo(db drivers.IMongoDB, log logger.ILogger) IOTPRepo { return &otpRepo{db: db, log: log} }
 
 func (r *otpRepo) coll() *mongo.Collection { return r.db.Database().Collection(constants.CollOTP) }

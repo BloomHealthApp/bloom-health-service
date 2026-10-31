@@ -1,5 +1,4 @@
-// Package publicrouter holds the /v1 handlers described in docs/api-contract.md. Every handler follows
-// the same shape: bind the DTO, read request-context values, Validate(), call the service, respond.
+// Package publicrouter holds the /v1 handlers described in docs/api-contract.md.
 package publicrouter
 
 import (

@@ -19,7 +19,6 @@ type membershipRepo struct {
 	log logger.ILogger
 }
 
-// NewMembershipRepo returns the MongoDB-backed IMembershipRepo.
 func NewMembershipRepo(db drivers.IMongoDB, log logger.ILogger) IMembershipRepo {
 	return &membershipRepo{db: db, log: log}
 }

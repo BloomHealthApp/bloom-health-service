@@ -71,7 +71,6 @@ func SignInRequest(c *gin.Context) {
 	c.JSON(http.StatusAccepted, resp)
 }
 
-// OTPVerify is POST /v1/auth/otp/verify.
 func OTPVerify(c *gin.Context) {
 	ctx := c.Request.Context()
 	var req request.OTPVerifyReq
@@ -95,7 +94,6 @@ func OTPVerify(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// Refresh is POST /v1/auth/refresh.
 func Refresh(c *gin.Context) {
 	ctx := c.Request.Context()
 	var req request.RefreshTokenReq
@@ -115,7 +113,6 @@ func Refresh(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// Logout is POST /v1/auth/logout.
 func Logout(c *gin.Context) {
 	ctx := c.Request.Context()
 	var req request.RefreshTokenReq

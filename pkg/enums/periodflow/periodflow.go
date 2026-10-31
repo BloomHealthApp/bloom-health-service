@@ -7,7 +7,6 @@ const (
 	Heavy  = "heavy"
 )
 
-// Values lists every allowed value.
 func Values() []string { return []string{Light, Medium, Heavy} }
 
 // Valid reports whether s is an allowed value (exact, case-sensitive).

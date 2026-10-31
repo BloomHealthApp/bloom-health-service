@@ -65,7 +65,7 @@ func BadRequestError(message string) IHttpError {
 	return newErr(http.StatusBadRequest, CodeValidationFailed, message)
 }
 
-// MethodNotAllowedError is a 405 reported with the validation_failed code (as in the v1 contract).
+// MethodNotAllowedError is a 405 reported with the validation_failed code.
 func MethodNotAllowedError(message string) IHttpError {
 	return newErr(http.StatusMethodNotAllowed, CodeValidationFailed, message)
 }

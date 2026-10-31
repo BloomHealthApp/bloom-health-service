@@ -26,7 +26,6 @@ func ListPeriods(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// CreatePeriod is POST /v1/periods.
 func CreatePeriod(c *gin.Context) {
 	ctx := c.Request.Context()
 	req, ok := bindCreate(c)

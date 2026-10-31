@@ -18,7 +18,7 @@ import (
 	"github.com/BloomHealthApp/bloom-health-service/pkg/logger"
 )
 
-// IMailer sends a plain-text email.
+// IMailer sends an email.
 type IMailer interface {
 	// Send delivers a multipart message with a plain-text and an HTML body.
 	Send(ctx context.Context, to, subject, text, html string) error

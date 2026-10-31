@@ -26,7 +26,6 @@ func ListLogs(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// PutLog is PUT /v1/logs/:habitId/:localDate.
 func PutLog(c *gin.Context) {
 	ctx := c.Request.Context()
 	var req request.PutLogReq

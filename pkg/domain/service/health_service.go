@@ -24,7 +24,6 @@ type healthService struct {
 	version string
 }
 
-// NewHealthService wires the health service.
 func NewHealthService(log logger.ILogger, cfg *config.Store, pinger drivers.IPinger, clk clock.Clock) IHealthService {
 	return &healthService{log: log, pinger: pinger, clock: clk, version: cfg.Version}
 }

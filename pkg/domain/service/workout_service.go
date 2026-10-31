@@ -26,7 +26,6 @@ type workoutService struct {
 	w        *entityWriter
 }
 
-// NewWorkoutService wires the workout service.
 func NewWorkoutService(log logger.ILogger, entities mongorepo.IEntityRepo, sync ISyncService) IWorkoutService {
 	return &workoutService{log: log, entities: entities, w: &entityWriter{log: log, typ: entitytype.Workout, entities: entities, sync: sync}}
 }

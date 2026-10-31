@@ -2,7 +2,7 @@
 
 Go (gin) REST + sync API for the Bloom Health wellness tracker. MongoDB Atlas is the cloud source of truth; the mobile app (`../bloom-health-app`) never talks to MongoDB directly. Contract: [`docs/api-contract.md`](docs/api-contract.md) (identical to `../docs/api-contract.md`).
 
-The service follows a clean-architecture layout: **handlers → interface-based services → repository interfaces**, wired with google/wire. See [`CLAUDE.md`](CLAUDE.md) for conventions.
+The service follows a clean-architecture layout: **handlers → interface-based services → repository interfaces**, wired with google/wire. See [`CLAUDE.md`](CLAUDE.md) and [`.claude/context/`](.claude/context/README.md) for conventions.
 
 ## Layout
 ```

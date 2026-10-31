@@ -17,7 +17,6 @@ type spaceRepo struct {
 	log logger.ILogger
 }
 
-// NewSpaceRepo returns the MongoDB-backed ISpaceRepo.
 func NewSpaceRepo(db drivers.IMongoDB, log logger.ILogger) ISpaceRepo {
 	return &spaceRepo{db: db, log: log}
 }

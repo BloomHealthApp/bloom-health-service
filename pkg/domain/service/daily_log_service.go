@@ -25,7 +25,6 @@ type dailyLogService struct {
 	sync     ISyncService
 }
 
-// NewDailyLogService wires the daily log service.
 func NewDailyLogService(log logger.ILogger, entities mongorepo.IEntityRepo, sync ISyncService) IDailyLogService {
 	return &dailyLogService{log: log, entities: entities, sync: sync}
 }

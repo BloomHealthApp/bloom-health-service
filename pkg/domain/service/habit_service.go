@@ -27,7 +27,6 @@ type habitService struct {
 	w        *entityWriter
 }
 
-// NewHabitService wires the habit service.
 func NewHabitService(log logger.ILogger, entities mongorepo.IEntityRepo, sync ISyncService) IHabitService {
 	return &habitService{log: log, entities: entities, w: &entityWriter{log: log, typ: entitytype.Habit, entities: entities, sync: sync}}
 }

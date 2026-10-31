@@ -56,7 +56,6 @@ func bindPatch(c *gin.Context, id string) (*request.PatchEntityReq, bool) {
 	return req, true
 }
 
-// CreateHabit is POST /v1/habits.
 func CreateHabit(c *gin.Context) {
 	ctx := c.Request.Context()
 	req, ok := bindCreate(c)
