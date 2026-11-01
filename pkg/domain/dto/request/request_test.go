@@ -65,6 +65,8 @@ func TestPatchMeValidate(t *testing.T) {
 		`{"displayName":null}`:     "displayName must be 1-40 characters",
 		`{"theme":"forestTrail"}`:  "",
 		`{"theme":"midnightNavy"}`: "",
+		`{"theme":"sunsetEmber"}`:  "",
+		`{"theme":"mintPeach"}`:    "",
 		`{"theme":"neon"}`:         "invalid theme",
 		`{"phone":null}`:           "phone must be a valid number (8-15 digits, optional +country code)",
 		`{"phone":""}`:             "phone must be a valid number (8-15 digits, optional +country code)",
