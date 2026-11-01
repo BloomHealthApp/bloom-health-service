@@ -5,6 +5,7 @@
 - OTP: 6 digits, HMAC-hashed at rest (bound to the challengeId), keyed by `challengeId` (single use, deleted on success), 10 min TTL, 5 attempts, resend cooldown per account (`IOTPRepo.LatestByEmail`), per-identifier and per-challenge limits; refresh tokens hashed, rotated, family revoked on reuse; access tokens HS256 15 min.
 - Role and space are resolved from the database on every request (`IAuthService.Authenticate`); never from the token or the client. Client-supplied `role`, `userId`, `sharedSpaceId`, `createdBy`, `updatedBy` are rejected (unknown field → 400).
 - Viewer is read-only: `RequireOwner` middleware **and** service-level `requireOwner` guards.
+- Saving a phone needs a code emailed to the account (`/me/phone/request`, `/me/phone/verify`). `PATCH /me` can't set one. This proves control of the email, not ownership of the number.
 - Strict JSON (`DisallowUnknownFields`, no trailing data), 1 MiB body limit, secure response headers, rate limits (per IP, per IP on `/auth`, per normalized email/phone, per challenge on verify).
 - Logs never contain tokens, OTPs or wellness values (logger redacts sensitive keys; request log records route patterns only).
 - Secrets (`MONGODB_URI`, `ACCESS_TOKEN_SECRET`, `SMTP_*`) come only from the environment. Never commit real values; `assets/*-config.json` hold non-secret settings only. PROD refuses `STORE=memory` and the console mailer.

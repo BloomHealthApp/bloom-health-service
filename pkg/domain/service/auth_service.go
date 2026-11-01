@@ -46,6 +46,12 @@ type IAuthService interface {
 	// VerifyOTP consumes the challenge (single use). A sign-up challenge first creates the user, private
 	// space, default habits and settings from the pending name/phone/email.
 	VerifyOTP(ctx context.Context, req *request.OTPVerifyReq) (*response.AuthResponse, apperrors.IHttpError)
+	// RequestPhoneChange mails a code to the signed-in user's email to confirm saving req.Phone. 409 when the
+	// phone belongs to another account; 429 during the resend cooldown. Nothing is saved yet.
+	RequestPhoneChange(ctx context.Context, actor *serviceBos.Actor, req *request.PhoneChangeReq) (*response.ChallengeResponse, apperrors.IHttpError)
+	// ConfirmPhoneChange consumes the actor's own phone-change challenge and returns the phone to save. A wrong
+	// code is a 400, not a 401: the caller is signed in, and a 401 would make clients treat the session as expired.
+	ConfirmPhoneChange(ctx context.Context, actor *serviceBos.Actor, req *request.OTPVerifyReq) (string, apperrors.IHttpError)
 	// Refresh rotates a refresh token. Reusing an already-rotated token revokes the whole family.
 	Refresh(ctx context.Context, req *request.RefreshTokenReq) (*response.AuthResponse, apperrors.IHttpError)
 	Logout(ctx context.Context, req *request.RefreshTokenReq) apperrors.IHttpError
@@ -140,8 +146,11 @@ func (s *authService) sendChallenge(ctx context.Context, purpose, email, name, p
 		_ = s.otps.Delete(ctx, prev.ChallengeID) // only the newest code stays valid
 	}
 	kind := smtp.OTPSignIn
-	if purpose == dao.OTPPurposeSignUp {
+	switch purpose {
+	case dao.OTPPurposeSignUp:
 		kind = smtp.OTPSignUp
+	case dao.OTPPurposePhoneChange:
+		kind = smtp.OTPPhoneChange
 	}
 	subject, text, html := smtp.OTPEmail(kind, name, code, int(constants.OTPTTL.Minutes()))
 	if err := s.mailer.Send(ctx, email, subject, text, html); err != nil {
@@ -257,6 +266,52 @@ func (s *authService) VerifyOTP(ctx context.Context, req *request.OTPVerifyReq) 
 		return nil, invalid
 	}
 	return s.issue(ctx, u, uuid.NewString())
+}
+
+func (s *authService) RequestPhoneChange(ctx context.Context, actor *serviceBos.Actor, req *request.PhoneChangeReq) (*response.ChallengeResponse, apperrors.IHttpError) {
+	if actor.User.Phone != nil && *actor.User.Phone == req.Phone {
+		return nil, apperrors.BadRequestError("this is already your phone number")
+	}
+	if other, err := s.users.ByPhone(ctx, req.Phone); err == nil && other.ID != actor.User.ID {
+		return nil, apperrors.AlreadyRegisteredError("an account with this phone already exists")
+	} else if err != nil && !apperrors.IsNotFound(err) {
+		return nil, internalErr(s.log, ctx, "phone change: lookup failed", err)
+	}
+	email := request.NormalizeEmail(actor.User.Email)
+	if cur, wait := s.cooldown(ctx, email); cur != nil {
+		return nil, apperrors.TooManyRequestsError("please wait before requesting another code", strconv.Itoa(int(wait.Seconds())+1))
+	}
+	id, err := s.sendChallenge(ctx, dao.OTPPurposePhoneChange, email, "", req.Phone, "", "")
+	if err != nil {
+		return nil, internalErr(s.log, ctx, "phone change: could not issue code", err)
+	}
+	return &response.ChallengeResponse{Status: "sent", ChallengeID: id}, nil
+}
+
+func (s *authService) ConfirmPhoneChange(ctx context.Context, actor *serviceBos.Actor, req *request.OTPVerifyReq) (string, apperrors.IHttpError) {
+	invalid := apperrors.BadRequestError("that code is not valid or has expired")
+	ch, err := s.otps.Get(ctx, req.ChallengeID)
+	if err != nil {
+		return "", invalid
+	}
+	// Checked before the code, so another user's or a sign-in challenge is left untouched.
+	if ch.Purpose != dao.OTPPurposePhoneChange || ch.Email != request.NormalizeEmail(actor.User.Email) || ch.PendingPhone == "" {
+		return "", invalid
+	}
+	if s.clock.Now().After(ch.ExpiresAt) || ch.Attempts >= constants.OTPMaxAttempts {
+		_ = s.otps.Delete(ctx, ch.ChallengeID)
+		return "", invalid
+	}
+	if subtle.ConstantTimeCompare([]byte(s.otpHash(ch.ChallengeID, req.Code)), []byte(ch.CodeHash)) != 1 {
+		if n, _ := s.otps.AddAttempt(ctx, ch.ChallengeID); n >= constants.OTPMaxAttempts {
+			_ = s.otps.Delete(ctx, ch.ChallengeID)
+		}
+		return "", invalid
+	}
+	if err := s.otps.Delete(ctx, ch.ChallengeID); err != nil {
+		return "", internalErr(s.log, ctx, "phone change: delete failed", err)
+	}
+	return ch.PendingPhone, nil
 }
 
 // issue mints an access/refresh pair for a new session in the given family and renders the response.

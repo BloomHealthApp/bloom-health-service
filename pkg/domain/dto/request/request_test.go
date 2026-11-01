@@ -69,9 +69,6 @@ func TestPatchMeValidate(t *testing.T) {
 		`{"theme":"graphiteGrey"}`: "",
 		`{"theme":"mintPeach"}`:    "",
 		`{"theme":"neon"}`:         "invalid theme",
-		`{"phone":null}`:           "phone must be a valid number (8-15 digits, optional +country code)",
-		`{"phone":""}`:             "phone must be a valid number (8-15 digits, optional +country code)",
-		`{"phone":"98765 43210"}`:  "",
 		`{"timezone":"Mars/Base"}`: "timezone must be a valid IANA zone",
 		`{"timezone":"Local"}`:     "timezone must be a valid IANA zone",
 	}

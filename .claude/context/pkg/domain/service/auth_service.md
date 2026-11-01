@@ -6,6 +6,7 @@ Passwordless sign-up and sign-in by emailed code, JWT access tokens, rotating re
 ## Rules
 - `RequestSignIn` always returns a challenge. Unknown identifiers and internal failures return a random decoy id, and the failure is only logged.
 - A phone sign-in that finds no account logs `signin: no account for phone`, without the number. An email that finds none logs nothing.
+- A `phone_change` challenge is only consumed by `ConfirmPhoneChange`, for the user whose email it was mailed to. `VerifyOTP` never issues tokens for it.
 - Every `VerifyOTP` failure returns the same 401 `invalid or expired code`.
 - `Authenticate` takes the role from the database, never from the token. It only accepts HS256 with the configured issuer and an expiry.
 - Compare OTP hashes with `subtle.ConstantTimeCompare`.

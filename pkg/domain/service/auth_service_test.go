@@ -14,6 +14,7 @@ import (
 	"github.com/BloomHealthApp/bloom-health-service/config"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/dto/request"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/models/dao"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/serviceBos"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/enums/userrole"
 	apperrors "github.com/BloomHealthApp/bloom-health-service/pkg/errors"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/infrastructure/mongorepo"
@@ -610,4 +611,18 @@ func TestRequestSignInLogsPhoneMissWithoutTheNumber(t *testing.T) {
 		})
 		require.NotContains(t, logs, "no account")
 	})
+}
+
+func TestRequestPhoneChangeCooldown(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	svc, m := createAuthService(ctrl, func(m *authMocks) {
+		m.users.EXPECT().ByPhone(gomock.Any(), "+919811122222").Return(nil, apperrors.ErrRepoNotFound)
+		m.otps.EXPECT().LatestByEmail(gomock.Any(), "anu@example.com").Return(&dao.OTPChallenge{ChallengeID: "cur", CreatedAt: m.clock.Now()}, nil)
+		// no otps.Save expectation: storing a challenge would fail the test
+	})
+	_, herr := svc.RequestPhoneChange(context.Background(), &serviceBos.Actor{User: anu}, &request.PhoneChangeReq{Phone: "+919811122222"})
+	require.NotNil(t, herr)
+	status, _ := herr.Get()
+	require.Equal(t, 429, status)
+	require.Empty(t, m.mailer.Snapshot())
 }

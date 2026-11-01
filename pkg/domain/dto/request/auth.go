@@ -113,6 +113,28 @@ func (r *OTPVerifyReq) Validate() apperrors.IHttpError {
 	return nil
 }
 
+// PhoneChangeReq is POST /me/phone/request.
+type PhoneChangeReq struct {
+	Phone string `json:"phone"`
+}
+
+// Validate trims the phone and requires it; Normalize canonicalizes it.
+func (r *PhoneChangeReq) Validate() apperrors.IHttpError {
+	r.Phone = strings.TrimSpace(r.Phone)
+	return toHTTPError(validation.ValidateStruct(r,
+		validation.Field(&r.Phone, rule(phoneMsg, func(v any) bool { return v.(string) != "" }))))
+}
+
+// Normalize rewrites the phone to E.164.
+func (r *PhoneChangeReq) Normalize(defaultCC string) apperrors.IHttpError {
+	p, err := utils.NormalizePhone(r.Phone, defaultCC)
+	if err != nil {
+		return apperrors.BadRequestError(phoneMsg)
+	}
+	r.Phone = p
+	return nil
+}
+
 // RefreshTokenReq is POST /auth/refresh and POST /auth/logout.
 type RefreshTokenReq struct {
 	RefreshToken string `json:"refreshToken"`
