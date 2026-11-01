@@ -106,6 +106,8 @@ func (e *Entity) Clone() *Entity {
 const (
 	OTPPurposeSignUp = "signup"
 	OTPPurposeSignIn = "signin"
+	// OTPPurposePhoneChange proves a signed-in user controls the account email before a phone is saved.
+	OTPPurposePhoneChange = "phone_change"
 )
 
 // OTPChallenge is a pending one-time code (stored hashed), addressed by its opaque ChallengeID.

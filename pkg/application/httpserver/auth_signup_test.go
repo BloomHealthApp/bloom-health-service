@@ -295,41 +295,97 @@ func TestOldOTPRequestEndpointIsGone(t *testing.T) {
 	require.Empty(t, e.mail.Messages)
 }
 
-func TestPatchMePhone(t *testing.T) {
+func TestPhoneChangeNeedsEmailCode(t *testing.T) {
 	e := setup(t)
 	e.relaxLimits()
 	e.signup("Riya", "9876543210", "riya@example.com")
 	anu, _ := e.login("anu@example.com") // legacy: no phone yet
+	riya, _ := e.login("riya@example.com")
 
-	// legacy user adds a phone; it is normalized
-	st, me := e.do("PATCH", "/v1/me", anu, map[string]any{"phone": "98 111-22222"})
+	request := func(token string, phone any) (int, map[string]any, string) {
+		e.mail.Messages = nil
+		st, body := e.do("POST", "/v1/me/phone/request", token, map[string]any{"phone": phone})
+		code := ""
+		if len(e.mail.Messages) == 1 {
+			code = codeRe.FindString(e.mail.Messages[0].Body)
+		}
+		return st, body, code
+	}
+	phoneOf := func(token string) any {
+		_, me := e.do("GET", "/v1/me", token, nil)
+		return me["phone"]
+	}
+
+	// PATCH /me can no longer set a phone
+	st, _ := e.do("PATCH", "/v1/me", anu, map[string]any{"phone": "9811122222"})
+	require.Equal(t, 400, st)
+	require.Nil(t, phoneOf(anu))
+
+	// requires sign-in, and a valid number
+	st, _ = e.do("POST", "/v1/me/phone/request", "", map[string]any{"phone": "9811122222"})
+	require.Equal(t, 401, st)
+	for _, bad := range []any{"123", "abcdefghij", "", nil} {
+		st, _, _ = request(anu, bad)
+		require.Equal(t, 400, st, bad)
+	}
+
+	// taken by another account, any formatting: nothing is mailed
+	st, body, code := request(anu, "+91 98765 43210")
+	require.Equal(t, 409, st)
+	require.Equal(t, "already_registered", errCode(body))
+	require.Empty(t, code)
+
+	// the code goes to the caller's own email, and nothing is saved until it's confirmed
+	st, ch, code := request(anu, "98 111-22222")
+	require.Equal(t, 202, st)
+	require.Equal(t, "anu@example.com", e.mail.Messages[0].To)
+	require.Contains(t, e.mail.Messages[0].Subject, "phone number")
+	require.NotContains(t, e.mail.Messages[0].Body, "9811122222")
+	require.Nil(t, phoneOf(anu))
+
+	// a wrong code is a 400, so clients don't treat the session as expired
+	st, _ = e.do("POST", "/v1/me/phone/verify", anu, map[string]any{"challengeId": ch["challengeId"], "code": "000000"})
+	require.Equal(t, 400, st)
+	require.Nil(t, phoneOf(anu))
+
+	// another user can't use it, even with the right code, and it stays usable
+	st, _ = e.do("POST", "/v1/me/phone/verify", riya, map[string]any{"challengeId": ch["challengeId"], "code": code})
+	require.Equal(t, 400, st)
+	require.Equal(t, "+919876543210", phoneOf(riya))
+
+	// the right code from the right user saves it, and the code is single use
+	st, me := e.do("POST", "/v1/me/phone/verify", anu, map[string]any{"challengeId": ch["challengeId"], "code": code})
 	require.Equal(t, 200, st)
 	require.Equal(t, "+919811122222", me["phone"])
+	st, _ = e.do("POST", "/v1/me/phone/verify", anu, map[string]any{"challengeId": ch["challengeId"], "code": code})
+	require.Equal(t, 400, st)
+
 	// ...and can then sign in with it
-	e.mail.Messages = nil
 	acc, _ := e.login("9811122222")
 	_, me2 := e.do("GET", "/v1/me", acc, nil)
 	require.Equal(t, me["id"], me2["id"])
 
-	// taken by another account (any formatting) -> 409 already_registered, profile unchanged
-	st, body := e.do("PATCH", "/v1/me", anu, map[string]any{"phone": "+91 98765 43210"})
-	require.Equal(t, 409, st)
-	require.Equal(t, "already_registered", errCode(body))
-	_, me3 := e.do("GET", "/v1/me", anu, nil)
+	// your current number needs no code
+	st, _, code = request(anu, "+919811122222")
+	require.Equal(t, 400, st)
+	require.Empty(t, code)
+
+	// other fields still patch, and leave the phone alone
+	st, me3 := e.do("PATCH", "/v1/me", anu, map[string]any{"theme": "mintPeach"})
+	require.Equal(t, 200, st)
 	require.Equal(t, "+919811122222", me3["phone"])
+}
 
-	// re-sending your own number is fine; other fields still patch alongside
-	st, me4 := e.do("PATCH", "/v1/me", anu, map[string]any{"phone": "+919811122222", "displayName": "Anu K"})
-	require.Equal(t, 200, st)
-	require.Equal(t, "Anu K", me4["displayName"])
+func TestPhoneChangeCodeCannotSignIn(t *testing.T) {
+	e := setup(t)
+	e.relaxLimits()
+	anu, _ := e.login("anu@example.com")
+	e.mail.Messages = nil
+	st, ch := e.do("POST", "/v1/me/phone/request", anu, map[string]any{"phone": "9811122222"})
+	require.Equal(t, 202, st)
+	code := codeRe.FindString(e.mail.Messages[0].Body)
 
-	// invalid values
-	for _, bad := range []any{"123", "abcdefghij", "", nil} {
-		st, _ = e.do("PATCH", "/v1/me", anu, map[string]any{"phone": bad})
-		require.Equal(t, 400, st, bad)
-	}
-	// omitting phone leaves it untouched
-	st, me5 := e.do("PATCH", "/v1/me", anu, map[string]any{"theme": "mintPeach"})
-	require.Equal(t, 200, st)
-	require.Equal(t, "+919811122222", me5["phone"])
+	st, body := e.do("POST", "/v1/auth/otp/verify", "", map[string]any{"challengeId": ch["challengeId"], "code": code})
+	require.Equal(t, 401, st)
+	require.Nil(t, body["accessToken"])
 }

@@ -54,6 +54,21 @@ func (mr *MockIAuthServiceMockRecorder) Authenticate(arg0, arg1 interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Authenticate", reflect.TypeOf((*MockIAuthService)(nil).Authenticate), arg0, arg1)
 }
 
+// ConfirmPhoneChange mocks base method.
+func (m *MockIAuthService) ConfirmPhoneChange(arg0 context.Context, arg1 *serviceBos.Actor, arg2 *request.OTPVerifyReq) (string, errors.IHttpError) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConfirmPhoneChange", arg0, arg1, arg2)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(errors.IHttpError)
+	return ret0, ret1
+}
+
+// ConfirmPhoneChange indicates an expected call of ConfirmPhoneChange.
+func (mr *MockIAuthServiceMockRecorder) ConfirmPhoneChange(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfirmPhoneChange", reflect.TypeOf((*MockIAuthService)(nil).ConfirmPhoneChange), arg0, arg1, arg2)
+}
+
 // Logout mocks base method.
 func (m *MockIAuthService) Logout(arg0 context.Context, arg1 *request.RefreshTokenReq) errors.IHttpError {
 	m.ctrl.T.Helper()
@@ -81,6 +96,21 @@ func (m *MockIAuthService) Refresh(arg0 context.Context, arg1 *request.RefreshTo
 func (mr *MockIAuthServiceMockRecorder) Refresh(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Refresh", reflect.TypeOf((*MockIAuthService)(nil).Refresh), arg0, arg1)
+}
+
+// RequestPhoneChange mocks base method.
+func (m *MockIAuthService) RequestPhoneChange(arg0 context.Context, arg1 *serviceBos.Actor, arg2 *request.PhoneChangeReq) (*response.ChallengeResponse, errors.IHttpError) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RequestPhoneChange", arg0, arg1, arg2)
+	ret0, _ := ret[0].(*response.ChallengeResponse)
+	ret1, _ := ret[1].(errors.IHttpError)
+	return ret0, ret1
+}
+
+// RequestPhoneChange indicates an expected call of RequestPhoneChange.
+func (mr *MockIAuthServiceMockRecorder) RequestPhoneChange(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestPhoneChange", reflect.TypeOf((*MockIAuthService)(nil).RequestPhoneChange), arg0, arg1, arg2)
 }
 
 // RequestSignIn mocks base method.
@@ -179,6 +209,21 @@ func (m *MockIUserService) PatchMe(arg0 context.Context, arg1 *serviceBos.Actor,
 func (mr *MockIUserServiceMockRecorder) PatchMe(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PatchMe", reflect.TypeOf((*MockIUserService)(nil).PatchMe), arg0, arg1, arg2)
+}
+
+// SetPhone mocks base method.
+func (m *MockIUserService) SetPhone(arg0 context.Context, arg1 *serviceBos.Actor, arg2 string) (*response.UserResponse, errors.IHttpError) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetPhone", arg0, arg1, arg2)
+	ret0, _ := ret[0].(*response.UserResponse)
+	ret1, _ := ret[1].(errors.IHttpError)
+	return ret0, ret1
+}
+
+// SetPhone indicates an expected call of SetPhone.
+func (mr *MockIUserServiceMockRecorder) SetPhone(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPhone", reflect.TypeOf((*MockIUserService)(nil).SetPhone), arg0, arg1, arg2)
 }
 
 // MockIHabitService is a mock of IHabitService interface.

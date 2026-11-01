@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"regexp"
@@ -13,6 +14,7 @@ import (
 	"github.com/BloomHealthApp/bloom-health-service/config"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/dto/request"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/models/dao"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/serviceBos"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/enums/userrole"
 	apperrors "github.com/BloomHealthApp/bloom-health-service/pkg/errors"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/infrastructure/mongorepo"
@@ -575,3 +577,52 @@ func TestSignUpAvatarIsStoredInChallengeAndAppliedAtVerify(t *testing.T) {
 }
 
 func avatarPtr(s string) *string { return &s }
+
+func TestRequestSignInLogsPhoneMissWithoutTheNumber(t *testing.T) {
+	ctx := context.Background()
+	run := func(t *testing.T, req *request.SignInReq, expect func(*authMocks)) string {
+		ctrl := gomock.NewController(t)
+		_, m := createAuthService(ctrl, expect)
+		var out bytes.Buffer
+		cfg := &config.Store{AccessSecret: testSecret, Issuer: "unit", OTPResendAfter: 30 * time.Second}
+		svc := NewAuthService(logger.NewWithWriter(&out, "info"), cfg, m.users, m.memberships, m.otps, m.sessions, m.mailer, m.provision, m.clock)
+		resp, herr := svc.RequestSignIn(ctx, req)
+		require.Nil(t, herr)
+		require.Equal(t, "sent", resp.Status)
+		require.Empty(t, m.mailer.Snapshot())
+		return out.String()
+	}
+	t.Run("unknown phone", func(t *testing.T) {
+		logs := run(t, &request.SignInReq{Identifier: "+919876500000"}, func(m *authMocks) {
+			m.users.EXPECT().ByPhone(gomock.Any(), "+919876500000").Return(nil, apperrors.ErrRepoNotFound)
+		})
+		require.Contains(t, logs, "signin: no account for phone")
+		require.NotContains(t, logs, "9876500000")
+	})
+	t.Run("unknown email stays silent", func(t *testing.T) {
+		logs := run(t, &request.SignInReq{Identifier: "nobody@example.com", IsEmail: true}, func(m *authMocks) {
+			m.users.EXPECT().ByEmail(gomock.Any(), "nobody@example.com").Return(nil, apperrors.ErrRepoNotFound)
+		})
+		require.NotContains(t, logs, "no account")
+	})
+	t.Run("rate-limited decoy isn't counted as a miss", func(t *testing.T) {
+		logs := run(t, &request.SignInReq{Identifier: "decoy|abc"}, func(m *authMocks) {
+			m.users.EXPECT().ByPhone(gomock.Any(), "decoy|abc").Return(nil, apperrors.ErrRepoNotFound)
+		})
+		require.NotContains(t, logs, "no account")
+	})
+}
+
+func TestRequestPhoneChangeCooldown(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	svc, m := createAuthService(ctrl, func(m *authMocks) {
+		m.users.EXPECT().ByPhone(gomock.Any(), "+919811122222").Return(nil, apperrors.ErrRepoNotFound)
+		m.otps.EXPECT().LatestByEmail(gomock.Any(), "anu@example.com").Return(&dao.OTPChallenge{ChallengeID: "cur", CreatedAt: m.clock.Now()}, nil)
+		// no otps.Save expectation: storing a challenge would fail the test
+	})
+	_, herr := svc.RequestPhoneChange(context.Background(), &serviceBos.Actor{User: anu}, &request.PhoneChangeReq{Phone: "+919811122222"})
+	require.NotNil(t, herr)
+	status, _ := herr.Get()
+	require.Equal(t, 429, status)
+	require.Empty(t, m.mailer.Snapshot())
+}

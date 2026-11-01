@@ -18,10 +18,11 @@ const (
 // OTPKind selects the wording of the code email.
 type OTPKind int
 
-// Email kinds: a code that finishes creating an account, or signs in to an existing one.
+// Email kinds: a code that finishes creating an account, signs in to an existing one, or confirms a phone number.
 const (
 	OTPSignIn OTPKind = iota
 	OTPSignUp
+	OTPPhoneChange
 )
 
 // OTPEmail renders the one-time-code email. Layout uses tables and inline CSS only, because mail clients
@@ -29,7 +30,12 @@ const (
 // name is only used for OTPSignUp ("Welcome, <name>!") and is HTML-escaped.
 func OTPEmail(kind OTPKind, name, code string, minutes int) (subject, text, htmlBody string) {
 	var greetText, greetHTML, intro string
-	if kind == OTPSignUp {
+	if kind == OTPPhoneChange {
+		subject = "Confirm your Bloom Health phone number"
+		greetText = "Hello!"
+		greetHTML = "Hello!"
+		intro = "Use this code to add this phone number to your Bloom Health account:"
+	} else if kind == OTPSignUp {
 		subject = "Your Bloom Health verification code"
 		greetText = fmt.Sprintf("Welcome, %s!", name)
 		greetHTML = fmt.Sprintf("Welcome, %s! &#127800;", html.EscapeString(name))
