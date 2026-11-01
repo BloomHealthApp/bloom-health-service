@@ -57,9 +57,9 @@ Rules (violations are `400 validation_failed`, or a `rejected` sync result with 
 Default habits (seeded, ids stable slugs `default-wakeup`, …): wake up by 05:00 (timeOfDay/by/300), exercise 90–120 min (duration/between/90..120), no added sugar (boolean), no junk food (boolean), dinner by 18:00 (timeOfDay/by/1080), water 2000 ml (quantity/atLeast), steps 7000–10000 (quantity/atLeast target 7000 targetMax 10000), sleep bedtime by 22:00 (timeOfDay/by/1320).
 
 ## Daily logs
-`DailyLog`: `{id, habitId, localDate, value (number|bool-as-0/1|minutes-since-midnight|null), status ("complete"|"incomplete"|"skipped"|"partial"), note (string|null), version, updatedAt, deletedAt}`; unique per `(habitId, localDate)`. `id` = `"{habitId}:{localDate}"`.
+`DailyLog`: `{id, habitId, localDate, value (number|bool-as-0/1|minutes-since-midnight|null), status ("complete"|"incomplete"|"skipped"|"partial"), note (string|null), source ("manual"|"device"; a write that omits it stores "manual", absent on older records = "manual"), version, updatedAt, deletedAt}`; unique per `(habitId, localDate)`. `id` = `"{habitId}:{localDate}"`.
 - `GET /logs?from=YYYY-MM-DD&to=YYYY-MM-DD` → `{items: DailyLog[]}` (max 366 days).
-- `PUT /logs/{habitId}/{localDate}` (owner) `{value, status, note?, baseVersion (0 when creating)}` → 200 DailyLog; stale baseVersion → 409 with `details.server`. Future dates → 400.
+- `PUT /logs/{habitId}/{localDate}` (owner) `{value, status, note?, source?, baseVersion (0 when creating)}` → 200 DailyLog; stale baseVersion → 409 with `details.server`. Future dates → 400.
 - Status is **computed by the client/server scoring lib** from value+target when status omitted.
 
 ## Workouts

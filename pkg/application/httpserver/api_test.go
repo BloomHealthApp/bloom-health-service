@@ -439,6 +439,41 @@ func TestSettings(t *testing.T) {
 	require.Equal(t, 400, st)
 }
 
+func TestDailyLogSource(t *testing.T) {
+	e := setup(t)
+	anu, _ := e.login("anu@example.com")
+	path := "/v1/logs/default-steps/" + today()
+
+	st, l := e.do("PUT", path, anu, map[string]any{"value": 8000, "source": "device", "baseVersion": 0})
+	require.Equal(t, 200, st, l)
+	require.Equal(t, "device", l["source"])
+
+	st, l = e.do("PUT", path, anu, map[string]any{"value": 9000, "baseVersion": 1})
+	require.Equal(t, 200, st, l)
+	require.Equal(t, "manual", l["source"], "a write without source is a manual entry")
+
+	st, _ = e.do("PUT", path, anu, map[string]any{"value": 9000, "source": "watch", "baseVersion": 2})
+	require.Equal(t, 400, st)
+
+	op := map[string]any{"operationId": "src-1", "entityType": "dailyLog", "entityId": "default-steps:" + today(), "op": "upsert", "baseVersion": 2,
+		"payload": map[string]any{"value": 9500, "source": "device"}, "clientTimestamp": time.Now().UTC().Format(time.RFC3339)}
+	st, body := e.do("POST", "/v1/sync/push", anu, map[string]any{"deviceId": "dev1", "operations": []any{op}})
+	require.Equal(t, 200, st, body)
+	r := body["results"].([]any)[0].(map[string]any)
+	require.Equal(t, "applied", r["status"], r)
+	require.Equal(t, "device", r["entity"].(map[string]any)["source"])
+
+	_, pulled := e.do("GET", "/v1/sync/pull", anu, nil)
+	found := false
+	for _, x := range pulled["changes"].(map[string]any)["dailyLogs"].([]any) {
+		if m := x.(map[string]any); m["id"] == "default-steps:"+today() {
+			found = true
+			require.Equal(t, "device", m["source"])
+		}
+	}
+	require.True(t, found)
+}
+
 func TestSyncPushIdempotencyConflictsAndPull(t *testing.T) {
 	e := setup(t)
 	anu, _ := e.login("anu@example.com")

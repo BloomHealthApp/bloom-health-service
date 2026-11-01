@@ -9,4 +9,5 @@ Writes go straight through `ISyncService.Apply`, not `entityWriter`, because `PU
 ## Gotchas
 - `Put` sends `value` and `note` as null when omitted, so leaving them out clears them.
 - If `status` is omitted, `Apply` computes it from the value and the habit's target.
+- If `source` is omitted, the log is stored as `manual`, even when the stored log was `device`. See `validation.Merge`.
 - `List` includes tombstones.

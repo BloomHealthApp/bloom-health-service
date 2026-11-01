@@ -31,6 +31,25 @@ func TestLogFutureDateRejected(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestLogSource(t *testing.T) {
+	base := map[string]any{"habitId": "h", "localDate": "2026-10-18", "value": 1.0}
+
+	d, err := Merge(entitytype.DailyLog, nil, base, Context{})
+	require.NoError(t, err)
+	require.Equal(t, "manual", d["source"])
+
+	d, err = Merge(entitytype.DailyLog, nil, map[string]any{"habitId": "h", "localDate": "2026-10-18", "value": 1.0, "source": "device"}, Context{})
+	require.NoError(t, err)
+	require.Equal(t, "device", d["source"])
+
+	d, err = Merge(entitytype.DailyLog, d, map[string]any{"value": 2.0}, Context{})
+	require.NoError(t, err)
+	require.Equal(t, "manual", d["source"], "a write without source must not keep a stored device value")
+
+	_, err = Merge(entitytype.DailyLog, nil, map[string]any{"habitId": "h", "localDate": "2026-10-18", "source": "watch"}, Context{})
+	require.Error(t, err)
+}
+
 func TestWorkoutDurationDerivedFromTimestamps(t *testing.T) {
 	d, err := Merge(entitytype.Workout, nil, map[string]any{"type": "yoga", "startedAt": "2026-10-17T05:00:00Z", "endedAt": "2026-10-17T06:00:00Z",
 		"pausedSeconds": 300.0, "durationSeconds": 1.0, "localDate": "2026-10-17"}, Context{Today: "2026-10-17"})

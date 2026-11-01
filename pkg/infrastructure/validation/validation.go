@@ -10,6 +10,7 @@ import (
 
 	"github.com/BloomHealthApp/bloom-health-service/pkg/enums/entitytype"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/enums/habitcategory"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/enums/logsource"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/enums/logstatus"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/enums/periodflow"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/enums/periodmood"
@@ -38,6 +39,7 @@ var (
 	trackingTyps = set(trackingtype.Values()...)
 	comparisons  = set(targetcomparison.Values()...)
 	logStatuses  = set(logstatus.Values()...)
+	logSources   = set(logsource.Values()...)
 	workoutTyps  = set(workouttype.Values()...)
 	restModes    = set(restdaymode.Values()...)
 	reminderKeys = set(remindertype.Values()...)
@@ -57,7 +59,7 @@ func set(v ...string) map[string]bool {
 var allowed = map[string]map[string]bool{
 	entitytype.Habit: set("title", "icon", "category", "trackingType", "target", "targetMax", "targetComparison",
 		"unit", "schedule", "reminder", "isActive", "sortOrder", "isDefault"),
-	entitytype.DailyLog: set("habitId", "localDate", "value", "status", "note"),
+	entitytype.DailyLog: set("habitId", "localDate", "value", "status", "note", "source"),
 	entitytype.Workout:  set("type", "startedAt", "endedAt", "durationSeconds", "pausedSeconds", "notes", "localDate"),
 	entitytype.Settings: set("dailyThreshold", "restDays", "restDayMode", "reminders", "stepGoal", "sundayRest"),
 	entitytype.Period:   set("startDate", "endDate", "flow", "symptoms", "mood", "note"),
@@ -98,6 +100,10 @@ func Merge(typ string, existing, payload map[string]any, ctx Context) (map[strin
 	case entitytype.Habit:
 		err = validateHabit(out, existing == nil)
 	case entitytype.DailyLog:
+		// A writer that omits source (such as an older app) entered the value itself, so a stored "device" must not survive.
+		if payload["source"] == nil {
+			out["source"] = logsource.Manual
+		}
 		err = validateLog(out, ctx)
 	case entitytype.Workout:
 		err = validateWorkout(out, ctx)
@@ -371,7 +377,7 @@ func validateLog(m map[string]any, ctx Context) error {
 	if m["note"] == nil || m["note"] == "" {
 		m["note"] = nil
 	}
-	return nil
+	return enum(m, "source", logSources, true)
 }
 
 func validateWorkout(m map[string]any, ctx Context) error {
