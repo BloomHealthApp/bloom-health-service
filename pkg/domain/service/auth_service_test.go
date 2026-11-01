@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"regexp"
@@ -575,3 +576,38 @@ func TestSignUpAvatarIsStoredInChallengeAndAppliedAtVerify(t *testing.T) {
 }
 
 func avatarPtr(s string) *string { return &s }
+
+func TestRequestSignInLogsPhoneMissWithoutTheNumber(t *testing.T) {
+	ctx := context.Background()
+	run := func(t *testing.T, req *request.SignInReq, expect func(*authMocks)) string {
+		ctrl := gomock.NewController(t)
+		_, m := createAuthService(ctrl, expect)
+		var out bytes.Buffer
+		cfg := &config.Store{AccessSecret: testSecret, Issuer: "unit", OTPResendAfter: 30 * time.Second}
+		svc := NewAuthService(logger.NewWithWriter(&out, "info"), cfg, m.users, m.memberships, m.otps, m.sessions, m.mailer, m.provision, m.clock)
+		resp, herr := svc.RequestSignIn(ctx, req)
+		require.Nil(t, herr)
+		require.Equal(t, "sent", resp.Status)
+		require.Empty(t, m.mailer.Snapshot())
+		return out.String()
+	}
+	t.Run("unknown phone", func(t *testing.T) {
+		logs := run(t, &request.SignInReq{Identifier: "+919876500000"}, func(m *authMocks) {
+			m.users.EXPECT().ByPhone(gomock.Any(), "+919876500000").Return(nil, apperrors.ErrRepoNotFound)
+		})
+		require.Contains(t, logs, "signin: no account for phone")
+		require.NotContains(t, logs, "9876500000")
+	})
+	t.Run("unknown email stays silent", func(t *testing.T) {
+		logs := run(t, &request.SignInReq{Identifier: "nobody@example.com", IsEmail: true}, func(m *authMocks) {
+			m.users.EXPECT().ByEmail(gomock.Any(), "nobody@example.com").Return(nil, apperrors.ErrRepoNotFound)
+		})
+		require.NotContains(t, logs, "no account")
+	})
+	t.Run("rate-limited decoy isn't counted as a miss", func(t *testing.T) {
+		logs := run(t, &request.SignInReq{Identifier: "decoy|abc"}, func(m *authMocks) {
+			m.users.EXPECT().ByPhone(gomock.Any(), "decoy|abc").Return(nil, apperrors.ErrRepoNotFound)
+		})
+		require.NotContains(t, logs, "no account")
+	})
+}

@@ -13,6 +13,7 @@ import (
 	"math"
 	"math/big"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -190,8 +191,12 @@ func (s *authService) RequestSignIn(ctx context.Context, req *request.SignInReq)
 		u, err = s.users.ByPhone(ctx, req.Identifier)
 	}
 	if err != nil {
-		if !apperrors.IsNotFound(err) {
+		switch {
+		case !apperrors.IsNotFound(err):
 			s.log.Error(ctx, "signin: lookup failed", map[string]any{"err": err.Error()})
+		case !req.IsEmail && !strings.HasPrefix(req.Identifier, "decoy|"):
+			// Never log the number. This shows how often phone sign-in finds no account, which the caller can't see.
+			s.log.Info(ctx, "signin: no account for phone", nil)
 		}
 		return decoy()
 	}
