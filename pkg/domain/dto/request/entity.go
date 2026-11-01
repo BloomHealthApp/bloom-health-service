@@ -59,6 +59,7 @@ type PutLogReq struct {
 	Value       *float64 `json:"value"`
 	Status      string   `json:"status"`
 	Note        *string  `json:"note"`
+	Source      string   `json:"source"`
 	BaseVersion int      `json:"baseVersion"`
 }
 

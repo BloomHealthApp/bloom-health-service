@@ -51,6 +51,9 @@ func (s *dailyLogService) Put(ctx context.Context, a *serviceBos.Actor, req *req
 	if req.Status != "" {
 		payload["status"] = req.Status
 	}
+	if req.Source != "" {
+		payload["source"] = req.Source
+	}
 	res, herr := s.sync.Apply(ctx, a, serviceBos.ApplyOp{EntityType: entitytype.DailyLog, EntityID: LogID(req.HabitID, req.LocalDate),
 		Op: opUpsert, BaseVersion: req.BaseVersion, Payload: payload})
 	if herr != nil {
