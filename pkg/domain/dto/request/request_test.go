@@ -66,6 +66,7 @@ func TestPatchMeValidate(t *testing.T) {
 		`{"theme":"forestTrail"}`:  "",
 		`{"theme":"midnightNavy"}`: "",
 		`{"theme":"sunsetEmber"}`:  "",
+		`{"theme":"graphiteGrey"}`: "",
 		`{"theme":"mintPeach"}`:    "",
 		`{"theme":"neon"}`:         "invalid theme",
 		`{"phone":null}`:           "phone must be a valid number (8-15 digits, optional +country code)",

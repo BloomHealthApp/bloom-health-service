@@ -7,11 +7,12 @@ const (
 	CottonCandy   = "cottonCandy"
 	LavenderDream = "lavenderDream"
 	SunsetEmber   = "sunsetEmber"
+	GraphiteGrey  = "graphiteGrey"
 	MintPeach     = "mintPeach"
 )
 
 func Values() []string {
-	return []string{ForestTrail, MidnightNavy, CottonCandy, LavenderDream, SunsetEmber, MintPeach}
+	return []string{ForestTrail, MidnightNavy, CottonCandy, LavenderDream, SunsetEmber, GraphiteGrey, MintPeach}
 }
 
 func Valid(s string) bool {
