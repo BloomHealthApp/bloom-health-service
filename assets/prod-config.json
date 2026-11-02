@@ -8,7 +8,7 @@
   "chat": {
     "dailyMessageCap": 100,
     "models": [
-      { "id": "groq-llama-3.3-70b", "label": "Llama 3.3 70B", "vendor": "groq", "providerModelId": "llama-3.3-70b-versatile", "contextWindow": 128000, "default": true }
+      { "id": "groq-gpt-oss-120b", "label": "GPT-OSS 120B", "vendor": "groq", "providerModelId": "openai/gpt-oss-120b", "contextWindow": 131072, "default": true }
     ]
   }
 }
