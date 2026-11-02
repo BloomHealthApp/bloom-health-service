@@ -26,7 +26,7 @@ The service makes no outbound HTTP calls. Its only runtime external services are
 ## Sibling services
 | Service | Notes |
 |---|---|
-| `bloom-health-task-worker` | Separate repo. Claims pending `chatMessages`, calls Groq (`llama-3.3-70b-versatile`, free tier) with `GROQ_API_KEY`, and settles them. Must use the same database and the same `chat.models` catalogue. Contract: `docs/chat-contract.md`. |
+| `bloom-health-task-worker` | Separate repo. Claims pending `chatMessages`, calls Groq (`llama-3.3-70b-versatile`, free tier) with `GROQ_API_KEY`, and settles them. Must use the same database and the same `chat.models` catalogue. Contract: `docs/chat-contract.md`. Runs on a Google Cloud e2-micro VM under systemd, deployed from its `v*` tags (its `deploy/gcp/README.md`). |
 
 ## Clients
 | Client | Notes |
