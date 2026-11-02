@@ -388,6 +388,8 @@ func TestPeriodSyncPushByOwner(t *testing.T) {
 
 func TestSundayRestDefault(t *testing.T) {
 	e := setup(t)
+	// The request count depends on the weekday and passes the IP burst on Mondays.
+	e.relaxLimits()
 	anu, _ := e.login("anu@example.com")
 	aman, _ := e.login("aman@example.com")
 

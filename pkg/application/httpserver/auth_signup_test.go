@@ -13,10 +13,11 @@ import (
 	"github.com/BloomHealthApp/bloom-health-service/pkg/utils/ratelimit"
 )
 
-// relaxLimits lifts the per-IP/per-identifier auth limits (covered by contract_test.go) so a test can
-// make many auth calls.
+// relaxLimits lifts the per-IP and per-identifier limits (covered by contract_test.go) so a test can
+// make many calls.
 func (e *env) relaxLimits() {
 	l := di.AppLogic.GetRateLimiters()
+	l.IP = ratelimit.NewKeyed(rate.Inf, 100000)
 	l.Auth = ratelimit.NewKeyed(rate.Inf, 100000)
 	l.Email = ratelimit.NewKeyed(rate.Inf, 100000)
 }
