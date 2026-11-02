@@ -12,3 +12,6 @@ An environment override only works if its variable is listed in `envBindings`. `
 
 ## Related
 `_shared/security-invariants.md`
+
+## Chat
+The `chat` section (`config/chat.go`) holds the model catalogue (`models[]`) and `dailyMessageCap` (env `CHAT_DAILY_MESSAGE_CAP`, read with `GetInt` because `UnmarshalKey` ignores env bindings). The catalogue must match bloom-health-task-worker's. No model API key belongs in this service.

@@ -4,6 +4,7 @@ package mongorepo
 
 import (
 	"context"
+	"time"
 
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/models/dao"
 )
@@ -74,4 +75,30 @@ type ISessionRepo interface {
 	// MarkUsed atomically sets UsedAt; returns false if it was already used or revoked.
 	MarkUsed(ctx context.Context, id string) (bool, error)
 	RevokeFamily(ctx context.Context, familyID string) error
+}
+
+// IChatSessionRepo persists chat sessions. Every lookup is scoped to the owning user, and
+// soft-deleted sessions are reported as errors.ErrRepoNotFound.
+type IChatSessionRepo interface {
+	Create(ctx context.Context, s *dao.ChatSession) error
+	Get(ctx context.Context, userID, id string) (*dao.ChatSession, error)
+	// ListForUser returns non-deleted sessions, most recently updated first.
+	ListForUser(ctx context.Context, userID string, limit int) ([]dao.ChatSession, error)
+	SoftDelete(ctx context.Context, userID, id string, at time.Time) error
+	// BeginTurn marks turnID as the session's in-flight turn and reserves two message indexes,
+	// returning the first. errors.ErrRepoConflict when another turn is already in flight.
+	BeginTurn(ctx context.Context, userID, id, turnID string, at time.Time) (int, error)
+	// EndTurn clears the in-flight turn only if it is still turnID.
+	EndTurn(ctx context.Context, id, turnID string) error
+	SetTitle(ctx context.Context, userID, id, title string) error
+}
+
+// IChatMessageRepo persists chat messages.
+type IChatMessageRepo interface {
+	Insert(ctx context.Context, msgs ...*dao.ChatMessage) error
+	// ListForSession returns up to limit messages with Idx < beforeIdx (all when beforeIdx <= 0),
+	// newest first.
+	ListForSession(ctx context.Context, sessionID string, beforeIdx, limit int) ([]dao.ChatMessage, error)
+	// CountUserMessagesSince counts the user-role messages userID sent at or after since.
+	CountUserMessagesSince(ctx context.Context, userID string, since time.Time) (int, error)
 }

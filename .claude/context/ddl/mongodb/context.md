@@ -5,3 +5,4 @@
 
 ## Rules
 Keep it in step with `EnsureIndexes` in `pkg/infrastructure/mongorepo/common.go`, which creates the same indexes at startup.
+The chat indexes include the worker's claim index (`status, runAt, createdAt`); keep it even though this service never queries by status.

@@ -19,6 +19,13 @@ const (
 	DefaultPullLimit  = 500
 	MaxPullLimit      = 1000
 	OpRetention       = 60 * 24 * time.Hour
+
+	MaxChatContentChars   = 4000
+	MaxChatTitleChars     = 80
+	DefaultChatTitle      = "New chat"
+	DefaultChatPageLimit  = 30
+	MaxChatPageLimit      = 50
+	MaxChatSessionsListed = 100
 )
 
 // Request header names understood by the generic-request-info middleware.
@@ -58,4 +65,7 @@ const (
 	CollOTP         = "otpChallenges"
 	CollSessions    = "refreshSessions"
 	CollCounters    = "counters"
+	// Chat collections are shared with bloom-health-task-worker (docs/chat-contract.md).
+	CollChatSessions = "chatSessions"
+	CollChatMessages = "chatMessages"
 )

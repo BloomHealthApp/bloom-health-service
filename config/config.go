@@ -42,6 +42,9 @@ type Store struct {
 	// DefaultCountryCode ("+91") is prefixed to bare 10-digit phone numbers.
 	DefaultCountryCode string
 
+	// Chat configures the AI chat API (model catalogue, quotas). The model is called by bloom-health-task-worker.
+	Chat ChatConfig
+
 	// Secrets and deployment-specific values: environment only, never in the JSON files.
 	MongoURI     string
 	AccessSecret string
@@ -64,6 +67,7 @@ var envBindings = map[string]string{
 	"mail.from":                  "MAIL_FROM",
 	"account.defaultTimezone":    "DEFAULT_TIMEZONE",
 	"account.defaultCountryCode": "DEFAULT_COUNTRY_CODE",
+	"chat.dailyMessageCap":       "CHAT_DAILY_MESSAGE_CAP",
 }
 
 // NewConfig reads the file for ACTIVE_ENV (default DEV), applies env overrides and validates.
@@ -110,6 +114,11 @@ func NewConfig() (*Store, error) {
 	if c.DefaultCountryCode == "" {
 		c.DefaultCountryCode = utils.DefaultCountryCode
 	}
+	if err := v.UnmarshalKey("chat", &c.Chat); err != nil {
+		return nil, fmt.Errorf("read chat config: %w", err)
+	}
+	c.Chat.DailyMessageCap = v.GetInt("chat.dailyMessageCap") // UnmarshalKey does not see env overrides
+	c.Chat = c.Chat.WithDefaults()
 	return c, c.Validate()
 }
 
@@ -138,7 +147,7 @@ func (c *Store) Validate() error {
 	if c.Mailer == "smtp" && c.SMTPHost == "" {
 		return errors.New("SMTP_HOST is required when MAILER=smtp")
 	}
-	return nil
+	return c.Chat.Validate()
 }
 
 func splitList(s string) []string {

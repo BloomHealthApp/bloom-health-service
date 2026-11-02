@@ -14,21 +14,23 @@ import (
 
 // Repositories bundles every repository plus the health pinger of the selected backend.
 type Repositories struct {
-	Users       mongorepo.IUserRepo
-	Spaces      mongorepo.ISpaceRepo
-	Memberships mongorepo.IMembershipRepo
-	Entities    mongorepo.IEntityRepo
-	Ops         mongorepo.IOpRepo
-	OTPs        mongorepo.IOTPRepo
-	Sessions    mongorepo.ISessionRepo
-	Pinger      drivers.IPinger
+	Users        mongorepo.IUserRepo
+	Spaces       mongorepo.ISpaceRepo
+	Memberships  mongorepo.IMembershipRepo
+	Entities     mongorepo.IEntityRepo
+	Ops          mongorepo.IOpRepo
+	OTPs         mongorepo.IOTPRepo
+	Sessions     mongorepo.ISessionRepo
+	ChatSessions mongorepo.IChatSessionRepo
+	ChatMessages mongorepo.IChatMessageRepo
+	Pinger       drivers.IPinger
 }
 
 // NewMemoryRepositories returns fresh in-memory repositories (tests and STORE=memory).
 func NewMemoryRepositories() *Repositories {
 	return &Repositories{Users: memory.NewUserRepo(), Spaces: memory.NewSpaceRepo(), Memberships: memory.NewMembershipRepo(),
 		Entities: memory.NewEntityRepo(), Ops: memory.NewOpRepo(), OTPs: memory.NewOTPRepo(), Sessions: memory.NewSessionRepo(),
-		Pinger: memory.Pinger{}}
+		ChatSessions: memory.NewChatSessionRepo(), ChatMessages: memory.NewChatMessageRepo(), Pinger: memory.Pinger{}}
 }
 
 // NewRepositories builds the repositories for cfg.StoreKind. For MongoDB it connects, pings and
@@ -56,6 +58,7 @@ func NewRepositories(cfg *config.Store, log logger.ILogger) (*Repositories, func
 		Users: mongorepo.NewUserRepo(db, log), Spaces: mongorepo.NewSpaceRepo(db, log),
 		Memberships: mongorepo.NewMembershipRepo(db, log), Entities: mongorepo.NewEntityRepo(db, log),
 		Ops: mongorepo.NewOpRepo(db, log), OTPs: mongorepo.NewOTPRepo(db, log), Sessions: mongorepo.NewSessionRepo(db, log),
+		ChatSessions: mongorepo.NewChatSessionRepo(db, log), ChatMessages: mongorepo.NewChatMessageRepo(db, log),
 		Pinger: db,
 	}, cleanup, nil
 }

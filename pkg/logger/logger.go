@@ -25,7 +25,9 @@ type slogLogger struct{ l *slog.Logger }
 
 var sensitiveParts = []string{"token", "otp", "code", "secret", "password", "pass", "authorization", "hash", "uri",
 	// private health/profile data (period tracker, gender) must never reach logs
-	"period", "gender", "symptom", "mood", "flow", "startdate", "enddate"}
+	"period", "gender", "symptom", "mood", "flow", "startdate", "enddate",
+	// AI chat text is private user input and model output
+	"content", "prompt", "title"}
 
 const redacted = "[REDACTED]"
 

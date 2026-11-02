@@ -87,6 +87,17 @@ func EnsureIndexes(ctx context.Context, db drivers.IMongoDB) error {
 		mongo.IndexModel{Keys: asc("email", "createdAt")}); err != nil {
 		return err
 	}
+	if err := idx(constants.CollChatSessions,
+		mongo.IndexModel{Keys: bson.D{{Key: "userId", Value: 1}, {Key: "updatedAt", Value: -1}}}); err != nil {
+		return err
+	}
+	// The status/runAt/createdAt index serves bloom-health-task-worker's claim query.
+	if err := idx(constants.CollChatMessages,
+		mongo.IndexModel{Keys: asc("sessionId", "idx"), Options: options.Index().SetUnique(true)},
+		mongo.IndexModel{Keys: asc("status", "runAt", "createdAt")},
+		mongo.IndexModel{Keys: asc("userId", "role", "createdAt")}); err != nil {
+		return err
+	}
 	return idx(constants.CollSessions,
 		mongo.IndexModel{Keys: asc("tokenHash"), Options: options.Index().SetUnique(true)},
 		mongo.IndexModel{Keys: asc("familyId")},

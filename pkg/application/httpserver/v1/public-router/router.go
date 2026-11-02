@@ -29,6 +29,14 @@ func RegisterRoutes(v1 *gin.RouterGroup) {
 	authed.GET("/workouts", ListWorkouts)
 	authed.GET("/stats/summary", StatsSummary)
 	authed.GET("/sync/pull", SyncPull)
+	// AI chat: any role, every session is private to the calling user
+	authed.GET("/chat/models", ListChatModels)
+	authed.POST("/chat/sessions", CreateChatSession)
+	authed.GET("/chat/sessions", ListChatSessions)
+	authed.GET("/chat/sessions/:sid", GetChatSession)
+	authed.DELETE("/chat/sessions/:sid", DeleteChatSession)
+	authed.GET("/chat/sessions/:sid/messages", ListChatMessages)
+	authed.POST("/chat/sessions/:sid/messages", SendChatMessage)
 
 	owner := authed.Group("", middleware.RequireOwner())
 	owner.PATCH("/settings", PatchSettings)

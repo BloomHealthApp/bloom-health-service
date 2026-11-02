@@ -33,3 +33,15 @@ func TestPeriodAndGenderFieldsAreRedacted(t *testing.T) {
 	}
 	require.Contains(t, out, `"route":"/v1/periods"`)
 }
+
+func TestChatTextFieldsAreRedacted(t *testing.T) {
+	var buf bytes.Buffer
+	l := NewWithWriter(&buf, "info")
+	l.Info(context.Background(), "msg", map[string]any{"content": "private-a", "systemPrompt": "private-b", "title": "private-c",
+		"sessionId": "s1"})
+	out := buf.String()
+	for _, s := range []string{"private-a", "private-b", "private-c"} {
+		require.NotContains(t, out, s)
+	}
+	require.Contains(t, out, `"sessionId":"s1"`)
+}

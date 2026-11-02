@@ -4,5 +4,11 @@
   "store": { "kind": "mongo", "mongoDb": "bubu_bloom" },
   "auth": { "issuer": "bloom-health", "otpResendSeconds": 30 },
   "mail": { "kind": "smtp", "smtpPort": "587", "from": "Bloom Health <no-reply@localhost>" },
-  "account": { "defaultTimezone": "Asia/Kolkata", "defaultCountryCode": "+91" }
+  "account": { "defaultTimezone": "Asia/Kolkata", "defaultCountryCode": "+91" },
+  "chat": {
+    "dailyMessageCap": 100,
+    "models": [
+      { "id": "groq-llama-3.3-70b", "label": "Llama 3.3 70B", "vendor": "groq", "providerModelId": "llama-3.3-70b-versatile", "contextWindow": 128000, "default": true }
+    ]
+  }
 }

@@ -51,6 +51,9 @@ func InitializeApp() (AppInterface, func(), error) {
 	iStatsService := service.NewStatsService(iLogger, iEntityRepo, iUserRepo, iMembershipRepo, clockClock)
 	iPinger := repositories.Pinger
 	iHealthService := service.NewHealthService(iLogger, store, iPinger, clockClock)
+	iChatSessionRepo := repositories.ChatSessions
+	iChatMessageRepo := repositories.ChatMessages
+	iChatService := service.NewChatService(iLogger, store, iChatSessionRepo, iChatMessageRepo, clockClock)
 	diAppLogic := &appLogic{
 		logger:    iLogger,
 		config:    store,
@@ -67,6 +70,7 @@ func InitializeApp() (AppInterface, func(), error) {
 		stats:     iStatsService,
 		provision: iProvisionService,
 		health:    iHealthService,
+		chat:      iChatService,
 	}
 	return diAppLogic, func() {
 		cleanup()
@@ -96,6 +100,9 @@ func InitializeTestApp(cfg *config.Store, log logger.ILogger, clk clock.Clock, m
 	iStatsService := service.NewStatsService(log, iEntityRepo, iUserRepo, iMembershipRepo, clk)
 	iPinger := repos.Pinger
 	iHealthService := service.NewHealthService(log, cfg, iPinger, clk)
+	iChatSessionRepo := repos.ChatSessions
+	iChatMessageRepo := repos.ChatMessages
+	iChatService := service.NewChatService(log, cfg, iChatSessionRepo, iChatMessageRepo, clk)
 	diAppLogic := &appLogic{
 		logger:    log,
 		config:    cfg,
@@ -112,6 +119,7 @@ func InitializeTestApp(cfg *config.Store, log logger.ILogger, clk clock.Clock, m
 		stats:     iStatsService,
 		provision: iProvisionService,
 		health:    iHealthService,
+		chat:      iChatService,
 	}
 	return diAppLogic, nil
 }
@@ -119,10 +127,10 @@ func InitializeTestApp(cfg *config.Store, log logger.ILogger, clk clock.Clock, m
 // container.go:
 
 // services are shared by the production and the test injector.
-var services = wire.NewSet(service.NewAuthService, service.NewUserService, service.NewHabitService, service.NewDailyLogService, service.NewWorkoutService, service.NewPeriodService, service.NewSettingsService, service.NewSyncService, service.NewStatsService, service.NewProvisionService, service.NewHealthService)
+var services = wire.NewSet(service.NewAuthService, service.NewUserService, service.NewHabitService, service.NewDailyLogService, service.NewWorkoutService, service.NewPeriodService, service.NewSettingsService, service.NewSyncService, service.NewStatsService, service.NewProvisionService, service.NewHealthService, service.NewChatService)
 
 var repositoryFields = wire.FieldsOf(new(*Repositories),
-	"Users", "Spaces", "Memberships", "Entities", "Ops", "OTPs", "Sessions", "Pinger")
+	"Users", "Spaces", "Memberships", "Entities", "Ops", "OTPs", "Sessions", "ChatSessions", "ChatMessages", "Pinger")
 
 var app = wire.NewSet(ratelimit.NewSet, services,
 	repositoryFields, wire.Struct(new(appLogic), "*"), wire.Bind(new(AppInterface), new(*appLogic)),

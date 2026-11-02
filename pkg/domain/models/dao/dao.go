@@ -148,3 +148,50 @@ type OpRecord struct {
 	Entity      *Entity
 	CreatedAt   time.Time
 }
+
+// ChatSession is one AI chat conversation, owned by a single user. Its shape is shared with
+// bloom-health-task-worker (docs/chat-contract.md), so field names must not change on one side only.
+type ChatSession struct {
+	ID      string `bson:"_id"`
+	UserID  string `bson:"userId"`
+	SpaceID string `bson:"spaceId"`
+	Title   string `bson:"title"`
+	ModelID string `bson:"modelId"`
+	// ContextScopes names the user data the worker may add to the prompt; always empty in v1.
+	ContextScopes []string `bson:"contextScopes"`
+	// ActiveTurnID is the id of the pending assistant message; nil when no turn is in flight.
+	ActiveTurnID *string    `bson:"activeTurnId"`
+	NextIdx      int        `bson:"nextIdx"`
+	Version      int        `bson:"version"`
+	CreatedAt    time.Time  `bson:"createdAt"`
+	UpdatedAt    time.Time  `bson:"updatedAt"`
+	DeletedAt    *time.Time `bson:"deletedAt"`
+}
+
+// ChatUsage is the token usage the worker reports for an assistant message.
+type ChatUsage struct {
+	InputTokens  int `bson:"inputTokens"`
+	OutputTokens int `bson:"outputTokens"`
+}
+
+// ChatMessage is one turn of a chat session. Assistant messages double as the worker's job queue:
+// the service inserts them pending and bloom-health-task-worker claims and settles them.
+type ChatMessage struct {
+	ID           string     `bson:"_id"`
+	SessionID    string     `bson:"sessionId"`
+	UserID       string     `bson:"userId"`
+	Idx          int        `bson:"idx"`
+	Role         string     `bson:"role"`
+	Content      string     `bson:"content"`
+	Status       string     `bson:"status"`
+	ModelID      string     `bson:"modelId"`
+	Attempt      int        `bson:"attempt"`
+	RunAt        time.Time  `bson:"runAt"`
+	LockedUntil  *time.Time `bson:"lockedUntil"`
+	ErrorCode    string     `bson:"errorCode,omitempty"`
+	Usage        *ChatUsage `bson:"usage,omitempty"`
+	FinishReason string     `bson:"finishReason,omitempty"`
+	LatencyMs    int        `bson:"latencyMs,omitempty"`
+	CreatedAt    time.Time  `bson:"createdAt"`
+	UpdatedAt    time.Time  `bson:"updatedAt"`
+}

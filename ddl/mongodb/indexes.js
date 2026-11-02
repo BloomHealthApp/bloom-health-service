@@ -5,7 +5,7 @@
 //   mongosh "$MONGODB_URI" --file ddl/mongodb/indexes.js
 //
 // Collections: users, memberships, sharedSpaces, habits, dailyHabitLogs, workoutSessions, settings, periods,
-// appliedOperations, otpChallenges, refreshSessions, counters (per-space sync sequence).
+// appliedOperations, otpChallenges, refreshSessions, counters (per-space sync sequence), chatSessions, chatMessages.
 // Writes use single-document compare-and-swap on `version`; no multi-document transactions are needed.
 
 const dbName = process.env.MONGODB_DB || "bubu_bloom";
@@ -41,3 +41,11 @@ d.otpChallenges.createIndex({ email: 1, createdAt: 1 });
 d.refreshSessions.createIndex({ tokenHash: 1 }, { unique: true });
 d.refreshSessions.createIndex({ familyId: 1 });
 d.refreshSessions.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
+// AI chat (shared with bloom-health-task-worker, see docs/chat-contract.md): sessions listed per user by
+// recency; messages unique per (sessionId, idx); (status, runAt, createdAt) serves the worker's claim
+// query; (userId, role, createdAt) serves the daily message cap.
+d.chatSessions.createIndex({ userId: 1, updatedAt: -1 });
+d.chatMessages.createIndex({ sessionId: 1, idx: 1 }, { unique: true });
+d.chatMessages.createIndex({ status: 1, runAt: 1, createdAt: 1 });
+d.chatMessages.createIndex({ userId: 1, role: 1, createdAt: 1 });

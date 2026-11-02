@@ -46,3 +46,10 @@ Access: public = no token; both = any member; owner = `RequireOwner`.
 | `GET /v1/stats/summary` | both | Stats | [stats.md](stats.md) |
 | `POST /v1/sync/push` | owner | Sync | [sync.md](sync.md) |
 | `GET /v1/sync/pull` | both | Sync | [sync.md](sync.md) |
+| `GET /v1/chat/models` | both | Chat | [chat.md](chat.md) |
+| `POST /v1/chat/sessions` | both | Chat | [chat.md](chat.md) |
+| `GET /v1/chat/sessions` | both | Chat | [chat.md](chat.md) |
+| `GET /v1/chat/sessions/:sid` | both | Chat | [chat.md](chat.md) |
+| `DELETE /v1/chat/sessions/:sid` | both | Chat | [chat.md](chat.md) |
+| `GET /v1/chat/sessions/:sid/messages` | both | Chat | [chat.md](chat.md) |
+| `POST /v1/chat/sessions/:sid/messages` | both | Chat | [chat.md](chat.md) |
