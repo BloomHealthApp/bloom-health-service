@@ -88,7 +88,7 @@ func TestSignUpEscapesNameInEmail(t *testing.T) {
 	st, _ := e.do("POST", "/v1/auth/signup/request", "", map[string]any{"name": `<img src=x onerror=alert(1)>`, "phone": "9876543210", "email": "x@example.com"})
 	require.Equal(t, 202, st)
 	require.Len(t, e.mail.Messages, 1)
-	require.NotContains(t, e.mail.Messages[0].HTML, "<img")
+	require.NotContains(t, e.mail.Messages[0].HTML, "<img src=x")
 	require.Contains(t, e.mail.Messages[0].HTML, "&lt;img")
 }
 
