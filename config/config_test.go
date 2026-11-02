@@ -43,8 +43,8 @@ func TestNewConfigChat(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 100, cfg.Chat.DailyMessageCap)
 	require.Len(t, cfg.Chat.Models, 1)
-	assert.Equal(t, ChatModel{ID: "groq-llama-3.3-70b", Label: "Llama 3.3 70B", Vendor: "groq",
-		ProviderModelID: "llama-3.3-70b-versatile", ContextWindow: 128000, Default: true}, cfg.Chat.Models[0])
+	assert.Equal(t, ChatModel{ID: "groq-gpt-oss-120b", Label: "GPT-OSS 120B", Vendor: "groq",
+		ProviderModelID: "openai/gpt-oss-120b", ContextWindow: 131072, Default: true}, cfg.Chat.Models[0])
 
 	t.Setenv("CHAT_DAILY_MESSAGE_CAP", "7")
 	cfg, err = NewConfig()

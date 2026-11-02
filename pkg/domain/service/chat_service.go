@@ -157,7 +157,12 @@ func (s *chatService) SendMessage(ctx context.Context, actor *serviceBos.Actor, 
 	if herr != nil {
 		return nil, herr
 	}
-	modelID, herr := s.resolveModel(req.ModelID, sess.ModelID)
+	fallback := sess.ModelID
+	if _, ok := s.cfg.Model(fallback); !ok {
+		// the chat's model was retired from the catalogue; the worker could only fail it
+		fallback = s.cfg.DefaultModel().ID
+	}
+	modelID, herr := s.resolveModel(req.ModelID, fallback)
 	if herr != nil {
 		return nil, herr
 	}

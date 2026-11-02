@@ -34,7 +34,7 @@ func createChatService(ctrl *gomock.Controller, setup func(m *chatMocks)) IChatS
 }
 
 func chatSession(title string) *dao.ChatSession {
-	return &dao.ChatSession{ID: "s1", UserID: "u1", SpaceID: "space1", Title: title, ModelID: "groq-llama-3.3-70b"}
+	return &dao.ChatSession{ID: "s1", UserID: "u1", SpaceID: "space1", Title: title, ModelID: "groq-gpt-oss-120b"}
 }
 
 func sendReq() *request.SendChatMessageReq {
@@ -99,4 +99,26 @@ func TestChatFirstMessageNamesDefaultTitledSession(t *testing.T) {
 	require.Nil(t, herr)
 	require.Equal(t, "pending", resp.AssistantMessage.Status)
 	require.Equal(t, 1, resp.AssistantMessage.Idx)
+}
+
+// A chat created with a model that has since left the catalogue must not queue turns for it.
+func TestChatSendUsesDefaultModelWhenChatModelWasRetired(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	svc := createChatService(ctrl, func(m *chatMocks) {
+		sess := chatSession("Sleep")
+		sess.ModelID = "groq-llama-3.3-70b"
+		m.sessions.EXPECT().Get(gomock.Any(), "u1", "s1").Return(sess, nil)
+		m.messages.EXPECT().CountUserMessagesSince(gomock.Any(), "u1", gomock.Any()).Return(0, nil)
+		m.sessions.EXPECT().BeginTurn(gomock.Any(), "u1", "s1", gomock.Any(), gomock.Any()).Return(2, nil)
+		m.messages.EXPECT().Insert(gomock.Any(), gomock.Any(), gomock.Any()).
+			DoAndReturn(func(_ context.Context, msgs ...*dao.ChatMessage) error {
+				for _, msg := range msgs {
+					require.Equal(t, config.DefaultChatModels()[0].ID, msg.ModelID)
+				}
+				return nil
+			})
+	})
+	resp, herr := svc.SendMessage(context.Background(), actorWithRole(userrole.Owner), sendReq())
+	require.Nil(t, herr)
+	require.Equal(t, "groq-gpt-oss-120b", resp.AssistantMessage.ModelID)
 }

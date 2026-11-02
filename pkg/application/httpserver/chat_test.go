@@ -39,7 +39,7 @@ func TestChatModels(t *testing.T) {
 	items := body["items"].([]any)
 	require.Len(t, items, 1)
 	m := items[0].(map[string]any)
-	require.Equal(t, "groq-llama-3.3-70b", m["id"])
+	require.Equal(t, "groq-gpt-oss-120b", m["id"])
 	require.Equal(t, true, m["default"])
 	require.NotContains(t, m, "providerModelId")
 }
@@ -52,7 +52,7 @@ func TestChatSendAndPoll(t *testing.T) {
 	st, body := e.do("GET", "/v1/chat/sessions/"+sid, tok, nil)
 	require.Equal(t, 200, st)
 	require.Equal(t, "New chat", body["title"])
-	require.Equal(t, "groq-llama-3.3-70b", body["modelId"])
+	require.Equal(t, "groq-gpt-oss-120b", body["modelId"])
 	require.Nil(t, body["pendingMessageId"])
 	require.Equal(t, []any{}, body["contextScopes"])
 
@@ -165,7 +165,7 @@ func TestChatValidation(t *testing.T) {
 		require.Equal(t, 400, st, c.body)
 		require.Equal(t, "validation_failed", errCode(body))
 	}
-	st, body := e.do("POST", "/v1/chat/sessions", tok, map[string]any{"title": "  Sleep  ", "modelId": "groq-llama-3.3-70b"})
+	st, body := e.do("POST", "/v1/chat/sessions", tok, map[string]any{"title": "  Sleep  ", "modelId": "groq-gpt-oss-120b"})
 	require.Equal(t, 201, st)
 	require.Equal(t, "Sleep", body["title"])
 	st, _ = e.do("POST", "/v1/chat/sessions/"+sid+"/messages", tok, map[string]any{"content": strings.Repeat("é", 4000)})

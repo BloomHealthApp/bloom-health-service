@@ -66,7 +66,7 @@ Config, not a collection, in both repos (`chat.models[]`). The service validates
 
 | id | vendor | providerModelId | contextWindow |
 |---|---|---|---|
-| `groq-llama-3.3-70b` (default) | `groq` | `llama-3.3-70b-versatile` | 128000 |
+| `groq-gpt-oss-120b` (default) | `groq` | `openai/gpt-oss-120b` | 131072 |
 
 ## Privacy
 - Message content and titles are private user data: neither service logs them (both loggers redact `content`, `prompt`, `title`).

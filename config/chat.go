@@ -25,8 +25,8 @@ type ChatConfig struct {
 
 // DefaultChatModels is the v1 catalogue: one free Groq model.
 func DefaultChatModels() []ChatModel {
-	return []ChatModel{{ID: "groq-llama-3.3-70b", Label: "Llama 3.3 70B", Vendor: "groq",
-		ProviderModelID: "llama-3.3-70b-versatile", ContextWindow: 128000, Default: true}}
+	return []ChatModel{{ID: "groq-gpt-oss-120b", Label: "GPT-OSS 120B", Vendor: "groq",
+		ProviderModelID: "openai/gpt-oss-120b", ContextWindow: 131072, Default: true}}
 }
 
 // WithDefaults fills unset values, so a zero ChatConfig (tests) behaves like the shipped config.
