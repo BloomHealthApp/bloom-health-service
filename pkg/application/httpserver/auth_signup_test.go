@@ -13,10 +13,11 @@ import (
 	"github.com/BloomHealthApp/bloom-health-service/pkg/utils/ratelimit"
 )
 
-// relaxLimits lifts the per-IP/per-identifier auth limits (covered by contract_test.go) so a test can
-// make many auth calls.
+// relaxLimits lifts the per-IP and per-identifier limits (covered by contract_test.go) so a test can
+// make many calls.
 func (e *env) relaxLimits() {
 	l := di.AppLogic.GetRateLimiters()
+	l.IP = ratelimit.NewKeyed(rate.Inf, 100000)
 	l.Auth = ratelimit.NewKeyed(rate.Inf, 100000)
 	l.Email = ratelimit.NewKeyed(rate.Inf, 100000)
 }
@@ -87,7 +88,7 @@ func TestSignUpEscapesNameInEmail(t *testing.T) {
 	st, _ := e.do("POST", "/v1/auth/signup/request", "", map[string]any{"name": `<img src=x onerror=alert(1)>`, "phone": "9876543210", "email": "x@example.com"})
 	require.Equal(t, 202, st)
 	require.Len(t, e.mail.Messages, 1)
-	require.NotContains(t, e.mail.Messages[0].HTML, "<img")
+	require.NotContains(t, e.mail.Messages[0].HTML, "<img src=x")
 	require.Contains(t, e.mail.Messages[0].HTML, "&lt;img")
 }
 

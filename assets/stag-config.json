@@ -2,7 +2,7 @@
   "server": { "port": "3000", "trustProxy": false, "version": "1.0.0" },
   "log": { "level": "info" },
   "store": { "kind": "mongo", "mongoDb": "bubu_bloom_stag" },
-  "auth": { "issuer": "bubu-bloom", "otpResendSeconds": 30 },
+  "auth": { "issuer": "bloom-health", "otpResendSeconds": 30 },
   "mail": { "kind": "smtp", "smtpPort": "587", "from": "Bloom Health <no-reply@localhost>" },
   "account": { "defaultTimezone": "Asia/Kolkata", "defaultCountryCode": "+91" }
 }

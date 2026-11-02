@@ -14,7 +14,7 @@ The service makes no outbound HTTP calls. Its only runtime external services are
 - **Access:** use a dedicated `readWrite` user on this database only, and restrict Atlas Network Access to the host's egress IPs.
 - **Automatic expiry (TTL indexes):** `appliedOperations` after 60 days, plus `otpChallenges` and `refreshSessions` at `expiresAt`.
 - **Collections:** `users`, `sharedSpaces`, `memberships`, `habits`, `dailyHabitLogs`, `workoutSessions`, `settings`, `periods`, `appliedOperations`, `otpChallenges`, `refreshSessions`, `counters`.
-- **Names:** the database (`bubu_bloom`) and JWT issuer (`bubu-bloom`) keep an older project name. Renaming them isn't cosmetic: it would point the service at a different database or invalidate access tokens.
+- **Names:** the database (`bubu_bloom`) keeps an older project name. Renaming it isn't cosmetic: it would point the service at a different database. The JWT issuer is `bloom-health`; changing it invalidates current access tokens, but not refresh tokens.
 - **Testing:** see `_shared/testing-limits.md`.
 
 ### SMTP
