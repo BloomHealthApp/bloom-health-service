@@ -90,8 +90,18 @@ Viewer freshness: pull on app foreground, tab focus, pull-to-refresh, and every 
 
 Client retry: exponential backoff 2s→5min with jitter on network/5xx; never retry `rejected`; mark `failed` after 8 attempts (user can retry manually). Status chip: `synced | pending(n) | failed(n) | offline`.
 
+## Chat (Bloomy, the AI assistant)
+Online only: these endpoints do not go through sync. Any role may chat; every session is private to the user who created it (other users, including the owner/viewer of the same space, get `404`). v1 sends only the conversation to the model, never habits, logs, workouts, periods or profile data.
+`ChatModel`: `{id, label, vendor, default (bool)}`. `ChatSession`: `{id, title, modelId, contextScopes ([], reserved), pendingMessageId (string|null: the assistant message being answered), createdAt, updatedAt}`.
+`ChatMessage`: `{id, sessionId, idx (int, 0-based, ascending), role ("user"|"assistant"), content, status ("pending"|"succeeded"|"failed"), modelId, errorCode (string|null), createdAt, updatedAt}`.
+- `GET /chat/models` → `{items: [ChatModel]}`.
+- `POST /chat/sessions` `{title? (1-80 chars), modelId?}` → `201 ChatSession`. Default title `"New chat"`, replaced by the start of the first message. `contextScopes` other than `[]` → 400 (not supported yet).
+- `GET /chat/sessions` → `{items: [ChatSession]}`, most recently updated first (at most 100). `GET /chat/sessions/{id}` → ChatSession. `DELETE /chat/sessions/{id}` → 204 (soft delete; later calls → 404).
+- `GET /chat/sessions/{id}/messages?before&limit` → `{items: [ChatMessage] oldest first, hasMore, nextBefore (int|null)}`. `limit` 1-50 (default 30); pass `nextBefore` as `before` to load older messages.
+- `POST /chat/sessions/{id}/messages` `{content (1-4000 chars, trimmed), modelId?}` → `202 {userMessage, assistantMessage}`; the assistant message is `pending` with empty `content`. Poll `GET .../messages` (about every 1.5 s) until it is `succeeded` or `failed`. One reply at a time per session: `409 conflict` with `details.reason = "turn_in_flight"` while one is pending. `429 rate_limited` (with `Retry-After`) after 100 messages per user per UTC day.
+
 ## Health
 `GET /health` → `{status:"ok", time, version}` (no auth, no DB detail).
 
 ## Security notes
-No DB URIs/secrets in the app. Access token 15 min (HS256/EdDSA via env key), refresh rotation, rate limits on `/auth/*` (per IP + per email). Logs never contain tokens, OTPs, wellness values or period/gender data. Period data is stored in the same MongoDB as everything else (not end-to-end encrypted); privacy is enforced by server-side filtering.
+No DB URIs/secrets in the app. Access token 15 min (HS256/EdDSA via env key), refresh rotation, rate limits on `/auth/*` (per IP + per email). Logs never contain tokens, OTPs, wellness values, period/gender data or chat text. Chat messages are sent to a third-party model provider (Groq) by the worker; the app never talks to the provider. Period data is stored in the same MongoDB as everything else (not end-to-end encrypted); privacy is enforced by server-side filtering.

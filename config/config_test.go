@@ -32,3 +32,33 @@ func TestNewConfigCORSOrigins(t *testing.T) {
 		})
 	}
 }
+
+func TestNewConfigChat(t *testing.T) {
+	t.Setenv("ACTIVE_ENV", "DEV")
+	t.Setenv("STORE", "memory")
+	t.Setenv("MAILER", "console")
+	t.Setenv("ACCESS_TOKEN_SECRET", "test-secret-test-secret-test-secret")
+
+	cfg, err := NewConfig()
+	require.NoError(t, err)
+	assert.Equal(t, 100, cfg.Chat.DailyMessageCap)
+	require.Len(t, cfg.Chat.Models, 1)
+	assert.Equal(t, ChatModel{ID: "groq-llama-3.3-70b", Label: "Llama 3.3 70B", Vendor: "groq",
+		ProviderModelID: "llama-3.3-70b-versatile", ContextWindow: 128000, Default: true}, cfg.Chat.Models[0])
+
+	t.Setenv("CHAT_DAILY_MESSAGE_CAP", "7")
+	cfg, err = NewConfig()
+	require.NoError(t, err)
+	assert.Equal(t, 7, cfg.Chat.DailyMessageCap)
+}
+
+func TestChatConfigValidate(t *testing.T) {
+	m := DefaultChatModels()[0]
+	other := m
+	other.ID, other.Default = "other", false
+	assert.NoError(t, ChatConfig{Models: []ChatModel{m, other}}.Validate())
+	assert.Error(t, ChatConfig{Models: []ChatModel{m, m}}.Validate(), "duplicate id")
+	other.Default = true
+	assert.Error(t, ChatConfig{Models: []ChatModel{m, other}}.Validate(), "two defaults")
+	assert.Error(t, ChatConfig{Models: []ChatModel{{ID: "x", Default: true}}}.Validate(), "missing vendor")
+}

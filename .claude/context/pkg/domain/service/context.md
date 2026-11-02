@@ -25,6 +25,7 @@
 | `ISettingsService` | [settings_service.md](settings_service.md) | entities, Sync |
 | `IStatsService` | [stats_service.md](stats_service.md) | entities, users, memberships |
 | `IHealthService` | [health_service.md](health_service.md) | `drivers.IPinger` |
+| `IChatService` | [chat_service.md](chat_service.md) | chat sessions, chat messages, `config.ChatConfig` |
 
 Shared helper: [entity_writer.md](entity_writer.md).
 

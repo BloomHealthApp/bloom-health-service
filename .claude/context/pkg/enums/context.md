@@ -8,3 +8,4 @@ Follow the existing shape: constants, `Values()` and `Valid(s)`.
 
 ## Gotchas
 `avatar` differs: its allowlist is `bubu-01` to `bubu-15`, exposed through `All()` and `IsValid(s)`.
+`chatstatus.Wire` maps the worker-only `running` to `pending` for clients.

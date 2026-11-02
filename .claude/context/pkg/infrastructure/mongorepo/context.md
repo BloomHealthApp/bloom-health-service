@@ -11,3 +11,7 @@ Repository interfaces and MongoDB implementations, with in-memory fakes in `memo
 
 ## Related
 `_shared/testing-limits.md`, `ddl/mongodb/context.md`
+
+## Gotchas
+- `chat.go` (chat sessions and messages) shares its collections with `bloom-health-task-worker`; field names are fixed by `docs/chat-contract.md`. `BeginTurn` returns the session's `nextIdx` before the `$inc` and tells "missing" from "turn in flight" with a follow-up `Get`.
+- `memory.SettleForTest` lets HTTP tests play the worker's part; it is not part of `IChatMessageRepo`.

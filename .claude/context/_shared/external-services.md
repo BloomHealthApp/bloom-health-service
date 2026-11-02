@@ -1,6 +1,6 @@
 # External services and dependencies
 
-The service makes no outbound HTTP calls. Its only runtime external services are MongoDB and SMTP.
+The service makes no outbound HTTP calls. Its only runtime external services are MongoDB and SMTP. AI chat replies come from `bloom-health-task-worker`, which shares the MongoDB database and calls the model provider (Groq); this service holds no model API key.
 
 ## Runtime services
 | Service | Used for | Code | Configuration |
@@ -13,7 +13,7 @@ The service makes no outbound HTTP calls. Its only runtime external services are
 - **Startup:** the service connects, pings and runs `EnsureIndexes`. It needs `createIndex` rights, or see `ddl/mongodb/indexes.js`.
 - **Access:** use a dedicated `readWrite` user on this database only, and restrict Atlas Network Access to the host's egress IPs.
 - **Automatic expiry (TTL indexes):** `appliedOperations` after 60 days, plus `otpChallenges` and `refreshSessions` at `expiresAt`.
-- **Collections:** `users`, `sharedSpaces`, `memberships`, `habits`, `dailyHabitLogs`, `workoutSessions`, `settings`, `periods`, `appliedOperations`, `otpChallenges`, `refreshSessions`, `counters`.
+- **Collections:** `users`, `sharedSpaces`, `memberships`, `habits`, `dailyHabitLogs`, `workoutSessions`, `settings`, `periods`, `appliedOperations`, `otpChallenges`, `refreshSessions`, `counters`, `chatSessions`, `chatMessages` (the last two are shared with bloom-health-task-worker, see `docs/chat-contract.md`).
 - **Names:** the database (`bubu_bloom`) keeps an older project name. Renaming it isn't cosmetic: it would point the service at a different database. The JWT issuer is `bloom-health`; changing it invalidates current access tokens, but not refresh tokens.
 - **Testing:** see `_shared/testing-limits.md`.
 
@@ -22,6 +22,11 @@ The service makes no outbound HTTP calls. Its only runtime external services are
 - No provider is fixed in the code. A provider API would be a new `smtp.IMailer` implementation.
 - `prod-config.json` has a `no-reply@localhost` sender, so set `MAIL_FROM` in production.
 - `net/smtp` is used, and it doesn't take the request's context, so there is no per-send timeout from the caller.
+
+## Sibling services
+| Service | Notes |
+|---|---|
+| `bloom-health-task-worker` | Separate repo. Claims pending `chatMessages`, calls Groq (`llama-3.3-70b-versatile`, free tier) with `GROQ_API_KEY`, and settles them. Must use the same database and the same `chat.models` catalogue. Contract: `docs/chat-contract.md`. |
 
 ## Clients
 | Client | Notes |
