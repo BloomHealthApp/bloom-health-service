@@ -22,11 +22,11 @@ func TestOTPEmailSignInContent(t *testing.T) {
 	require.Contains(t, html, "Bloom Health")
 	require.Contains(t, html, "Welcome back")
 	require.Contains(t, html, "10 minutes")
-	require.Contains(t, html, "</span><span", "tiles have no whitespace between them, so the code copies unbroken")
-	require.Equal(t, 6, strings.Count(html, "display:inline-block"), "one tile per digit")
-	for _, img := range inlineImages {
-		require.Contains(t, html, "cid:"+img.cid)
-	}
+	require.Contains(t, html, ">123456<", "the code stays one unbroken string, so it copies cleanly")
+	require.Contains(t, html, "&#129419;", "the logo")
+	require.Contains(t, html, "linear-gradient", "the page background")
+	require.NotContains(t, html, "<img", "images show up as attachments or get blocked")
+	require.NotContains(t, html, "display:none", "hidden text looks like spam")
 	require.NotContains(t, html, "<script")
 	require.NotContains(t, html, "http://", "no remote resources")
 	require.NotContains(t, html, "%!", "no formatting errors")
@@ -60,6 +60,9 @@ func TestBuildMessageIsValidMultipart(t *testing.T) {
 	m, err := mail.ReadMessage(strings.NewReader(string(raw)))
 	require.NoError(t, err)
 	require.Equal(t, "user@example.com", m.Header.Get("To"))
+	_, err = m.Header.Date()
+	require.NoError(t, err)
+	require.Regexp(t, `^<[0-9a-f]{32}@example\.com>$`, m.Header.Get("Message-ID"))
 	mt, params, err := mime.ParseMediaType(m.Header.Get("Content-Type"))
 	require.NoError(t, err)
 	require.Equal(t, "multipart/alternative", mt)
@@ -84,48 +87,6 @@ func TestBuildMessageIsValidMultipart(t *testing.T) {
 	require.Contains(t, types[1], "text/html")
 	require.Equal(t, "plain 123456", bodies[0])
 	require.Equal(t, "<p>html 123456 🌸</p>", bodies[1])
-}
-
-func TestBuildMessageAttachesReferencedImages(t *testing.T) {
-	_, text, html := OTPEmail(OTPSignIn, "", "123456", 10)
-	raw, err := buildMessage("a@example.com", "user@example.com", "s", text, html)
-	require.NoError(t, err)
-	m, err := mail.ReadMessage(strings.NewReader(string(raw)))
-	require.NoError(t, err)
-	_, params, err := mime.ParseMediaType(m.Header.Get("Content-Type"))
-	require.NoError(t, err)
-
-	mr := multipart.NewReader(m.Body, params["boundary"])
-	first, err := mr.NextPart()
-	require.NoError(t, err)
-	require.Contains(t, first.Header.Get("Content-Type"), "text/plain")
-	second, err := mr.NextPart()
-	require.NoError(t, err)
-	mt, relParams, err := mime.ParseMediaType(second.Header.Get("Content-Type"))
-	require.NoError(t, err)
-	require.Equal(t, "multipart/related", mt)
-
-	rel := multipart.NewReader(second, relParams["boundary"])
-	htmlPart, err := rel.NextPart()
-	require.NoError(t, err)
-	require.Contains(t, htmlPart.Header.Get("Content-Type"), "text/html")
-	var cids []string
-	for {
-		p, err := rel.NextPart()
-		if err == io.EOF {
-			break
-		}
-		require.NoError(t, err)
-		require.Equal(t, "image/png", p.Header.Get("Content-Type"))
-		b, err := io.ReadAll(p)
-		require.NoError(t, err)
-		dec, err := base64.StdEncoding.DecodeString(strings.ReplaceAll(string(b), "\r\n", ""))
-		require.NoError(t, err)
-		require.True(t, strings.HasPrefix(string(dec), "\x89PNG"))
-		cids = append(cids, p.Header.Get("Content-Id"))
-	}
-	require.Len(t, cids, len(inlineImages))
-	require.Less(t, len(raw), 200*1024, "keep the message small enough not to be clipped or rejected")
 }
 
 func TestFormatFromKeepsDisplayName(t *testing.T) {

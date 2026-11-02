@@ -13,6 +13,7 @@ import (
 	"net/smtp"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/BloomHealthApp/bloom-health-service/config"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/logger"
@@ -71,42 +72,31 @@ func formatFrom(from string) (header, addr string) {
 	return a.String(), a.Address
 }
 
+// senderDomain returns the domain of the From address, for the Message-ID.
+func senderDomain(from string) string {
+	if a, err := mail.ParseAddress(from); err == nil {
+		if i := strings.LastIndex(a.Address, "@"); i >= 0 {
+			return a.Address[i+1:]
+		}
+	}
+	return "localhost"
+}
+
 // buildMessage renders a multipart/alternative message (text first, HTML preferred) with base64 bodies.
 func buildMessage(from, to, subject, text, html string) ([]byte, error) {
 	boundary := "bloom-" + hex.EncodeToString(randBytes(12))
 	var b strings.Builder
+	b.WriteString("Date: " + time.Now().Format(time.RFC1123Z) + "\r\n")
+	b.WriteString("Message-ID: <" + hex.EncodeToString(randBytes(16)) + "@" + senderDomain(from) + ">\r\n")
 	b.WriteString("From: " + from + "\r\n")
 	b.WriteString("To: " + to + "\r\n")
 	b.WriteString("Subject: " + mime.QEncoding.Encode("utf-8", subject) + "\r\n")
 	b.WriteString("MIME-Version: 1.0\r\n")
 	b.WriteString("Content-Type: multipart/alternative; boundary=\"" + boundary + "\"\r\n\r\n")
-	b.WriteString("--" + boundary + "\r\n")
-	b.WriteString("Content-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n")
-	writeBase64(&b, []byte(text))
-
-	b.WriteString("--" + boundary + "\r\n")
-	images, err := referencedImages(html)
-	if err != nil {
-		return nil, err
-	}
-	writeHTML := func() {
-		b.WriteString("Content-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n")
-		writeBase64(&b, []byte(html))
-	}
-	if len(images) == 0 {
-		writeHTML()
-	} else {
-		related := "bloom-rel-" + hex.EncodeToString(randBytes(12))
-		b.WriteString("Content-Type: multipart/related; boundary=\"" + related + "\"\r\n\r\n")
-		b.WriteString("--" + related + "\r\n")
-		writeHTML()
-		for _, img := range images {
-			b.WriteString("--" + related + "\r\n")
-			b.WriteString("Content-Type: image/png\r\nContent-Transfer-Encoding: base64\r\n")
-			b.WriteString("Content-ID: <" + img.cid + ">\r\nContent-Disposition: inline; filename=\"" + img.cid + ".png\"\r\n\r\n")
-			writeBase64(&b, img.data)
-		}
-		b.WriteString("--" + related + "--\r\n")
+	for _, part := range []struct{ ctype, body string }{{"text/plain", text}, {"text/html", html}} {
+		b.WriteString("--" + boundary + "\r\n")
+		b.WriteString("Content-Type: " + part.ctype + "; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n")
+		writeBase64(&b, []byte(part.body))
 	}
 	b.WriteString("--" + boundary + "--\r\n")
 	return []byte(b.String()), nil
@@ -119,27 +109,6 @@ func writeBase64(b *strings.Builder, data []byte) {
 		enc = enc[76:]
 	}
 	b.WriteString(enc + "\r\n")
-}
-
-type inlineImage struct {
-	cid  string
-	data []byte
-}
-
-// referencedImages loads the embedded images the HTML points at with cid: URLs.
-func referencedImages(html string) ([]inlineImage, error) {
-	var out []inlineImage
-	for _, img := range inlineImages {
-		if !strings.Contains(html, "cid:"+img.cid) {
-			continue
-		}
-		data, err := imageFS.ReadFile(img.file)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, inlineImage{img.cid, data})
-	}
-	return out, nil
 }
 
 func randBytes(n int) []byte {
