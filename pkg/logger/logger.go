@@ -13,7 +13,8 @@ import (
 	"github.com/BloomHealthApp/bloom-health-service/pkg/utils"
 )
 
-// ILogger is the logging contract used by every layer. The context supplies the request id.
+// ILogger is the logging contract used by every layer. The context supplies the request id and, once
+// authenticated, the user id.
 type ILogger interface {
 	Debug(ctx context.Context, msg string, fields map[string]any)
 	Info(ctx context.Context, msg string, fields map[string]any)
@@ -67,9 +68,14 @@ func (s *slogLogger) log(ctx context.Context, lv slog.Level, msg string, fields 
 	if !s.l.Enabled(ctx, lv) {
 		return
 	}
-	attrs := make([]any, 0, len(fields)*2+2)
+	attrs := make([]any, 0, len(fields)*2+4)
 	if id := utils.GetFromContext(ctx, utils.RequestIDKey); id != "" {
 		attrs = append(attrs, "requestId", id)
+	}
+	if a := utils.GetActor(ctx); a != nil && a.User != nil {
+		if _, set := fields["userId"]; !set {
+			attrs = append(attrs, "userId", a.User.ID)
+		}
 	}
 	for k, v := range fields {
 		if isSensitive(k) {

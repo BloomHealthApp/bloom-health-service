@@ -1,6 +1,6 @@
-# Auth API (`auth.go`)
+# Auth API (`signup-request.go`, `signin-request.go`, `verify-otp.go`, `refresh.go`, `logout.go`)
 
-Service: [auth_service.md](../../../../domain/service/auth_service.md). Contract section: Auth. All routes also pass `LimitAuth` (per IP).
+Service: [auth-service.md](../../../../domain/service/auth-service.md). Contract section: Auth. All routes also pass `LimitAuth` (per IP).
 
 | Route | Success | Per-key limit in the handler |
 |---|---|---|

@@ -11,15 +11,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 
 	"github.com/BloomHealthApp/bloom-health-service/config"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/application/httpserver"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/di"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/bo"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/models/dao"
-	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/serviceBos"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/infrastructure/transport/smtp"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/logger"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/utils/clock"
@@ -30,29 +29,11 @@ type env struct {
 	repos *di.Repositories
 	srv   *httptest.Server
 	mail  *smtp.CaptureMailer
-	auth  *tokenMinter
 	clock *clock.Fake
 }
 
 const secret = "0123456789abcdef0123456789abcdef-test"
 const issuer = "bloom-test"
-
-// tokenMinter signs access tokens for any stored user. The outsider test needs a valid token for a
-// user without membership, which the real login flow (correctly) refuses to issue.
-type tokenMinter struct{ repos *di.Repositories }
-
-type minted struct{ AccessToken string }
-
-func (m *tokenMinter) VerifyOTP(ctx context.Context, email, _ string) (*minted, *dao.User, error) {
-	u, err := m.repos.Users.ByEmail(ctx, email)
-	if err != nil {
-		return nil, nil, err
-	}
-	now := time.Now()
-	at, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{Subject: u.ID, Issuer: issuer,
-		IssuedAt: jwt.NewNumericDate(now), ExpiresAt: jwt.NewNumericDate(now.Add(15 * time.Minute)), ID: uuid.NewString()}).SignedString([]byte(secret))
-	return &minted{AccessToken: at}, u, err
-}
 
 func setup(t *testing.T) *env {
 	t.Helper()
@@ -67,16 +48,16 @@ func setup(t *testing.T) *env {
 	di.AppLogic = app
 
 	prov := app.GetProvisionService()
-	require.NoError(t, prov.Provision(ctx, serviceBos.ProvisionOptions{Owner: serviceBos.Person{Email: "anu@example.com", Name: "Anu"},
-		Viewer: serviceBos.Person{Email: "aman@example.com", Name: "Aman"}, Timezone: "UTC"}))
+	require.NoError(t, prov.Provision(ctx, bo.ProvisionOptions{Owner: bo.Person{Email: "anu@example.com", Name: "Anu"},
+		Viewer: bo.Person{Email: "aman@example.com", Name: "Aman"}, Timezone: "UTC"}))
 	// A second, unrelated space and an unprovisioned-membership user.
-	require.NoError(t, prov.Provision(ctx, serviceBos.ProvisionOptions{Owner: serviceBos.Person{Email: "other-owner@example.com", Name: "Other"},
-		Viewer: serviceBos.Person{Email: "other-viewer@example.com", Name: "Viewer2"}, Timezone: "UTC"}))
+	require.NoError(t, prov.Provision(ctx, bo.ProvisionOptions{Owner: bo.Person{Email: "other-owner@example.com", Name: "Other"},
+		Viewer: bo.Person{Email: "other-viewer@example.com", Name: "Viewer2"}, Timezone: "UTC"}))
 	require.NoError(t, repos.Users.Save(ctx, newUser("outsider@example.com")))
 
 	srv := httptest.NewServer(httpserver.NewRouter())
 	t.Cleanup(srv.Close)
-	return &env{t: t, repos: repos, srv: srv, mail: mailer, auth: &tokenMinter{repos: repos}, clock: clk}
+	return &env{t: t, repos: repos, srv: srv, mail: mailer, clock: clk}
 }
 
 var codeRe = regexp.MustCompile(`\b(\d{6})\b`)

@@ -1,6 +1,6 @@
-# Workouts API (`workouts.go`)
+# Workouts API (`list-workouts.go`, `create-workout.go`, `patch-workout.go`, `delete-workout.go`)
 
-Service: [workout_service.md](../../../../domain/service/workout_service.md). Contract section: Workouts.
+Service: [workout-service.md](../../../../domain/service/workout-service.md). Contract section: Workouts.
 
 | Route | Access | Success |
 |---|---|---|

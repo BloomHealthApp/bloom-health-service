@@ -1,6 +1,6 @@
-# Profile API (`me.go`)
+# Profile API (`get-me.go`, `patch-me.go`, `delete-me.go`, `request-phone-change.go`, `verify-phone-change.go`)
 
-Service: [user_service.md](../../../../domain/service/user_service.md). Contract section: Profile & settings.
+Service: [user-service.md](../../../../domain/service/user-service.md). Contract section: Profile & settings.
 
 | Route | Access | Success |
 |---|---|---|

@@ -1,6 +1,6 @@
-# Health API (`health.go`)
+# Health API (`get-health.go`)
 
-Service: [health_service.md](../../../../domain/service/health_service.md). Contract section: Health.
+Service: [health-service.md](../../../../domain/service/health-service.md). Contract section: Health.
 
 | Route | Access | Success |
 |---|---|---|

@@ -4,7 +4,7 @@ package utils
 import (
 	"context"
 
-	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/serviceBos"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/bo"
 )
 
 // CtxKey is the type of request-context keys.
@@ -32,7 +32,7 @@ func GetFromContext(ctx context.Context, key CtxKey) string {
 }
 
 // GetActor returns the authenticated actor, or nil when the request is unauthenticated.
-func GetActor(ctx context.Context) *serviceBos.Actor {
-	a, _ := ctx.Value(ActorKey).(*serviceBos.Actor)
+func GetActor(ctx context.Context) *bo.Actor {
+	a, _ := ctx.Value(ActorKey).(*bo.Actor)
 	return a
 }

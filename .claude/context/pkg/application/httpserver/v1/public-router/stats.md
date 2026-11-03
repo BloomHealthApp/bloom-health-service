@@ -1,6 +1,6 @@
-# Stats API (`stats.go`)
+# Stats API (`get-stats-summary.go`)
 
-Service: [stats_service.md](../../../../domain/service/stats_service.md). Contract section: Stats.
+Service: [stats-service.md](../../../../domain/service/stats-service.md). Contract section: Stats.
 
 | Route | Access | Success |
 |---|---|---|

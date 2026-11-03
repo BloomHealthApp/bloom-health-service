@@ -1,6 +1,6 @@
-# Sync API (`sync.go`)
+# Sync API (`sync-push.go`, `sync-pull.go`)
 
-Service: [sync_service.md](../../../../domain/service/sync_service.md). Contract section: Sync.
+Service: [sync-service.md](../../../../domain/service/sync-service.md). Contract section: Sync.
 
 | Route | Access | Success |
 |---|---|---|

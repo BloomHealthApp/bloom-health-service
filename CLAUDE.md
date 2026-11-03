@@ -2,7 +2,7 @@
 
 Go REST + offline-sync API for the Bloom Health wellness tracker (passwordless: sign up with name/phone/email, sign in with phone or email, always via an emailed code; each new user gets a private space as **owner**; **viewer** access exists in the data model but has no invite endpoint yet). Public contract: `docs/api-contract.md` (paths `/v1/...`, error body `{"error":{code,message,details}}`) — it must not change without updating the contract and the app. Module path: `github.com/BloomHealthApp/bloom-health-service`. Store: MongoDB (Atlas); `STORE=memory` for tests/dev.
 
-The service uses a layered clean architecture (handlers → interface-based services → repository interfaces, Wire DI, `IHttpError`, header middleware, viper env config, Makefile mock/wire targets).
+The service uses a layered architecture (handlers → interface-based services → repository interfaces, Wire DI, `IHttpError`, header middleware, viper env config, Makefile mock/wire targets). Read `.claude/service-architecture.md` before any code change: it has the layer rules, file naming and recipes.
 
 ## Commands
 ```
@@ -23,7 +23,7 @@ Local run without MongoDB:
 ## Context workflow (every task)
 Project context lives in `.claude/context/`, mirroring the service's folders. Not in code comments.
 
-1. Before changing code in a folder, read the matching `.claude/context/<path>/context.md`, and its nearest parent if there is none. Also read the note for the file you're changing, if there is one: `public-router/<api>.md` for an API, `service/<name>_service.md` for a service.
+1. Before changing code in a folder, read the matching `.claude/context/<path>/context.md`, and its nearest parent if there is none. Also read the note for the file you're changing, if there is one: `public-router/<api>.md` for an API, `service/<name>-service.md` for a service.
 2. After the change, in the same task, update the context file for any new or changed rule, reason, gotcha or architecture decision. Create the file if the folder now has real context. Delete statements that are no longer true.
 3. New, moved or deleted service folders: make the same change in `.claude/context/`. New or changed routes and services: update their note and the index table in that folder's `context.md`. New external services or changes to how one is used: update `_shared/external-services.md`.
 4. Do not add comments to code to hold context, history or task notes.
@@ -39,7 +39,8 @@ ddl/mongodb/                   documented index set
 pkg/application/httpserver/    router, HTTP tests; v1/public-router/ = handlers
 pkg/di/                        Wire graph and AppLogic
 pkg/domain/service/            services
-pkg/domain/serviceBos/         business objects
+pkg/domain/bo/                 business objects
+pkg/domain/helpers/            pure DAO/BO -> response DTO mappers
 pkg/domain/dto/                request and response DTOs
 pkg/domain/models/dao/         persisted documents
 pkg/enums/                     one package per enum

@@ -11,12 +11,3 @@ const (
 )
 
 func Values() []string { return []string{Strength, Cardio, Yoga, Walking, Badminton, Other} }
-
-func Valid(s string) bool {
-	for _, v := range Values() {
-		if v == s {
-			return true
-		}
-	}
-	return false
-}

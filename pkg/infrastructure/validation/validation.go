@@ -68,7 +68,7 @@ var allowed = map[string]map[string]bool{
 // serverOnly fields that clients may not set (silently kept from existing / defaulted on create).
 var serverOnly = map[string]map[string]bool{entitytype.Habit: set("isDefault")}
 
-// Context carries validation context.
+// Context is what field validation needs to know about the writer.
 type Context struct {
 	Today string // writer's local date; daily logs/workouts after this are rejected
 }

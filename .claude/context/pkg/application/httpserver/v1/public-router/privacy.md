@@ -1,4 +1,4 @@
-# Privacy policy page (`privacy.go`)
+# Privacy policy page (`get-privacy-policy.go`)
 
 | Route | Access | Success |
 |---|---|---|

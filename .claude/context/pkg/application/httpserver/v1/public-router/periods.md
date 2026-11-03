@@ -1,6 +1,6 @@
-# Period tracker API (`periods.go`)
+# Period tracker API (`list-periods.go`, `create-period.go`, `patch-period.go`, `delete-period.go`)
 
-Service: [period_service.md](../../../../domain/service/period_service.md). Contract section: Period tracker.
+Service: [period-service.md](../../../../domain/service/period-service.md). Contract section: Period tracker.
 
 | Route | Access | Success |
 |---|---|---|

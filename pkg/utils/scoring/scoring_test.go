@@ -62,7 +62,7 @@ func TestFixtures(t *testing.T) {
 			for d, m := range c.Logs {
 				logs[d] = map[string]Log{}
 				for id, l := range m {
-					logs[d][id] = Log{Value: l.Value, Status: l.Status}
+					logs[d][id] = Log(l)
 				}
 			}
 			days, err := ComputeDays(habits, logs, Settings{Threshold: c.Settings.Threshold, RestDays: c.Settings.RestDays, RestMode: c.Settings.RestMode, NeutralDates: c.Settings.NeutralDates}, c.From, c.To, c.Today)

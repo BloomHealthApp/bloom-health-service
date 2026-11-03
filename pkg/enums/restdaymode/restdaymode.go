@@ -7,12 +7,3 @@ const (
 )
 
 func Values() []string { return []string{Neutral, Counts} }
-
-func Valid(s string) bool {
-	for _, v := range Values() {
-		if v == s {
-			return true
-		}
-	}
-	return false
-}

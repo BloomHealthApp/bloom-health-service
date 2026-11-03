@@ -1,6 +1,6 @@
-# Settings API (`settings.go`)
+# Settings API (`get-settings.go`, `patch-settings.go`)
 
-Service: [settings_service.md](../../../../domain/service/settings_service.md). Contract section: Profile & settings.
+Service: [settings-service.md](../../../../domain/service/settings-service.md). Contract section: Profile & settings.
 
 | Route | Access | Success |
 |---|---|---|
