@@ -51,17 +51,3 @@ func (r *PatchEntityReq) Validate() apperrors.IHttpError {
 	delete(r.Payload, "id")
 	return nil
 }
-
-// PutLogReq is PUT /logs/{habitId}/{localDate}.
-type PutLogReq struct {
-	HabitID     string   `json:"-"`
-	LocalDate   string   `json:"-"`
-	Value       *float64 `json:"value"`
-	Status      string   `json:"status"`
-	Note        *string  `json:"note"`
-	Source      string   `json:"source"`
-	BaseVersion int      `json:"baseVersion"`
-}
-
-// Validate is a no-op: date, habit and value are validated by the entity rules.
-func (r *PutLogReq) Validate() apperrors.IHttpError { return nil }

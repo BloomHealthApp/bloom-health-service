@@ -39,8 +39,3 @@ func (r *RangeReq) Validate() apperrors.IHttpError {
 	}
 	return nil
 }
-
-// ListHabitsReq is GET /habits.
-type ListHabitsReq struct{ IncludeInactive bool }
-
-func (r *ListHabitsReq) Validate() apperrors.IHttpError { return nil }
