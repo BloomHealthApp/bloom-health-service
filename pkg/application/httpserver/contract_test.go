@@ -67,6 +67,23 @@ func TestHealthEndpoints(t *testing.T) {
 	}
 }
 
+func TestPrivacyPolicyPage(t *testing.T) {
+	e := setup(t)
+	resp, body := raw(t, e, "GET", "/privacy", "", "")
+	require.Equal(t, 200, resp.StatusCode)
+	require.Equal(t, "text/html; charset=utf-8", resp.Header.Get("Content-Type"))
+	require.Equal(t, "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'", resp.Header.Get("Content-Security-Policy"), "styles only, still no scripts")
+	require.Equal(t, "nosniff", resp.Header.Get("X-Content-Type-Options"))
+	require.Contains(t, body, "<title>Bloom Health privacy policy</title>")
+	require.Contains(t, body, "<h2>Keeping and deleting your data</h2>")
+	require.Contains(t, body, `<a href="mailto:support.bloomhealth@gmail.com">support.bloomhealth@gmail.com</a>`)
+	require.Contains(t, body, "<li>Account details:")
+	require.NotContains(t, body, "<script")
+
+	resp, _ = raw(t, e, "POST", "/privacy", "", "")
+	require.Equal(t, 405, resp.StatusCode)
+}
+
 func TestPerIdentifierRateLimitDoesNotRevealAndVerifyReturns429(t *testing.T) {
 	e := setup(t)
 	// signin request: burst of 3 per identifier, further requests still answer 202 (decoy challenge)
