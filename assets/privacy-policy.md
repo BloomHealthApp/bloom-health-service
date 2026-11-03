@@ -10,7 +10,7 @@ Bloom Health helps you build daily habits, log workouts, track your cycle and ch
 - Habits and progress: the habits you create, what you complete each day, streaks, your daily goal and reminder times.
 - Workouts: the workouts you log and how long they took.
 - Period tracker: the period dates you enter, if the tracker is on.
-- Steps: if you turn on Auto-track steps, your daily step totals from Health Connect (Android) or Apple Health (iPhone). We read step counts only, nothing else.
+- Steps: if you turn on Auto-track steps, your daily step totals from Health Connect (Android) or Apple Health (iPhone). If you also allow it, we read your daily active calories burned to show on the home-screen widget. Calories stay on your phone: they are never sent to our servers. We read nothing else.
 - Bloomy chats: the messages you send to Bloomy and its replies.
 - Technical data: sign-in tokens and basic request logs (time, address, errors) that keep the service secure and working.
 
@@ -18,7 +18,7 @@ Bloom Health helps you build daily habits, log workouts, track your cycle and ch
 
 - To run the app: save your habits and progress, sync them between your devices and show your streaks.
 - To sign you in with a one-time code sent to your email.
-- To fill your Steps habit from your step totals.
+- To fill your Steps habit from your step totals, and to show steps and calories on the home-screen widget.
 - To answer you in Bloomy.
 - To keep the service secure, fix problems and prevent abuse.
 
@@ -26,7 +26,7 @@ We do not sell your data, show ads, or use your data for advertising or to build
 
 ## Health data
 
-Steps, workouts and period data are health information. We use them only to show your progress in the app. We never use them for advertising, never sell them and never share them with data brokers.
+Steps, calories, workouts and period data are health information. We use them only to show your progress in the app. We never use them for advertising, never sell them and never share them with data brokers.
 
 Bloom Health's use of information received from Health Connect adheres to the Health Connect Permissions policy, including the Limited Use requirements. Data from Apple Health is used the same way.
 
