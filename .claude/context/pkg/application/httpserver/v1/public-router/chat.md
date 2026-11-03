@@ -8,7 +8,7 @@ Service: [chat_service.md](../../../../domain/service/chat_service.md). Contract
 | `POST /chat/sessions` | both | 201 ChatSession |
 | `GET /chat/sessions` | both | 200 `{items}`, newest first, at most 100 |
 | `GET /chat/sessions/:sid` | both | 200 ChatSession |
-| `DELETE /chat/sessions/:sid` | both | 204, soft delete |
+| `DELETE /chat/sessions/:sid` | both | 204; erases the messages, clears the title and leaves a tombstone that expires after 7 days |
 | `GET /chat/sessions/:sid/messages?before&limit` | both | 200 page, oldest first |
 | `POST /chat/sessions/:sid/messages` | both | 202 `{userMessage, assistantMessage}` |
 

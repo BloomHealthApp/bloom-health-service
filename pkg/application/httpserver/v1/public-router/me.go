@@ -99,3 +99,13 @@ func VerifyPhoneChange(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, resp)
 }
+
+// DeleteMe is DELETE /v1/me (both roles): permanently erases the caller's account and data.
+func DeleteMe(c *gin.Context) {
+	ctx := c.Request.Context()
+	if herr := di.AppLogic.GetUserService().DeleteMe(ctx, utils.GetActor(ctx)); herr != nil {
+		utils.RespondError(c, herr)
+		return
+	}
+	c.Status(http.StatusNoContent)
+}

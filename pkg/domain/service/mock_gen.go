@@ -181,6 +181,20 @@ func (m *MockIUserService) EXPECT() *MockIUserServiceMockRecorder {
 	return m.recorder
 }
 
+// DeleteMe mocks base method.
+func (m *MockIUserService) DeleteMe(arg0 context.Context, arg1 *serviceBos.Actor) errors.IHttpError {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteMe", arg0, arg1)
+	ret0, _ := ret[0].(errors.IHttpError)
+	return ret0
+}
+
+// DeleteMe indicates an expected call of DeleteMe.
+func (mr *MockIUserServiceMockRecorder) DeleteMe(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteMe", reflect.TypeOf((*MockIUserService)(nil).DeleteMe), arg0, arg1)
+}
+
 // GetMe mocks base method.
 func (m *MockIUserService) GetMe(arg0 context.Context, arg1 *serviceBos.Actor) (*response.UserResponse, errors.IHttpError) {
 	m.ctrl.T.Helper()

@@ -32,7 +32,7 @@ var services = wire.NewSet(
 )
 
 var repositoryFields = wire.FieldsOf(new(*Repositories),
-	"Users", "Spaces", "Memberships", "Entities", "Ops", "OTPs", "Sessions", "ChatSessions", "ChatMessages", "Pinger")
+	"Users", "Spaces", "Memberships", "Entities", "Ops", "OTPs", "Sessions", "ChatSessions", "ChatMessages", "Accounts", "Pinger")
 
 var app = wire.NewSet(
 	ratelimit.NewSet,

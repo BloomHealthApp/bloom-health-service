@@ -22,7 +22,7 @@ Both repos keep their own copy of this file and of the document shapes below. A 
 | `nextIdx` | int | service | next free message `idx`; each turn reserves two |
 | `version` | int | both | `$inc` on every update |
 | `createdAt`, `updatedAt` | date | service | |
-| `deletedAt` | date \| null | service | soft delete |
+| `deletedAt` | date \| null | service | set on delete, when the service also clears `title` and erases the session's messages; a TTL index removes the session 7 days later |
 
 ### `chatMessages`
 | Field | Type | Written by | Notes |
@@ -53,7 +53,7 @@ Created by the service at startup (`EnsureIndexes`) and documented in `ddl/mongo
 
 ## Lifecycle
 1. **Enqueue (service).** Compare-and-swap on the session: `{_id, userId, deletedAt: null, activeTurnId: null}` → set `activeTurnId = <new assistant id>`, `$inc nextIdx 2`. If no document matches, the session is missing (404) or a turn is in flight (409). Then insert the user message (`succeeded`) and the assistant message (`pending`, `attempt 0`, `runAt = now`). If the insert fails, clear `activeTurnId` (compare-and-swap on the same id).
-2. **Claim (worker).** `findOneAndUpdate({status: "pending", runAt: {$lte: now}}, sort {createdAt: 1})` → `status: running`, `$inc attempt`, `lockedUntil = now + timeout`. If the session is deleted, fail the message with `session_deleted`.
+2. **Claim (worker).** `findOneAndUpdate({status: "pending", runAt: {$lte: now}}, sort {createdAt: 1})` → `status: running`, `$inc attempt`, `lockedUntil = now + timeout`. If the session is deleted, fail the message with `session_deleted`. Deleting a session erases its messages, so a turn in flight may find its message gone: the settle then matches nothing and the worker drops the result.
 3. **Settle (worker).** Every update filters `{_id, status: "running", attempt: <claimed attempt>}` so a stale worker cannot overwrite a newer attempt:
    - success → `succeeded`, `content`, `usage`, `finishReason`, `latencyMs`;
    - retryable error (network, 429, 5xx) with attempts left → `pending`, `runAt = now + backoff`;

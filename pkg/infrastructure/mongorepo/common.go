@@ -88,7 +88,9 @@ func EnsureIndexes(ctx context.Context, db drivers.IMongoDB) error {
 		return err
 	}
 	if err := idx(constants.CollChatSessions,
-		mongo.IndexModel{Keys: bson.D{{Key: "userId", Value: 1}, {Key: "updatedAt", Value: -1}}}); err != nil {
+		mongo.IndexModel{Keys: bson.D{{Key: "userId", Value: 1}, {Key: "updatedAt", Value: -1}}},
+		// TTL ignores documents whose deletedAt is null, so only deleted sessions expire.
+		mongo.IndexModel{Keys: asc("deletedAt"), Options: options.Index().SetExpireAfterSeconds(int32(constants.DeletedChatRetention.Seconds()))}); err != nil {
 		return err
 	}
 	// The status/runAt/createdAt index serves bloom-health-task-worker's claim query.

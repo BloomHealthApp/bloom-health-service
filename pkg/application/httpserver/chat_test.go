@@ -234,3 +234,32 @@ func TestChatDailyCap(t *testing.T) {
 	require.Contains(t, raw, `"rate_limited"`)
 	require.NotEmpty(t, resp.Header.Get("Retry-After"))
 }
+
+func TestDeleteChatErasesMessagesAndTitle(t *testing.T) {
+	e := setup(t)
+	tok, _ := e.login("anu@example.com")
+	_, me := e.do("GET", "/v1/me", tok, nil)
+	sid := e.newChat(tok)
+	st, sent := e.do("POST", "/v1/chat/sessions/"+sid+"/messages", tok, map[string]any{"content": "my private question"})
+	require.Equal(t, 202, st)
+	e.settle(sid, sent["assistantMessage"].(map[string]any)["id"].(string), chatstatus.Succeeded, "a private answer")
+	other := e.newChat(tok)
+	st, _ = e.do("POST", "/v1/chat/sessions/"+other+"/messages", tok, map[string]any{"content": "keep me"})
+	require.Equal(t, 202, st)
+
+	st, _ = e.do("DELETE", "/v1/chat/sessions/"+sid, tok, nil)
+	require.Equal(t, 204, st)
+
+	msgs, err := e.repos.ChatMessages.ListForSession(t.Context(), sid, 0, 10)
+	require.NoError(t, err)
+	require.Empty(t, msgs, "messages are erased at once, not only hidden")
+	kept, err := e.repos.ChatMessages.ListForSession(t.Context(), other, 0, 10)
+	require.NoError(t, err)
+	require.Len(t, kept, 2, "other chats keep their messages")
+	_, err = e.repos.ChatSessions.Get(t.Context(), me["id"].(string), sid)
+	require.Error(t, err)
+	require.True(t, memory.ChatSessionTombstoneForTest(e.repos.ChatSessions, sid, func(s *dao.ChatSession) {
+		require.NotNil(t, s.DeletedAt)
+		require.Empty(t, s.Title, "the title is chat text, so it goes too")
+	}))
+}
