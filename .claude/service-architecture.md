@@ -223,10 +223,10 @@ Never `panic` for control flow; never return a raw `error` from a service to a h
 ### 6.5 Logging
 
 ```go
-s.log.Error(ctx, "chat session create failed", map[string]any{"err": err.Error(), "userId": actor.User.ID, "sessionId": id})
+s.log.Error(ctx, "chat turn rollback failed", map[string]any{"err": err.Error(), "sessionId": sess.ID})
 ```
 
-`ctx` is always first. Include `userId` and entity ids. Never log tokens, OTPs, wellness values, period or gender data, chat text or entity `Data` (see `_shared/privacy-invariants.md`).
+`ctx` is always first. The logger adds `requestId` and, after auth, `userId` from the context; add entity ids yourself. Never log tokens, OTPs, wellness values, period or gender data, chat text or entity `Data` (see `_shared/privacy-invariants.md`).
 
 ### 6.6 Config
 

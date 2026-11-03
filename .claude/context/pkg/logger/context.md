@@ -6,5 +6,7 @@
 ## Rules
 Adding a new kind of sensitive field means adding it to `sensitiveParts`. Chat text keys (`content`, `prompt`, `title`) are redacted, so any field whose name contains them is too.
 
+Every line gets `requestId` from the context and, after auth, `userId` from the actor, so callers only add entity ids. An explicit `userId` field wins over the actor's.
+
 ## Related
 `_shared/security-invariants.md`, `_shared/privacy-invariants.md`

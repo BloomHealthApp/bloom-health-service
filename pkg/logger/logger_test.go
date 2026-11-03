@@ -7,8 +7,23 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/bo"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/models/dao"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/utils"
 )
+
+func TestActorUserIDIsAdded(t *testing.T) {
+	var buf bytes.Buffer
+	l := NewWithWriter(&buf, "info")
+	ctx := utils.SetInContext(context.Background(), utils.ActorKey, &bo.Actor{User: &dao.User{ID: "u-1"}})
+	l.Info(ctx, "msg", nil)
+	require.Contains(t, buf.String(), `"userId":"u-1"`)
+
+	buf.Reset()
+	l.Info(ctx, "msg", map[string]any{"userId": "u-2"})
+	require.Contains(t, buf.String(), `"userId":"u-2"`)
+	require.NotContains(t, buf.String(), `"u-1"`)
+}
 
 func TestSensitiveFieldsAreRedacted(t *testing.T) {
 	var buf bytes.Buffer
