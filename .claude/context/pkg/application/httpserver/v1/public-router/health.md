@@ -1,4 +1,4 @@
-# Health API (`health.go`)
+# Health API (`get-health.go`)
 
 Service: [health-service.md](../../../../domain/service/health-service.md). Contract section: Health.
 

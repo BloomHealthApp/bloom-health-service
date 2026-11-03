@@ -4,6 +4,8 @@
 The `/v1` handlers. `docs/api-contract.md` is the source of truth for request and response shapes. The notes here add what the contract doesn't say: wiring, limits and code-level behavior.
 
 ## Rules
+One file per endpoint, kebab-case after the action (`create-habit.go`), holding one `HandleXxx` func. `router.go` only registers routes; binders shared by several handlers live in `bind-helpers.go`. Each API area has one note here (`habits.md` covers the four habit handlers).
+
 Every handler has the same shape, with no logic in handlers:
 
 1. `ctx := c.Request.Context()`

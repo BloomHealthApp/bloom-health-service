@@ -17,8 +17,8 @@ const privacyCSP = "default-src 'none'; style-src 'unsafe-inline'; frame-ancesto
 
 var privacyPage = sync.OnceValue(func() string { return renderPolicyPage(assets.PrivacyPolicy) })
 
-// PrivacyPolicy is GET /privacy: the public privacy policy page that Google Play and the App Store link to.
-func PrivacyPolicy(c *gin.Context) {
+// HandleGetPrivacyPolicy is GET /privacy: the public privacy policy page that Google Play and the App Store link to.
+func HandleGetPrivacyPolicy(c *gin.Context) {
 	h := c.Writer.Header()
 	h.Set("Content-Security-Policy", privacyCSP)
 	h.Set("Cache-Control", "public, max-age=3600")

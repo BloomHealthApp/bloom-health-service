@@ -9,9 +9,10 @@ import (
 	"github.com/BloomHealthApp/bloom-health-service/pkg/utils"
 )
 
-// Health is GET /health and GET /v1/health (no auth, no database detail).
-func Health(c *gin.Context) {
-	resp, herr := di.AppLogic.GetHealthService().Check(c.Request.Context())
+// HandleGetChatSession is GET /v1/chat/sessions/:sid.
+func HandleGetChatSession(c *gin.Context) {
+	ctx := c.Request.Context()
+	resp, herr := di.AppLogic.GetChatService().GetSession(ctx, utils.GetActor(ctx), c.Param("sid"))
 	if herr != nil {
 		utils.RespondError(c, herr)
 		return

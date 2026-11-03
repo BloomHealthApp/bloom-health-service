@@ -1,4 +1,4 @@
-# Settings API (`settings.go`)
+# Settings API (`get-settings.go`, `patch-settings.go`)
 
 Service: [settings-service.md](../../../../domain/service/settings-service.md). Contract section: Profile & settings.
 

@@ -1,4 +1,4 @@
-# Daily logs API (`logs.go`)
+# Daily logs API (`list-logs.go`, `put-log.go`)
 
 Service: [daily-log-service.md](../../../../domain/service/daily-log-service.md). Contract section: Daily logs.
 

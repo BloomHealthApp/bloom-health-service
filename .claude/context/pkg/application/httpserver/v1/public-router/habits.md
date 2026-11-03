@@ -1,4 +1,4 @@
-# Habits API (`habits.go`)
+# Habits API (`list-habits.go`, `create-habit.go`, `patch-habit.go`, `delete-habit.go`)
 
 Service: [habit-service.md](../../../../domain/service/habit-service.md). Contract section: Habits.
 

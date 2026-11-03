@@ -1,4 +1,4 @@
-# Period tracker API (`periods.go`)
+# Period tracker API (`list-periods.go`, `create-period.go`, `patch-period.go`, `delete-period.go`)
 
 Service: [period-service.md](../../../../domain/service/period-service.md). Contract section: Period tracker.
 

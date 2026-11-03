@@ -1,4 +1,4 @@
-# Workouts API (`workouts.go`)
+# Workouts API (`list-workouts.go`, `create-workout.go`, `patch-workout.go`, `delete-workout.go`)
 
 Service: [workout-service.md](../../../../domain/service/workout-service.md). Contract section: Workouts.
 

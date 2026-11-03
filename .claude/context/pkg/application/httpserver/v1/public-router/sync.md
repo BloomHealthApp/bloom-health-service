@@ -1,4 +1,4 @@
-# Sync API (`sync.go`)
+# Sync API (`sync-push.go`, `sync-pull.go`)
 
 Service: [sync-service.md](../../../../domain/service/sync-service.md). Contract section: Sync.
 

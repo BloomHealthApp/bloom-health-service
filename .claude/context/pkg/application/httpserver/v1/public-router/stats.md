@@ -1,4 +1,4 @@
-# Stats API (`stats.go`)
+# Stats API (`get-stats-summary.go`)
 
 Service: [stats-service.md](../../../../domain/service/stats-service.md). Contract section: Stats.
 
