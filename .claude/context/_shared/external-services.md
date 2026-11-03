@@ -10,7 +10,7 @@ The service makes no outbound HTTP calls. Its only runtime external services are
 
 ### MongoDB
 - **Writes:** no multi-document transactions. Writes are single-document compare-and-swap on `version`, so any Atlas tier works.
-- **Startup:** the service connects, pings and runs `EnsureIndexes`. It needs `createIndex` rights, or see `ddl/mongodb/indexes.js`.
+- **Startup:** the service connects and pings, then runs `EnsureIndexes` in the background, so a cold start on Vercel doesn't make its first request wait for every index check. It logs `mongo connected` and `indexes ensured` with their `ms`, which shows cold-start cost in Vercel's logs. It needs `createIndex` rights, or see `ddl/mongodb/indexes.js`. On a brand-new database the unique indexes appear a moment after startup; provision with `indexes.js` first if that matters.
 - **Access:** use a dedicated `readWrite` user on this database only, and restrict Atlas Network Access to the host's egress IPs.
 - **Automatic expiry (TTL indexes):** `appliedOperations` after 60 days, plus `otpChallenges` and `refreshSessions` at `expiresAt`.
 - **Collections:** `users`, `sharedSpaces`, `memberships`, `habits`, `dailyHabitLogs`, `workoutSessions`, `settings`, `periods`, `appliedOperations`, `otpChallenges`, `refreshSessions`, `counters`, `chatSessions`, `chatMessages` (the last two are shared with bloom-health-task-worker, see `docs/chat-contract.md`).

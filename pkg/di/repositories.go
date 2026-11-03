@@ -33,22 +33,32 @@ func NewMemoryRepositories() *Repositories {
 		ChatSessions: memory.NewChatSessionRepo(), ChatMessages: memory.NewChatMessageRepo(), Pinger: memory.Pinger{}}
 }
 
-// NewRepositories builds the repositories for cfg.StoreKind. For MongoDB it connects, pings and
-// ensures indexes; the returned cleanup disconnects.
+// NewRepositories builds the repositories for cfg.StoreKind. For MongoDB it connects and pings, then
+// ensures indexes in the background; the returned cleanup disconnects.
 func NewRepositories(cfg *config.Store, log logger.ILogger) (*Repositories, func(), error) {
 	if cfg.StoreKind == constants.StoreMemory {
 		return NewMemoryRepositories(), func() {}, nil
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
+	started := time.Now()
 	db, err := drivers.NewMongoDB(ctx, cfg.MongoURI, cfg.MongoDB)
 	if err != nil {
 		return nil, nil, err
 	}
-	if err := mongorepo.EnsureIndexes(ctx, db); err != nil {
-		_ = db.Close(context.Background())
-		return nil, nil, err
-	}
+	log.Info(ctx, "mongo connected", map[string]any{"ms": time.Since(started).Milliseconds()})
+	// Index creation is idempotent and the indexes already exist after the first start, so a cold start (Vercel scales
+	// to zero) must not make its first request wait for it.
+	go func() {
+		ictx, icancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer icancel()
+		began := time.Now()
+		if err := mongorepo.EnsureIndexes(ictx, db); err != nil {
+			log.Error(ictx, "ensure indexes failed", map[string]any{"err": err.Error()})
+			return
+		}
+		log.Info(ictx, "indexes ensured", map[string]any{"ms": time.Since(began).Milliseconds()})
+	}()
 	cleanup := func() {
 		c, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
