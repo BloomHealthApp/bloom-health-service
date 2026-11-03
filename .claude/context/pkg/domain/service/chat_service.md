@@ -17,3 +17,6 @@ The AI chat ("Bloomy") API. It stores turns and enqueues a pending assistant mes
 
 ## Related
 `_shared/privacy-invariants.md` (chat text), `public-router/chat.md`
+
+## Deleting a chat
+`DeleteSession` soft-deletes the session (clearing its title, which is chat text) and then hard-deletes all its messages. If the worker is mid-turn, its settle matches nothing and it treats the turn as settled elsewhere. MongoDB's TTL index removes the tombstone after 7 days.

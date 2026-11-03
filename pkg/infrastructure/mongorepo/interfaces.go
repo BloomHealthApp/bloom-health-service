@@ -84,6 +84,7 @@ type IChatSessionRepo interface {
 	Get(ctx context.Context, userID, id string) (*dao.ChatSession, error)
 	// ListForUser returns non-deleted sessions, most recently updated first.
 	ListForUser(ctx context.Context, userID string, limit int) ([]dao.ChatSession, error)
+	// SoftDelete marks the session deleted and clears its title. The tombstone expires after constants.DeletedChatRetention.
 	SoftDelete(ctx context.Context, userID, id string, at time.Time) error
 	// BeginTurn marks turnID as the session's in-flight turn and reserves two message indexes,
 	// returning the first. errors.ErrRepoConflict when another turn is already in flight.
@@ -101,4 +102,16 @@ type IChatMessageRepo interface {
 	ListForSession(ctx context.Context, sessionID string, beforeIdx, limit int) ([]dao.ChatMessage, error)
 	// CountUserMessagesSince counts the user-role messages userID sent at or after since.
 	CountUserMessagesSince(ctx context.Context, userID string, since time.Time) (int, error)
+	// DeleteForSession hard-deletes every message of a session.
+	DeleteForSession(ctx context.Context, sessionID string) error
+}
+
+// IAccountRepo hard-deletes accounts (DELETE /v1/me). Every method is idempotent, so a failed erase can be retried.
+type IAccountRepo interface {
+	// EraseSpace deletes a space and everything stored in it: entities of every type, applied operations, its sync
+	// counter and all its memberships.
+	EraseSpace(ctx context.Context, spaceID string) error
+	// EraseUser deletes the user and everything tied to them: memberships, refresh sessions, pending codes mailed
+	// to their email, and their chat sessions and messages.
+	EraseUser(ctx context.Context, user *dao.User) error
 }

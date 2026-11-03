@@ -19,6 +19,8 @@ const (
 	DefaultPullLimit  = 500
 	MaxPullLimit      = 1000
 	OpRetention       = 60 * 24 * time.Hour
+	// DeletedChatRetention is how long a deleted chat session's empty tombstone is kept before MongoDB's TTL removes it.
+	DeletedChatRetention = 7 * 24 * time.Hour
 
 	MaxChatContentChars   = 4000
 	MaxChatTitleChars     = 80

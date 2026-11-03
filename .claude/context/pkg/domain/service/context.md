@@ -16,7 +16,7 @@
 |---|---|---|
 | `IAuthService` | [auth_service.md](auth_service.md) | users, memberships, OTP, sessions, mailer, Provision |
 | `IProvisionService` | [provision_service.md](provision_service.md) | users, spaces, memberships, entities |
-| `IUserService` | [user_service.md](user_service.md) | users, memberships |
+| `IUserService` | [user_service.md](user_service.md) | users, memberships, accounts (erase) |
 | `ISyncService` | [sync_service.md](sync_service.md) | entities, operations |
 | `IHabitService` | [habit_service.md](habit_service.md) | entities, Sync |
 | `IDailyLogService` | [daily_log_service.md](daily_log_service.md) | entities, Sync |

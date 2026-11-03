@@ -62,7 +62,7 @@ func (r *chatSessionRepo) ListForUser(ctx context.Context, userID string, limit 
 
 func (r *chatSessionRepo) SoftDelete(ctx context.Context, userID, id string, at time.Time) error {
 	res, err := r.coll().UpdateOne(ctx, liveSession(userID, id),
-		bson.D{{Key: "$set", Value: bson.D{{Key: "deletedAt", Value: at}, {Key: "updatedAt", Value: at}}},
+		bson.D{{Key: "$set", Value: bson.D{{Key: "deletedAt", Value: at}, {Key: "updatedAt", Value: at}, {Key: "title", Value: ""}}},
 			{Key: "$inc", Value: bson.D{{Key: "version", Value: 1}}}})
 	if err != nil {
 		return err
@@ -152,4 +152,9 @@ func (r *chatMessageRepo) CountUserMessagesSince(ctx context.Context, userID str
 	n, err := r.coll().CountDocuments(ctx, bson.D{{Key: "userId", Value: userID}, {Key: "role", Value: chatrole.User},
 		{Key: "createdAt", Value: bson.D{{Key: "$gte", Value: since}}}})
 	return int(n), err
+}
+
+func (r *chatMessageRepo) DeleteForSession(ctx context.Context, sessionID string) error {
+	_, err := r.coll().DeleteMany(ctx, bson.D{{Key: "sessionId", Value: sessionID}})
+	return err
 }

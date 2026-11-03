@@ -86,7 +86,7 @@ func (r *chatSessionRepo) SoftDelete(_ context.Context, userID, id string, at ti
 	if err != nil {
 		return err
 	}
-	s.DeletedAt, s.UpdatedAt = &at, at
+	s.DeletedAt, s.UpdatedAt, s.Title = &at, at, ""
 	s.Version++
 	return nil
 }
@@ -208,6 +208,32 @@ func SettleForTest(repo mongorepo.IChatMessageRepo, id string, apply func(m *dao
 	m, ok := r.messages[id]
 	if ok {
 		apply(m)
+	}
+	return ok
+}
+
+func (r *chatMessageRepo) DeleteForSession(_ context.Context, sessionID string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for k, m := range r.messages {
+		if m.SessionID == sessionID {
+			delete(r.messages, k)
+		}
+	}
+	return nil
+}
+
+// ChatSessionTombstoneForTest runs inspect on a session even after it was deleted (tests only).
+func ChatSessionTombstoneForTest(repo mongorepo.IChatSessionRepo, id string, inspect func(s *dao.ChatSession)) bool {
+	r, ok := repo.(*chatSessionRepo)
+	if !ok {
+		return false
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	s, ok := r.sessions[id]
+	if ok {
+		inspect(cloneChatSession(s))
 	}
 	return ok
 }

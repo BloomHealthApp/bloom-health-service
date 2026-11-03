@@ -40,7 +40,8 @@ func InitializeApp() (AppInterface, func(), error) {
 	iEntityRepo := repositories.Entities
 	iProvisionService := service.NewProvisionService(iLogger, iUserRepo, iSpaceRepo, iMembershipRepo, iEntityRepo, clockClock)
 	iAuthService := service.NewAuthService(iLogger, store, iUserRepo, iMembershipRepo, iotpRepo, iSessionRepo, iMailer, iProvisionService, clockClock)
-	iUserService := service.NewUserService(iLogger, iUserRepo, iMembershipRepo, clockClock)
+	iAccountRepo := repositories.Accounts
+	iUserService := service.NewUserService(iLogger, iUserRepo, iMembershipRepo, iAccountRepo, clockClock)
 	iOpRepo := repositories.Ops
 	iSyncService := service.NewSyncService(iLogger, iEntityRepo, iOpRepo, clockClock)
 	iHabitService := service.NewHabitService(iLogger, iEntityRepo, iSyncService)
@@ -89,7 +90,8 @@ func InitializeTestApp(cfg *config.Store, log logger.ILogger, clk clock.Clock, m
 	iEntityRepo := repos.Entities
 	iProvisionService := service.NewProvisionService(log, iUserRepo, iSpaceRepo, iMembershipRepo, iEntityRepo, clk)
 	iAuthService := service.NewAuthService(log, cfg, iUserRepo, iMembershipRepo, iotpRepo, iSessionRepo, mailer, iProvisionService, clk)
-	iUserService := service.NewUserService(log, iUserRepo, iMembershipRepo, clk)
+	iAccountRepo := repos.Accounts
+	iUserService := service.NewUserService(log, iUserRepo, iMembershipRepo, iAccountRepo, clk)
 	iOpRepo := repos.Ops
 	iSyncService := service.NewSyncService(log, iEntityRepo, iOpRepo, clk)
 	iHabitService := service.NewHabitService(log, iEntityRepo, iSyncService)
@@ -130,7 +132,7 @@ func InitializeTestApp(cfg *config.Store, log logger.ILogger, clk clock.Clock, m
 var services = wire.NewSet(service.NewAuthService, service.NewUserService, service.NewHabitService, service.NewDailyLogService, service.NewWorkoutService, service.NewPeriodService, service.NewSettingsService, service.NewSyncService, service.NewStatsService, service.NewProvisionService, service.NewHealthService, service.NewChatService)
 
 var repositoryFields = wire.FieldsOf(new(*Repositories),
-	"Users", "Spaces", "Memberships", "Entities", "Ops", "OTPs", "Sessions", "ChatSessions", "ChatMessages", "Pinger")
+	"Users", "Spaces", "Memberships", "Entities", "Ops", "OTPs", "Sessions", "ChatSessions", "ChatMessages", "Accounts", "Pinger")
 
 var app = wire.NewSet(ratelimit.NewSet, services,
 	repositoryFields, wire.Struct(new(appLogic), "*"), wire.Bind(new(AppInterface), new(*appLogic)),

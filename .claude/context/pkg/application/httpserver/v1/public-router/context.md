@@ -28,6 +28,7 @@ Access: public = no token; both = any member; owner = `RequireOwner`.
 | `POST /v1/auth/logout` | public | Auth | [auth.md](auth.md) |
 | `GET /v1/me` | both | User | [me.md](me.md) |
 | `PATCH /v1/me` | both | User | [me.md](me.md) |
+| `DELETE /v1/me` | both | User | [me.md](me.md) |
 | `GET /v1/settings` | both | Settings | [settings.md](settings.md) |
 | `PATCH /v1/settings` | owner | Settings | [settings.md](settings.md) |
 | `GET /v1/habits` | both | Habit | [habits.md](habits.md) |

@@ -48,7 +48,7 @@ Bloomy's answers can be wrong and aren't medical advice. Talk to a doctor about 
 
 ## On your phone
 
-The app keeps a copy of your data on your phone so it works offline, and stores your sign-in securely in the system keychain. Reminders, alarms and home-screen widgets run on your phone. Signing out clears your sign-in.
+The app keeps a copy of your data on your phone so it works offline, and stores your sign-in securely in the system keychain. Reminders, alarms and home-screen widgets run on your phone. Signing out erases that copy and your sign-in from the phone; your data stays in your account for when you sign back in.
 
 ## Security
 
@@ -56,9 +56,11 @@ Data is encrypted in transit (HTTPS) and stored with access limited to the peopl
 
 ## Keeping and deleting your data
 
-We keep your data while your account exists. Sign-in codes expire within minutes and old sign-in sessions expire on their own.
+We keep your data while your account exists. Sign-in codes expire within minutes and old sign-in sessions expire on their own. When you delete a Bloomy chat, its messages are erased at once and nothing of it remains after 7 days.
 
-To delete your account and all its data, including habits, workouts, steps, period data and Bloomy chats, email support.bloomhealth@gmail.com from the address you signed up with. We delete it within 30 days and confirm by email. You can also ask for a copy of your data, or for corrections, the same way.
+To delete your account, open Settings → Delete account in the app. Your account and all its data, including habits, workouts, steps, period data and Bloomy chats, are erased from our servers straight away, and from your phone.
+
+If you can't use the app, email support.bloomhealth@gmail.com from the address you signed up with and we will delete your account within 30 days and confirm by email. You can also ask for a copy of your data, or for corrections, the same way.
 
 ## Children
 

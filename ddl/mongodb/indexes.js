@@ -46,6 +46,8 @@ d.refreshSessions.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 // recency; messages unique per (sessionId, idx); (status, runAt, createdAt) serves the worker's claim
 // query; (userId, role, createdAt) serves the daily message cap.
 d.chatSessions.createIndex({ userId: 1, updatedAt: -1 });
+// Deleted sessions (deletedAt set, title cleared, messages already erased) expire after 7 days; null deletedAt never expires.
+d.chatSessions.createIndex({ deletedAt: 1 }, { expireAfterSeconds: 7 * 24 * 3600 });
 d.chatMessages.createIndex({ sessionId: 1, idx: 1 }, { unique: true });
 d.chatMessages.createIndex({ status: 1, runAt: 1, createdAt: 1 });
 d.chatMessages.createIndex({ userId: 1, role: 1, createdAt: 1 });

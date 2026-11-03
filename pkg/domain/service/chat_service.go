@@ -128,6 +128,10 @@ func (s *chatService) DeleteSession(ctx context.Context, actor *serviceBos.Actor
 	if err != nil {
 		return internalErr(s.log, ctx, "chat session delete failed", err)
 	}
+	// A turn still running in the worker then settles nothing, which it treats as settled elsewhere.
+	if err := s.messages.DeleteForSession(ctx, id); err != nil {
+		return internalErr(s.log, ctx, "chat message delete failed", err)
+	}
 	return nil
 }
 

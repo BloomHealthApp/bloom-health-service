@@ -19,17 +19,22 @@ type IUserService interface {
 	// SetPhone saves an E.164 phone the caller has already confirmed through IAuthService.ConfirmPhoneChange.
 	// 409 already_registered when another account took it in the meantime.
 	SetPhone(ctx context.Context, actor *serviceBos.Actor, phone string) (*response.UserResponse, apperrors.IHttpError)
+	// DeleteMe permanently erases the caller's account and data. For an owner that includes the whole space, so any
+	// viewers lose access to it.
+	DeleteMe(ctx context.Context, actor *serviceBos.Actor) apperrors.IHttpError
 }
 
 type userService struct {
 	log         logger.ILogger
 	users       mongorepo.IUserRepo
 	memberships mongorepo.IMembershipRepo
+	accounts    mongorepo.IAccountRepo
 	clock       clock.Clock
 }
 
-func NewUserService(log logger.ILogger, users mongorepo.IUserRepo, memberships mongorepo.IMembershipRepo, clk clock.Clock) IUserService {
-	return &userService{log: log, users: users, memberships: memberships, clock: clk}
+func NewUserService(log logger.ILogger, users mongorepo.IUserRepo, memberships mongorepo.IMembershipRepo, accounts mongorepo.IAccountRepo,
+	clk clock.Clock) IUserService {
+	return &userService{log: log, users: users, memberships: memberships, accounts: accounts, clock: clk}
 }
 
 func (s *userService) GetMe(ctx context.Context, actor *serviceBos.Actor) (*response.UserResponse, apperrors.IHttpError) {
@@ -101,4 +106,18 @@ func (s *userService) SetPhone(ctx context.Context, actor *serviceBos.Actor, pho
 	}
 	r := buildUserResponse(ctx, s.users, s.memberships, &u, actor.Membership)
 	return &r, nil
+}
+
+func (s *userService) DeleteMe(ctx context.Context, actor *serviceBos.Actor) apperrors.IHttpError {
+	// The space goes first: if a later step fails, the user still exists and can retry.
+	if actor.IsOwner() {
+		if err := s.accounts.EraseSpace(ctx, actor.SpaceID()); err != nil {
+			return internalErr(s.log, ctx, "account erase: space failed", err)
+		}
+	}
+	if err := s.accounts.EraseUser(ctx, actor.User); err != nil {
+		return internalErr(s.log, ctx, "account erase: user failed", err)
+	}
+	s.log.Info(ctx, "account erased", map[string]any{"userId": actor.User.ID, "owner": actor.IsOwner()})
+	return nil
 }

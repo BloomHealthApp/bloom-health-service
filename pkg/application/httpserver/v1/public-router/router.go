@@ -21,6 +21,7 @@ func RegisterRoutes(v1 *gin.RouterGroup) {
 	authed := v1.Group("", middleware.Authenticate())
 	authed.GET("/me", GetMe)
 	authed.PATCH("/me", PatchMe)
+	authed.DELETE("/me", DeleteMe)
 	authed.POST("/me/phone/request", RequestPhoneChange)
 	authed.POST("/me/phone/verify", VerifyPhoneChange)
 	authed.GET("/settings", GetSettings)

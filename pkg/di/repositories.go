@@ -23,14 +23,17 @@ type Repositories struct {
 	Sessions     mongorepo.ISessionRepo
 	ChatSessions mongorepo.IChatSessionRepo
 	ChatMessages mongorepo.IChatMessageRepo
+	Accounts     mongorepo.IAccountRepo
 	Pinger       drivers.IPinger
 }
 
 // NewMemoryRepositories returns fresh in-memory repositories (tests and STORE=memory).
 func NewMemoryRepositories() *Repositories {
-	return &Repositories{Users: memory.NewUserRepo(), Spaces: memory.NewSpaceRepo(), Memberships: memory.NewMembershipRepo(),
+	r := &Repositories{Users: memory.NewUserRepo(), Spaces: memory.NewSpaceRepo(), Memberships: memory.NewMembershipRepo(),
 		Entities: memory.NewEntityRepo(), Ops: memory.NewOpRepo(), OTPs: memory.NewOTPRepo(), Sessions: memory.NewSessionRepo(),
 		ChatSessions: memory.NewChatSessionRepo(), ChatMessages: memory.NewChatMessageRepo(), Pinger: memory.Pinger{}}
+	r.Accounts = memory.NewAccountRepo(r.Users, r.Spaces, r.Memberships, r.Entities, r.Ops, r.OTPs, r.Sessions, r.ChatSessions, r.ChatMessages)
+	return r
 }
 
 // NewRepositories builds the repositories for cfg.StoreKind. For MongoDB it connects and pings, then
@@ -69,6 +72,7 @@ func NewRepositories(cfg *config.Store, log logger.ILogger) (*Repositories, func
 		Memberships: mongorepo.NewMembershipRepo(db, log), Entities: mongorepo.NewEntityRepo(db, log),
 		Ops: mongorepo.NewOpRepo(db, log), OTPs: mongorepo.NewOTPRepo(db, log), Sessions: mongorepo.NewSessionRepo(db, log),
 		ChatSessions: mongorepo.NewChatSessionRepo(db, log), ChatMessages: mongorepo.NewChatMessageRepo(db, log),
-		Pinger: db,
+		Accounts: mongorepo.NewAccountRepo(db, log),
+		Pinger:   db,
 	}, cleanup, nil
 }
