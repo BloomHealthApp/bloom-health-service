@@ -2,7 +2,7 @@
 
 Go REST + offline-sync API for the Bloom Health wellness tracker (passwordless: sign up with name/phone/email, sign in with phone or email, always via an emailed code; each new user gets a private space as **owner**; **viewer** access exists in the data model but has no invite endpoint yet). Public contract: `docs/api-contract.md` (paths `/v1/...`, error body `{"error":{code,message,details}}`) — it must not change without updating the contract and the app. Module path: `github.com/BloomHealthApp/bloom-health-service`. Store: MongoDB (Atlas); `STORE=memory` for tests/dev.
 
-The service uses a layered clean architecture (handlers → interface-based services → repository interfaces, Wire DI, `IHttpError`, header middleware, viper env config, Makefile mock/wire targets).
+The service uses a layered architecture (handlers → interface-based services → repository interfaces, Wire DI, `IHttpError`, header middleware, viper env config, Makefile mock/wire targets). Read `.claude/service-architecture.md` before any code change: it has the layer rules, file naming and recipes.
 
 ## Commands
 ```
