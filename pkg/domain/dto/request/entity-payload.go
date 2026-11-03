@@ -8,7 +8,7 @@ import (
 	apperrors "github.com/BloomHealthApp/bloom-health-service/pkg/errors"
 )
 
-// CreateEntityReq is POST /habits and POST /workouts. The payload is validated field by field by the
+// CreateEntityReq is POST /habits, POST /workouts and POST /periods. The payload is validated field by field by the
 // service against a strict allowlist (mass-assignment protection).
 type CreateEntityReq struct {
 	Payload map[string]any
@@ -30,7 +30,7 @@ func (r *CreateEntityReq) Validate() apperrors.IHttpError {
 	return nil
 }
 
-// PatchEntityReq is PATCH /habits/{id}, PATCH /workouts/{id} and PATCH /settings.
+// PatchEntityReq is PATCH /habits/{id}, PATCH /workouts/{id}, PATCH /periods/{id} and PATCH /settings.
 type PatchEntityReq struct {
 	ID      string
 	Payload map[string]any

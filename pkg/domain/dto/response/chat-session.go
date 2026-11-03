@@ -1,6 +1,6 @@
 package response
 
-// ChatSessionResponse is a chat session.
+// ChatSessionResponse is the contract's chat session object, shared by the session endpoints.
 type ChatSessionResponse struct {
 	ID            string   `json:"id"`
 	Title         string   `json:"title"`

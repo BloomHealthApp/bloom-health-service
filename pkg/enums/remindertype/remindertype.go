@@ -10,12 +10,3 @@ const (
 )
 
 func Values() []string { return []string{WakeUp, Hydration, Workout, EveningCheckIn, Bedtime} }
-
-func Valid(s string) bool {
-	for _, v := range Values() {
-		if v == s {
-			return true
-		}
-	}
-	return false
-}

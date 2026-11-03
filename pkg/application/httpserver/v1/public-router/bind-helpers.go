@@ -7,7 +7,7 @@ import (
 	"github.com/BloomHealthApp/bloom-health-service/pkg/utils"
 )
 
-// bindCreate binds and validates a create body shared by habits and workouts.
+// bindCreate binds and validates a create body shared by habits, workouts and periods.
 func bindCreate(c *gin.Context) (*request.CreateEntityReq, bool) {
 	var body map[string]any
 	if herr := utils.BindStrictJSON(c, &body); herr != nil {

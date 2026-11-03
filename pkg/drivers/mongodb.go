@@ -19,7 +19,6 @@ type IMongoDB interface {
 	IPinger
 	// Database returns the application database handle.
 	Database() *mongo.Database
-	// Close disconnects the client.
 	Close(ctx context.Context) error
 }
 

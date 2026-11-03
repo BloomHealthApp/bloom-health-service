@@ -9,12 +9,3 @@ const (
 )
 
 func Values() []string { return []string{Complete, Incomplete, Skipped, Partial} }
-
-func Valid(s string) bool {
-	for _, v := range Values() {
-		if v == s {
-			return true
-		}
-	}
-	return false
-}
