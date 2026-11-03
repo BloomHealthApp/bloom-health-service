@@ -32,6 +32,7 @@ func NewRouter() *gin.Engine {
 	r.NoMethod(func(c *gin.Context) { utils.RespondError(c, apperrors.MethodNotAllowedError("method not allowed")) })
 
 	r.GET("/health", publicrouter.Health)
+	r.GET("/privacy", publicrouter.PrivacyPolicy)
 	publicrouter.RegisterRoutes(r.Group("/v1"))
 	return r
 }
