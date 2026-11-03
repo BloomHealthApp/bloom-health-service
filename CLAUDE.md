@@ -39,7 +39,7 @@ ddl/mongodb/                   documented index set
 pkg/application/httpserver/    router, HTTP tests; v1/public-router/ = handlers
 pkg/di/                        Wire graph and AppLogic
 pkg/domain/service/            services
-pkg/domain/serviceBos/         business objects
+pkg/domain/bo/                 business objects
 pkg/domain/dto/                request and response DTOs
 pkg/domain/models/dao/         persisted documents
 pkg/enums/                     one package per enum

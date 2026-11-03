@@ -8,10 +8,10 @@ import (
 	context "context"
 	reflect "reflect"
 
+	bo "github.com/BloomHealthApp/bloom-health-service/pkg/domain/bo"
 	request "github.com/BloomHealthApp/bloom-health-service/pkg/domain/dto/request"
 	response "github.com/BloomHealthApp/bloom-health-service/pkg/domain/dto/response"
 	dao "github.com/BloomHealthApp/bloom-health-service/pkg/domain/models/dao"
-	serviceBos "github.com/BloomHealthApp/bloom-health-service/pkg/domain/serviceBos"
 	errors "github.com/BloomHealthApp/bloom-health-service/pkg/errors"
 	gomock "github.com/golang/mock/gomock"
 )
@@ -40,10 +40,10 @@ func (m *MockIAuthService) EXPECT() *MockIAuthServiceMockRecorder {
 }
 
 // Authenticate mocks base method.
-func (m *MockIAuthService) Authenticate(arg0 context.Context, arg1 string) (*serviceBos.Actor, errors.IHttpError) {
+func (m *MockIAuthService) Authenticate(arg0 context.Context, arg1 string) (*bo.Actor, errors.IHttpError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Authenticate", arg0, arg1)
-	ret0, _ := ret[0].(*serviceBos.Actor)
+	ret0, _ := ret[0].(*bo.Actor)
 	ret1, _ := ret[1].(errors.IHttpError)
 	return ret0, ret1
 }
@@ -55,7 +55,7 @@ func (mr *MockIAuthServiceMockRecorder) Authenticate(arg0, arg1 interface{}) *go
 }
 
 // ConfirmPhoneChange mocks base method.
-func (m *MockIAuthService) ConfirmPhoneChange(arg0 context.Context, arg1 *serviceBos.Actor, arg2 *request.OTPVerifyReq) (string, errors.IHttpError) {
+func (m *MockIAuthService) ConfirmPhoneChange(arg0 context.Context, arg1 *bo.Actor, arg2 *request.OTPVerifyReq) (string, errors.IHttpError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConfirmPhoneChange", arg0, arg1, arg2)
 	ret0, _ := ret[0].(string)
@@ -99,7 +99,7 @@ func (mr *MockIAuthServiceMockRecorder) Refresh(arg0, arg1 interface{}) *gomock.
 }
 
 // RequestPhoneChange mocks base method.
-func (m *MockIAuthService) RequestPhoneChange(arg0 context.Context, arg1 *serviceBos.Actor, arg2 *request.PhoneChangeReq) (*response.ChallengeResponse, errors.IHttpError) {
+func (m *MockIAuthService) RequestPhoneChange(arg0 context.Context, arg1 *bo.Actor, arg2 *request.PhoneChangeReq) (*response.ChallengeResponse, errors.IHttpError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RequestPhoneChange", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*response.ChallengeResponse)
@@ -182,7 +182,7 @@ func (m *MockIUserService) EXPECT() *MockIUserServiceMockRecorder {
 }
 
 // DeleteMe mocks base method.
-func (m *MockIUserService) DeleteMe(arg0 context.Context, arg1 *serviceBos.Actor) errors.IHttpError {
+func (m *MockIUserService) DeleteMe(arg0 context.Context, arg1 *bo.Actor) errors.IHttpError {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteMe", arg0, arg1)
 	ret0, _ := ret[0].(errors.IHttpError)
@@ -196,7 +196,7 @@ func (mr *MockIUserServiceMockRecorder) DeleteMe(arg0, arg1 interface{}) *gomock
 }
 
 // GetMe mocks base method.
-func (m *MockIUserService) GetMe(arg0 context.Context, arg1 *serviceBos.Actor) (*response.UserResponse, errors.IHttpError) {
+func (m *MockIUserService) GetMe(arg0 context.Context, arg1 *bo.Actor) (*response.UserResponse, errors.IHttpError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMe", arg0, arg1)
 	ret0, _ := ret[0].(*response.UserResponse)
@@ -211,7 +211,7 @@ func (mr *MockIUserServiceMockRecorder) GetMe(arg0, arg1 interface{}) *gomock.Ca
 }
 
 // PatchMe mocks base method.
-func (m *MockIUserService) PatchMe(arg0 context.Context, arg1 *serviceBos.Actor, arg2 *request.PatchMeReq) (*response.UserResponse, errors.IHttpError) {
+func (m *MockIUserService) PatchMe(arg0 context.Context, arg1 *bo.Actor, arg2 *request.PatchMeReq) (*response.UserResponse, errors.IHttpError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PatchMe", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*response.UserResponse)
@@ -226,7 +226,7 @@ func (mr *MockIUserServiceMockRecorder) PatchMe(arg0, arg1, arg2 interface{}) *g
 }
 
 // SetPhone mocks base method.
-func (m *MockIUserService) SetPhone(arg0 context.Context, arg1 *serviceBos.Actor, arg2 string) (*response.UserResponse, errors.IHttpError) {
+func (m *MockIUserService) SetPhone(arg0 context.Context, arg1 *bo.Actor, arg2 string) (*response.UserResponse, errors.IHttpError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetPhone", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*response.UserResponse)
@@ -264,7 +264,7 @@ func (m *MockIHabitService) EXPECT() *MockIHabitServiceMockRecorder {
 }
 
 // Create mocks base method.
-func (m *MockIHabitService) Create(arg0 context.Context, arg1 *serviceBos.Actor, arg2 *request.CreateEntityReq) (map[string]interface{}, errors.IHttpError) {
+func (m *MockIHabitService) Create(arg0 context.Context, arg1 *bo.Actor, arg2 *request.CreateEntityReq) (map[string]interface{}, errors.IHttpError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", arg0, arg1, arg2)
 	ret0, _ := ret[0].(map[string]interface{})
@@ -279,7 +279,7 @@ func (mr *MockIHabitServiceMockRecorder) Create(arg0, arg1, arg2 interface{}) *g
 }
 
 // Delete mocks base method.
-func (m *MockIHabitService) Delete(arg0 context.Context, arg1 *serviceBos.Actor, arg2 string) errors.IHttpError {
+func (m *MockIHabitService) Delete(arg0 context.Context, arg1 *bo.Actor, arg2 string) errors.IHttpError {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Delete", arg0, arg1, arg2)
 	ret0, _ := ret[0].(errors.IHttpError)
@@ -293,7 +293,7 @@ func (mr *MockIHabitServiceMockRecorder) Delete(arg0, arg1, arg2 interface{}) *g
 }
 
 // List mocks base method.
-func (m *MockIHabitService) List(arg0 context.Context, arg1 *serviceBos.Actor, arg2 *request.ListHabitsReq) (*response.ItemsResponse, errors.IHttpError) {
+func (m *MockIHabitService) List(arg0 context.Context, arg1 *bo.Actor, arg2 *request.ListHabitsReq) (*response.ItemsResponse, errors.IHttpError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*response.ItemsResponse)
@@ -308,7 +308,7 @@ func (mr *MockIHabitServiceMockRecorder) List(arg0, arg1, arg2 interface{}) *gom
 }
 
 // Patch mocks base method.
-func (m *MockIHabitService) Patch(arg0 context.Context, arg1 *serviceBos.Actor, arg2 *request.PatchEntityReq) (map[string]interface{}, errors.IHttpError) {
+func (m *MockIHabitService) Patch(arg0 context.Context, arg1 *bo.Actor, arg2 *request.PatchEntityReq) (map[string]interface{}, errors.IHttpError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Patch", arg0, arg1, arg2)
 	ret0, _ := ret[0].(map[string]interface{})
@@ -346,7 +346,7 @@ func (m *MockIDailyLogService) EXPECT() *MockIDailyLogServiceMockRecorder {
 }
 
 // List mocks base method.
-func (m *MockIDailyLogService) List(arg0 context.Context, arg1 *serviceBos.Actor, arg2 *request.RangeReq) (*response.ItemsResponse, errors.IHttpError) {
+func (m *MockIDailyLogService) List(arg0 context.Context, arg1 *bo.Actor, arg2 *request.RangeReq) (*response.ItemsResponse, errors.IHttpError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*response.ItemsResponse)
@@ -361,7 +361,7 @@ func (mr *MockIDailyLogServiceMockRecorder) List(arg0, arg1, arg2 interface{}) *
 }
 
 // Put mocks base method.
-func (m *MockIDailyLogService) Put(arg0 context.Context, arg1 *serviceBos.Actor, arg2 *request.PutLogReq) (map[string]interface{}, errors.IHttpError) {
+func (m *MockIDailyLogService) Put(arg0 context.Context, arg1 *bo.Actor, arg2 *request.PutLogReq) (map[string]interface{}, errors.IHttpError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Put", arg0, arg1, arg2)
 	ret0, _ := ret[0].(map[string]interface{})
@@ -399,7 +399,7 @@ func (m *MockIWorkoutService) EXPECT() *MockIWorkoutServiceMockRecorder {
 }
 
 // Create mocks base method.
-func (m *MockIWorkoutService) Create(arg0 context.Context, arg1 *serviceBos.Actor, arg2 *request.CreateEntityReq) (map[string]interface{}, errors.IHttpError) {
+func (m *MockIWorkoutService) Create(arg0 context.Context, arg1 *bo.Actor, arg2 *request.CreateEntityReq) (map[string]interface{}, errors.IHttpError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", arg0, arg1, arg2)
 	ret0, _ := ret[0].(map[string]interface{})
@@ -414,7 +414,7 @@ func (mr *MockIWorkoutServiceMockRecorder) Create(arg0, arg1, arg2 interface{}) 
 }
 
 // Delete mocks base method.
-func (m *MockIWorkoutService) Delete(arg0 context.Context, arg1 *serviceBos.Actor, arg2 string) errors.IHttpError {
+func (m *MockIWorkoutService) Delete(arg0 context.Context, arg1 *bo.Actor, arg2 string) errors.IHttpError {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Delete", arg0, arg1, arg2)
 	ret0, _ := ret[0].(errors.IHttpError)
@@ -428,7 +428,7 @@ func (mr *MockIWorkoutServiceMockRecorder) Delete(arg0, arg1, arg2 interface{}) 
 }
 
 // List mocks base method.
-func (m *MockIWorkoutService) List(arg0 context.Context, arg1 *serviceBos.Actor, arg2 *request.RangeReq) (*response.ItemsResponse, errors.IHttpError) {
+func (m *MockIWorkoutService) List(arg0 context.Context, arg1 *bo.Actor, arg2 *request.RangeReq) (*response.ItemsResponse, errors.IHttpError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*response.ItemsResponse)
@@ -443,7 +443,7 @@ func (mr *MockIWorkoutServiceMockRecorder) List(arg0, arg1, arg2 interface{}) *g
 }
 
 // Patch mocks base method.
-func (m *MockIWorkoutService) Patch(arg0 context.Context, arg1 *serviceBos.Actor, arg2 *request.PatchEntityReq) (map[string]interface{}, errors.IHttpError) {
+func (m *MockIWorkoutService) Patch(arg0 context.Context, arg1 *bo.Actor, arg2 *request.PatchEntityReq) (map[string]interface{}, errors.IHttpError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Patch", arg0, arg1, arg2)
 	ret0, _ := ret[0].(map[string]interface{})
@@ -481,7 +481,7 @@ func (m *MockIPeriodService) EXPECT() *MockIPeriodServiceMockRecorder {
 }
 
 // Create mocks base method.
-func (m *MockIPeriodService) Create(arg0 context.Context, arg1 *serviceBos.Actor, arg2 *request.CreateEntityReq) (map[string]interface{}, errors.IHttpError) {
+func (m *MockIPeriodService) Create(arg0 context.Context, arg1 *bo.Actor, arg2 *request.CreateEntityReq) (map[string]interface{}, errors.IHttpError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", arg0, arg1, arg2)
 	ret0, _ := ret[0].(map[string]interface{})
@@ -496,7 +496,7 @@ func (mr *MockIPeriodServiceMockRecorder) Create(arg0, arg1, arg2 interface{}) *
 }
 
 // Delete mocks base method.
-func (m *MockIPeriodService) Delete(arg0 context.Context, arg1 *serviceBos.Actor, arg2 string) errors.IHttpError {
+func (m *MockIPeriodService) Delete(arg0 context.Context, arg1 *bo.Actor, arg2 string) errors.IHttpError {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Delete", arg0, arg1, arg2)
 	ret0, _ := ret[0].(errors.IHttpError)
@@ -510,7 +510,7 @@ func (mr *MockIPeriodServiceMockRecorder) Delete(arg0, arg1, arg2 interface{}) *
 }
 
 // List mocks base method.
-func (m *MockIPeriodService) List(arg0 context.Context, arg1 *serviceBos.Actor, arg2 *request.RangeReq) (*response.ItemsResponse, errors.IHttpError) {
+func (m *MockIPeriodService) List(arg0 context.Context, arg1 *bo.Actor, arg2 *request.RangeReq) (*response.ItemsResponse, errors.IHttpError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*response.ItemsResponse)
@@ -525,7 +525,7 @@ func (mr *MockIPeriodServiceMockRecorder) List(arg0, arg1, arg2 interface{}) *go
 }
 
 // Patch mocks base method.
-func (m *MockIPeriodService) Patch(arg0 context.Context, arg1 *serviceBos.Actor, arg2 *request.PatchEntityReq) (map[string]interface{}, errors.IHttpError) {
+func (m *MockIPeriodService) Patch(arg0 context.Context, arg1 *bo.Actor, arg2 *request.PatchEntityReq) (map[string]interface{}, errors.IHttpError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Patch", arg0, arg1, arg2)
 	ret0, _ := ret[0].(map[string]interface{})
@@ -563,7 +563,7 @@ func (m *MockISettingsService) EXPECT() *MockISettingsServiceMockRecorder {
 }
 
 // Get mocks base method.
-func (m *MockISettingsService) Get(arg0 context.Context, arg1 *serviceBos.Actor) (map[string]interface{}, errors.IHttpError) {
+func (m *MockISettingsService) Get(arg0 context.Context, arg1 *bo.Actor) (map[string]interface{}, errors.IHttpError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", arg0, arg1)
 	ret0, _ := ret[0].(map[string]interface{})
@@ -578,7 +578,7 @@ func (mr *MockISettingsServiceMockRecorder) Get(arg0, arg1 interface{}) *gomock.
 }
 
 // Patch mocks base method.
-func (m *MockISettingsService) Patch(arg0 context.Context, arg1 *serviceBos.Actor, arg2 *request.PatchEntityReq) (map[string]interface{}, errors.IHttpError) {
+func (m *MockISettingsService) Patch(arg0 context.Context, arg1 *bo.Actor, arg2 *request.PatchEntityReq) (map[string]interface{}, errors.IHttpError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Patch", arg0, arg1, arg2)
 	ret0, _ := ret[0].(map[string]interface{})
@@ -616,10 +616,10 @@ func (m *MockISyncService) EXPECT() *MockISyncServiceMockRecorder {
 }
 
 // Apply mocks base method.
-func (m *MockISyncService) Apply(arg0 context.Context, arg1 *serviceBos.Actor, arg2 serviceBos.ApplyOp) (*serviceBos.ApplyResult, errors.IHttpError) {
+func (m *MockISyncService) Apply(arg0 context.Context, arg1 *bo.Actor, arg2 bo.ApplyOp) (*bo.ApplyResult, errors.IHttpError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Apply", arg0, arg1, arg2)
-	ret0, _ := ret[0].(*serviceBos.ApplyResult)
+	ret0, _ := ret[0].(*bo.ApplyResult)
 	ret1, _ := ret[1].(errors.IHttpError)
 	return ret0, ret1
 }
@@ -631,7 +631,7 @@ func (mr *MockISyncServiceMockRecorder) Apply(arg0, arg1, arg2 interface{}) *gom
 }
 
 // Pull mocks base method.
-func (m *MockISyncService) Pull(arg0 context.Context, arg1 *serviceBos.Actor, arg2 *request.SyncPullReq) (*response.SyncPullResponse, errors.IHttpError) {
+func (m *MockISyncService) Pull(arg0 context.Context, arg1 *bo.Actor, arg2 *request.SyncPullReq) (*response.SyncPullResponse, errors.IHttpError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Pull", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*response.SyncPullResponse)
@@ -646,7 +646,7 @@ func (mr *MockISyncServiceMockRecorder) Pull(arg0, arg1, arg2 interface{}) *gomo
 }
 
 // Push mocks base method.
-func (m *MockISyncService) Push(arg0 context.Context, arg1 *serviceBos.Actor, arg2 *request.SyncPushReq) (*response.SyncPushResponse, errors.IHttpError) {
+func (m *MockISyncService) Push(arg0 context.Context, arg1 *bo.Actor, arg2 *request.SyncPushReq) (*response.SyncPushResponse, errors.IHttpError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Push", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*response.SyncPushResponse)
@@ -684,7 +684,7 @@ func (m *MockIStatsService) EXPECT() *MockIStatsServiceMockRecorder {
 }
 
 // Summary mocks base method.
-func (m *MockIStatsService) Summary(arg0 context.Context, arg1 *serviceBos.Actor, arg2 *request.RangeReq) (*response.SummaryResponse, errors.IHttpError) {
+func (m *MockIStatsService) Summary(arg0 context.Context, arg1 *bo.Actor, arg2 *request.RangeReq) (*response.SummaryResponse, errors.IHttpError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Summary", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*response.SummaryResponse)
@@ -737,7 +737,7 @@ func (mr *MockIProvisionServiceMockRecorder) EnsureAccount(arg0, arg1, arg2, arg
 }
 
 // Provision mocks base method.
-func (m *MockIProvisionService) Provision(arg0 context.Context, arg1 serviceBos.ProvisionOptions) error {
+func (m *MockIProvisionService) Provision(arg0 context.Context, arg1 bo.ProvisionOptions) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Provision", arg0, arg1)
 	ret0, _ := ret[0].(error)
@@ -812,7 +812,7 @@ func (m *MockIChatService) EXPECT() *MockIChatServiceMockRecorder {
 }
 
 // CreateSession mocks base method.
-func (m *MockIChatService) CreateSession(arg0 context.Context, arg1 *serviceBos.Actor, arg2 *request.CreateChatSessionReq) (*response.ChatSessionResponse, errors.IHttpError) {
+func (m *MockIChatService) CreateSession(arg0 context.Context, arg1 *bo.Actor, arg2 *request.CreateChatSessionReq) (*response.ChatSessionResponse, errors.IHttpError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateSession", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*response.ChatSessionResponse)
@@ -827,7 +827,7 @@ func (mr *MockIChatServiceMockRecorder) CreateSession(arg0, arg1, arg2 interface
 }
 
 // DeleteSession mocks base method.
-func (m *MockIChatService) DeleteSession(arg0 context.Context, arg1 *serviceBos.Actor, arg2 string) errors.IHttpError {
+func (m *MockIChatService) DeleteSession(arg0 context.Context, arg1 *bo.Actor, arg2 string) errors.IHttpError {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteSession", arg0, arg1, arg2)
 	ret0, _ := ret[0].(errors.IHttpError)
@@ -841,7 +841,7 @@ func (mr *MockIChatServiceMockRecorder) DeleteSession(arg0, arg1, arg2 interface
 }
 
 // GetSession mocks base method.
-func (m *MockIChatService) GetSession(arg0 context.Context, arg1 *serviceBos.Actor, arg2 string) (*response.ChatSessionResponse, errors.IHttpError) {
+func (m *MockIChatService) GetSession(arg0 context.Context, arg1 *bo.Actor, arg2 string) (*response.ChatSessionResponse, errors.IHttpError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSession", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*response.ChatSessionResponse)
@@ -856,7 +856,7 @@ func (mr *MockIChatServiceMockRecorder) GetSession(arg0, arg1, arg2 interface{})
 }
 
 // ListMessages mocks base method.
-func (m *MockIChatService) ListMessages(arg0 context.Context, arg1 *serviceBos.Actor, arg2 *request.ListChatMessagesReq) (*response.ChatMessagesResponse, errors.IHttpError) {
+func (m *MockIChatService) ListMessages(arg0 context.Context, arg1 *bo.Actor, arg2 *request.ListChatMessagesReq) (*response.ChatMessagesResponse, errors.IHttpError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListMessages", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*response.ChatMessagesResponse)
@@ -885,7 +885,7 @@ func (mr *MockIChatServiceMockRecorder) ListModels(arg0 interface{}) *gomock.Cal
 }
 
 // ListSessions mocks base method.
-func (m *MockIChatService) ListSessions(arg0 context.Context, arg1 *serviceBos.Actor) (*response.ChatSessionsResponse, errors.IHttpError) {
+func (m *MockIChatService) ListSessions(arg0 context.Context, arg1 *bo.Actor) (*response.ChatSessionsResponse, errors.IHttpError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListSessions", arg0, arg1)
 	ret0, _ := ret[0].(*response.ChatSessionsResponse)
@@ -900,7 +900,7 @@ func (mr *MockIChatServiceMockRecorder) ListSessions(arg0, arg1 interface{}) *go
 }
 
 // SendMessage mocks base method.
-func (m *MockIChatService) SendMessage(arg0 context.Context, arg1 *serviceBos.Actor, arg2 *request.SendChatMessageReq) (*response.SendChatMessageResponse, errors.IHttpError) {
+func (m *MockIChatService) SendMessage(arg0 context.Context, arg1 *bo.Actor, arg2 *request.SendChatMessageReq) (*response.SendChatMessageResponse, errors.IHttpError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SendMessage", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*response.SendChatMessageResponse)

@@ -1,6 +1,6 @@
 # Daily logs API (`logs.go`)
 
-Service: [daily_log_service.md](../../../../domain/service/daily_log_service.md). Contract section: Daily logs.
+Service: [daily-log-service.md](../../../../domain/service/daily-log-service.md). Contract section: Daily logs.
 
 | Route | Access | Success |
 |---|---|---|

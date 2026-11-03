@@ -1,6 +1,6 @@
 # Habits API (`habits.go`)
 
-Service: [habit_service.md](../../../../domain/service/habit_service.md). Contract section: Habits.
+Service: [habit-service.md](../../../../domain/service/habit-service.md). Contract section: Habits.
 
 | Route | Access | Success |
 |---|---|---|

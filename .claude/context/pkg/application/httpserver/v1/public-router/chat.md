@@ -1,6 +1,6 @@
 # Chat API (`chat.go`)
 
-Service: [chat_service.md](../../../../domain/service/chat_service.md). Contract section: Chat. Queue shapes: `docs/chat-contract.md`.
+Service: [chat-service.md](../../../../domain/service/chat-service.md). Contract section: Chat. Queue shapes: `docs/chat-contract.md`.
 
 | Route | Access | Success |
 |---|---|---|

@@ -18,8 +18,8 @@ import (
 	"github.com/BloomHealthApp/bloom-health-service/config"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/application/httpserver"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/di"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/bo"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/models/dao"
-	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/serviceBos"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/infrastructure/transport/smtp"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/logger"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/utils/clock"
@@ -67,11 +67,11 @@ func setup(t *testing.T) *env {
 	di.AppLogic = app
 
 	prov := app.GetProvisionService()
-	require.NoError(t, prov.Provision(ctx, serviceBos.ProvisionOptions{Owner: serviceBos.Person{Email: "anu@example.com", Name: "Anu"},
-		Viewer: serviceBos.Person{Email: "aman@example.com", Name: "Aman"}, Timezone: "UTC"}))
+	require.NoError(t, prov.Provision(ctx, bo.ProvisionOptions{Owner: bo.Person{Email: "anu@example.com", Name: "Anu"},
+		Viewer: bo.Person{Email: "aman@example.com", Name: "Aman"}, Timezone: "UTC"}))
 	// A second, unrelated space and an unprovisioned-membership user.
-	require.NoError(t, prov.Provision(ctx, serviceBos.ProvisionOptions{Owner: serviceBos.Person{Email: "other-owner@example.com", Name: "Other"},
-		Viewer: serviceBos.Person{Email: "other-viewer@example.com", Name: "Viewer2"}, Timezone: "UTC"}))
+	require.NoError(t, prov.Provision(ctx, bo.ProvisionOptions{Owner: bo.Person{Email: "other-owner@example.com", Name: "Other"},
+		Viewer: bo.Person{Email: "other-viewer@example.com", Name: "Viewer2"}, Timezone: "UTC"}))
 	require.NoError(t, repos.Users.Save(ctx, newUser("outsider@example.com")))
 
 	srv := httptest.NewServer(httpserver.NewRouter())

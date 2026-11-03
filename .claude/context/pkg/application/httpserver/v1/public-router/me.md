@@ -1,6 +1,6 @@
 # Profile API (`me.go`)
 
-Service: [user_service.md](../../../../domain/service/user_service.md). Contract section: Profile & settings.
+Service: [user-service.md](../../../../domain/service/user-service.md). Contract section: Profile & settings.
 
 | Route | Access | Success |
 |---|---|---|
