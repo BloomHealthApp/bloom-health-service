@@ -7,6 +7,7 @@ import (
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/bo"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/dto/request"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/dto/response"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/helpers"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/enums/entitytype"
 	apperrors "github.com/BloomHealthApp/bloom-health-service/pkg/errors"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/infrastructure/mongorepo"
@@ -47,7 +48,7 @@ func (s *habitService) List(ctx context.Context, a *bo.Actor, req *request.ListH
 		y, _ := out[j].Data["sortOrder"].(float64)
 		return x < y
 	})
-	return &response.ItemsResponse{Items: publicList(out)}, nil
+	return &response.ItemsResponse{Items: helpers.PublicList(out)}, nil
 }
 
 func (s *habitService) Create(ctx context.Context, a *bo.Actor, req *request.CreateEntityReq) (map[string]any, apperrors.IHttpError) {

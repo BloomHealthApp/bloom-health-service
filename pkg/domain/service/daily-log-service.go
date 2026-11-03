@@ -6,6 +6,7 @@ import (
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/bo"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/dto/request"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/dto/response"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/helpers"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/enums/entitytype"
 	apperrors "github.com/BloomHealthApp/bloom-health-service/pkg/errors"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/infrastructure/mongorepo"
@@ -34,7 +35,7 @@ func (s *dailyLogService) List(ctx context.Context, a *bo.Actor, req *request.Ra
 	if err != nil {
 		return nil, internalErr(s.log, ctx, "log list failed", err)
 	}
-	return &response.ItemsResponse{Items: publicList(es)}, nil
+	return &response.ItemsResponse{Items: helpers.PublicList(es)}, nil
 }
 
 func (s *dailyLogService) Put(ctx context.Context, a *bo.Actor, req *request.PutLogReq) (map[string]any, apperrors.IHttpError) {

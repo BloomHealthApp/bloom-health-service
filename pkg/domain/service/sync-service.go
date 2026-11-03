@@ -8,6 +8,7 @@ import (
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/bo"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/dto/request"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/dto/response"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/helpers"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/models/dao"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/enums/entitytype"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/enums/opstatus"
@@ -255,12 +256,7 @@ func (s *syncService) Push(ctx context.Context, a *bo.Actor, req *request.SyncPu
 		if herr != nil {
 			return nil, herr
 		}
-		item := response.SyncResult{OperationID: o.OperationID, Status: res.Status, Reason: res.Reason, Resolved: res.Resolved}
-		if res.Entity != nil {
-			item.Entity = res.Entity.Public()
-			item.EntityType = res.Entity.Type
-		}
-		results = append(results, item)
+		results = append(results, helpers.SyncResult(o.OperationID, res))
 	}
 	return &response.SyncPushResponse{Results: results}, nil
 }

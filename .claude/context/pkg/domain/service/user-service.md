@@ -1,7 +1,7 @@
 # IUserService (`user-service.go`, `user-view.go`)
 
 ## Purpose
-Reads and updates the caller's own profile. `buildUserResponse` renders the contract's `user` object and is also used by auth.
+Reads and updates the caller's own profile. `buildUserResponse` looks up the space owner and renders the contract's `user` object through `helpers.UserResponse`; auth uses it too.
 
 ## Rules
 `periodTrackerEnabled` is always the caller's own value. A viewer must never learn the owner's value or gender. The owner fields in `user` are limited to `ownerDisplayName` and `ownerAvatar`.

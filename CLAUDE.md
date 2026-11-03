@@ -23,7 +23,7 @@ Local run without MongoDB:
 ## Context workflow (every task)
 Project context lives in `.claude/context/`, mirroring the service's folders. Not in code comments.
 
-1. Before changing code in a folder, read the matching `.claude/context/<path>/context.md`, and its nearest parent if there is none. Also read the note for the file you're changing, if there is one: `public-router/<api>.md` for an API, `service/<name>_service.md` for a service.
+1. Before changing code in a folder, read the matching `.claude/context/<path>/context.md`, and its nearest parent if there is none. Also read the note for the file you're changing, if there is one: `public-router/<api>.md` for an API, `service/<name>-service.md` for a service.
 2. After the change, in the same task, update the context file for any new or changed rule, reason, gotcha or architecture decision. Create the file if the folder now has real context. Delete statements that are no longer true.
 3. New, moved or deleted service folders: make the same change in `.claude/context/`. New or changed routes and services: update their note and the index table in that folder's `context.md`. New external services or changes to how one is used: update `_shared/external-services.md`.
 4. Do not add comments to code to hold context, history or task notes.
@@ -40,6 +40,7 @@ pkg/application/httpserver/    router, HTTP tests; v1/public-router/ = handlers
 pkg/di/                        Wire graph and AppLogic
 pkg/domain/service/            services
 pkg/domain/bo/                 business objects
+pkg/domain/helpers/            pure DAO/BO -> response DTO mappers
 pkg/domain/dto/                request and response DTOs
 pkg/domain/models/dao/         persisted documents
 pkg/enums/                     one package per enum

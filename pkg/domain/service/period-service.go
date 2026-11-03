@@ -7,6 +7,7 @@ import (
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/bo"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/dto/request"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/dto/response"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/helpers"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/models/dao"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/enums/entitytype"
 	apperrors "github.com/BloomHealthApp/bloom-health-service/pkg/errors"
@@ -67,7 +68,7 @@ func (s *periodService) List(ctx context.Context, a *bo.Actor, req *request.Rang
 		items = append(items, e)
 	}
 	sortByStart(items)
-	return &response.ItemsResponse{Items: publicList(items)}, nil
+	return &response.ItemsResponse{Items: helpers.PublicList(items)}, nil
 }
 
 func (s *periodService) Create(ctx context.Context, a *bo.Actor, req *request.CreateEntityReq) (map[string]any, apperrors.IHttpError) {

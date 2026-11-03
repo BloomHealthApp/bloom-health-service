@@ -43,14 +43,6 @@ func resultToEntity(res *bo.ApplyResult) (map[string]any, apperrors.IHttpError) 
 	}
 }
 
-func publicList(es []dao.Entity) []map[string]any {
-	out := make([]map[string]any, 0, len(es))
-	for i := range es {
-		out = append(out, es[i].Public())
-	}
-	return out
-}
-
 // entityWriter implements create/patch/delete for one entity type on top of ISyncService.
 type entityWriter struct {
 	log      logger.ILogger

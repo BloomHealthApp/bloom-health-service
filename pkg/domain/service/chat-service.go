@@ -13,6 +13,7 @@ import (
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/bo"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/dto/request"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/dto/response"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/helpers"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/models/dao"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/enums/chatrole"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/enums/chatstatus"
@@ -84,7 +85,7 @@ func (s *chatService) CreateSession(ctx context.Context, actor *bo.Actor, req *r
 	if err := s.sessions.Create(ctx, sess); err != nil {
 		return nil, internalErr(s.log, ctx, "chat session create failed", err)
 	}
-	r := chatSessionResponse(sess)
+	r := helpers.ChatSessionResponse(sess)
 	return &r, nil
 }
 
@@ -95,7 +96,7 @@ func (s *chatService) ListSessions(ctx context.Context, actor *bo.Actor) (*respo
 	}
 	out := &response.ChatSessionsResponse{Items: make([]response.ChatSessionResponse, 0, len(list))}
 	for i := range list {
-		out.Items = append(out.Items, chatSessionResponse(&list[i]))
+		out.Items = append(out.Items, helpers.ChatSessionResponse(&list[i]))
 	}
 	return out, nil
 }
@@ -116,7 +117,7 @@ func (s *chatService) GetSession(ctx context.Context, actor *bo.Actor, id string
 	if herr != nil {
 		return nil, herr
 	}
-	r := chatSessionResponse(sess)
+	r := helpers.ChatSessionResponse(sess)
 	return &r, nil
 }
 
@@ -151,7 +152,7 @@ func (s *chatService) ListMessages(ctx context.Context, actor *bo.Actor, req *re
 		out.NextBefore = &oldest
 	}
 	for i := len(list) - 1; i >= 0; i-- {
-		out.Items = append(out.Items, chatMessageResponse(&list[i]))
+		out.Items = append(out.Items, helpers.ChatMessageResponse(&list[i]))
 	}
 	return out, nil
 }
@@ -202,7 +203,7 @@ func (s *chatService) SendMessage(ctx context.Context, actor *bo.Actor, req *req
 			s.log.Warn(ctx, "chat auto-title failed", map[string]any{"sessionId": sess.ID, "err": err.Error()})
 		}
 	}
-	return &response.SendChatMessageResponse{UserMessage: chatMessageResponse(userMsg), AssistantMessage: chatMessageResponse(assistantMsg)}, nil
+	return &response.SendChatMessageResponse{UserMessage: helpers.ChatMessageResponse(userMsg), AssistantMessage: helpers.ChatMessageResponse(assistantMsg)}, nil
 }
 
 // checkDailyCap refuses a new message once the user has sent DailyMessageCap messages this UTC day.
@@ -225,24 +226,4 @@ func autoTitle(content string) string {
 		t = strings.TrimSpace(string(r[:autoTitleChars])) + "…"
 	}
 	return t
-}
-
-func chatSessionResponse(s *dao.ChatSession) response.ChatSessionResponse {
-	scopes := s.ContextScopes
-	if scopes == nil {
-		scopes = []string{}
-	}
-	return response.ChatSessionResponse{ID: s.ID, Title: s.Title, ModelID: s.ModelID, ContextScopes: scopes,
-		PendingMessageID: s.ActiveTurnID, CreatedAt: s.CreatedAt.UTC().Format(time.RFC3339), UpdatedAt: s.UpdatedAt.UTC().Format(time.RFC3339)}
-}
-
-func chatMessageResponse(m *dao.ChatMessage) response.ChatMessageResponse {
-	var code *string
-	if m.ErrorCode != "" {
-		c := m.ErrorCode
-		code = &c
-	}
-	return response.ChatMessageResponse{ID: m.ID, SessionID: m.SessionID, Idx: m.Idx, Role: m.Role, Content: m.Content,
-		Status: chatstatus.Wire(m.Status), ModelID: m.ModelID, ErrorCode: code,
-		CreatedAt: m.CreatedAt.UTC().Format(time.RFC3339), UpdatedAt: m.UpdatedAt.UTC().Format(time.RFC3339)}
 }

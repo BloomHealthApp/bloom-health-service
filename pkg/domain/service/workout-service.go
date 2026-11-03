@@ -6,6 +6,7 @@ import (
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/bo"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/dto/request"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/dto/response"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/helpers"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/enums/entitytype"
 	apperrors "github.com/BloomHealthApp/bloom-health-service/pkg/errors"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/infrastructure/mongorepo"
@@ -35,7 +36,7 @@ func (s *workoutService) List(ctx context.Context, a *bo.Actor, req *request.Ran
 	if err != nil {
 		return nil, internalErr(s.log, ctx, "workout list failed", err)
 	}
-	return &response.ItemsResponse{Items: publicList(es)}, nil
+	return &response.ItemsResponse{Items: helpers.PublicList(es)}, nil
 }
 
 func (s *workoutService) Create(ctx context.Context, a *bo.Actor, req *request.CreateEntityReq) (map[string]any, apperrors.IHttpError) {
