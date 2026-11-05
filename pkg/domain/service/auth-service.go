@@ -73,12 +73,15 @@ type authService struct {
 	secret      []byte
 	issuer      string
 	resendAfter time.Duration
+	reviewEmail string
+	reviewCode  string
 }
 
 func NewAuthService(log logger.ILogger, cfg *config.Store, users mongorepo.IUserRepo, memberships mongorepo.IMembershipRepo,
 	otps mongorepo.IOTPRepo, sessions mongorepo.ISessionRepo, mailer smtp.IMailer, provision IProvisionService, clk clock.Clock) IAuthService {
 	return &authService{log: log, users: users, memberships: memberships, otps: otps, sessions: sessions, mailer: mailer,
-		provision: provision, defaultTZ: cfg.DefaultTZ, clock: clk, secret: []byte(cfg.AccessSecret), issuer: cfg.Issuer, resendAfter: cfg.OTPResendAfter}
+		provision: provision, defaultTZ: cfg.DefaultTZ, clock: clk, secret: []byte(cfg.AccessSecret), issuer: cfg.Issuer, resendAfter: cfg.OTPResendAfter,
+		reviewEmail: cfg.ReviewEmail, reviewCode: cfg.ReviewCode}
 }
 
 func internalErr(log logger.ILogger, ctx context.Context, msg string, err error) apperrors.IHttpError {
@@ -131,9 +134,14 @@ func (s *authService) sendChallenge(ctx context.Context, purpose, email, name, p
 	if err != nil {
 		return "", err
 	}
-	code, err := randomCode()
-	if err != nil {
-		return "", err
+	// Security: only sign-in for the configured review account gets the fixed code. Sign-up and phone changes are always
+	// mailed, so the account must first be created through a real emailed code.
+	review := purpose == dao.OTPPurposeSignIn && s.reviewEmail != "" && email == s.reviewEmail
+	code := s.reviewCode
+	if !review {
+		if code, err = randomCode(); err != nil {
+			return "", err
+		}
 	}
 	prev, _ := s.otps.LatestByEmail(ctx, email)
 	now := s.clock.Now()
@@ -144,6 +152,10 @@ func (s *authService) sendChallenge(ctx context.Context, purpose, email, name, p
 	}
 	if prev != nil && prev.ChallengeID != id {
 		_ = s.otps.Delete(ctx, prev.ChallengeID) // only the newest code stays valid
+	}
+	if review {
+		s.log.Info(ctx, "signin: review account, code not mailed", nil)
+		return id, nil
 	}
 	kind := smtp.OTPSignIn
 	switch purpose {

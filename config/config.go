@@ -51,6 +51,10 @@ type Store struct {
 	SMTPHost     string
 	SMTPUser     string
 	SMTPPass     string
+	// ReviewEmail and ReviewCode (REVIEW_LOGIN_EMAIL, REVIEW_LOGIN_CODE) give Google Play's reviewers a fixed sign-in
+	// code for one existing account, because they can't read its inbox. Both empty (the default) turns it off.
+	ReviewEmail string
+	ReviewCode  string
 }
 
 // envBindings maps viper keys to the environment variables that may override them.
@@ -110,6 +114,7 @@ func NewConfig() (*Store, error) {
 		DefaultTZ: v.GetString("account.defaultTimezone"), DefaultCountryCode: strings.TrimSpace(v.GetString("account.defaultCountryCode")),
 		MongoURI: os.Getenv("MONGODB_URI"), AccessSecret: os.Getenv("ACCESS_TOKEN_SECRET"),
 		SMTPHost: os.Getenv("SMTP_HOST"), SMTPUser: os.Getenv("SMTP_USER"), SMTPPass: os.Getenv("SMTP_PASS"),
+		ReviewEmail: strings.ToLower(strings.TrimSpace(os.Getenv("REVIEW_LOGIN_EMAIL"))), ReviewCode: strings.TrimSpace(os.Getenv("REVIEW_LOGIN_CODE")),
 	}
 	if c.DefaultCountryCode == "" {
 		c.DefaultCountryCode = utils.DefaultCountryCode
@@ -147,7 +152,30 @@ func (c *Store) Validate() error {
 	if c.Mailer == "smtp" && c.SMTPHost == "" {
 		return errors.New("SMTP_HOST is required when MAILER=smtp")
 	}
+	if err := validateReviewLogin(c.ReviewEmail, c.ReviewCode); err != nil {
+		return err
+	}
 	return c.Chat.Validate()
+}
+
+// validateReviewLogin requires both review settings or neither, and a 6-digit code that isn't trivially guessable.
+func validateReviewLogin(email, code string) error {
+	if email == "" && code == "" {
+		return nil
+	}
+	if email == "" || code == "" {
+		return errors.New("REVIEW_LOGIN_EMAIL and REVIEW_LOGIN_CODE must be set together")
+	}
+	if !strings.Contains(email, "@") {
+		return errors.New("REVIEW_LOGIN_EMAIL must be an email address")
+	}
+	if len(code) != 6 || strings.Trim(code, "0123456789") != "" {
+		return errors.New("REVIEW_LOGIN_CODE must be 6 digits")
+	}
+	if code == "123456" || code == "654321" || strings.Count(code, code[:1]) == 6 {
+		return errors.New("REVIEW_LOGIN_CODE is too easy to guess")
+	}
+	return nil
 }
 
 func splitList(s string) []string {

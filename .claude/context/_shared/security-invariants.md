@@ -9,3 +9,4 @@
 - Strict JSON (`DisallowUnknownFields`, no trailing data), 1 MiB body limit, secure response headers, rate limits (per IP, per IP on `/auth`, per normalized email/phone, per challenge on verify).
 - Logs never contain tokens, OTPs or wellness values (logger redacts sensitive keys; request log records route patterns only).
 - Secrets (`MONGODB_URI`, `ACCESS_TOKEN_SECRET`, `SMTP_*`) come only from the environment. Never commit real values; `assets/*-config.json` hold non-secret settings only. PROD refuses `STORE=memory` and the console mailer.
+- The only exception to emailed codes is the optional Play review login: one configured email signs in with a fixed 6-digit code (`REVIEW_LOGIN_*`, env only). It never applies to sign-up or phone changes, to any other account, or when either variable is unset. Keep that account free of real personal data, and rotate the code if it leaks.

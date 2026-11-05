@@ -62,3 +62,32 @@ func TestChatConfigValidate(t *testing.T) {
 	assert.Error(t, ChatConfig{Models: []ChatModel{m, other}}.Validate(), "two defaults")
 	assert.Error(t, ChatConfig{Models: []ChatModel{{ID: "x", Default: true}}}.Validate(), "missing vendor")
 }
+
+func TestValidateReviewLogin(t *testing.T) {
+	assert.NoError(t, validateReviewLogin("", ""), "off by default")
+	assert.NoError(t, validateReviewLogin("review@example.com", "481937"))
+	assert.Error(t, validateReviewLogin("review@example.com", ""), "both or neither")
+	assert.Error(t, validateReviewLogin("", "481937"), "both or neither")
+	assert.Error(t, validateReviewLogin("not-an-email", "481937"))
+	for _, code := range []string{"12345", "1234567", "12a456", "123456", "654321", "000000", "777777"} {
+		assert.Error(t, validateReviewLogin("review@example.com", code), code)
+	}
+}
+
+func TestNewConfigReviewLogin(t *testing.T) {
+	t.Setenv("ACTIVE_ENV", "DEV")
+	t.Setenv("STORE", "memory")
+	t.Setenv("MAILER", "console")
+	t.Setenv("ACCESS_TOKEN_SECRET", "test-secret-test-secret-test-secret")
+	t.Setenv("REVIEW_LOGIN_EMAIL", " Review@Example.com ")
+	t.Setenv("REVIEW_LOGIN_CODE", "481937")
+
+	cfg, err := NewConfig()
+	require.NoError(t, err)
+	assert.Equal(t, "review@example.com", cfg.ReviewEmail)
+	assert.Equal(t, "481937", cfg.ReviewCode)
+
+	t.Setenv("REVIEW_LOGIN_CODE", "")
+	_, err = NewConfig()
+	assert.Error(t, err)
+}
