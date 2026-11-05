@@ -24,6 +24,9 @@ func main() {
 	defer cleanup()
 	di.AppLogic = app
 	cfg, log := app.GetConfig(), app.GetLogger()
+	if cfg.ReviewLoginProblem != "" {
+		log.Error(context.Background(), "review login disabled", map[string]any{"reason": cfg.ReviewLoginProblem})
+	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()

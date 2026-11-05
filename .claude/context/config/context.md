@@ -10,7 +10,7 @@ Viper loader producing `config.Store`: `assets/{dev,stag,prod}-config.json` (emb
 ## Gotchas
 An environment override only works if its variable is listed in `envBindings`. `CORS_ORIGINS` (comma-separated browser origins) is empty by default, which turns CORS headers off.
 
-- `REVIEW_LOGIN_EMAIL` + `REVIEW_LOGIN_CODE` are read straight from the environment (secrets, not in `envBindings`). `validateReviewLogin` needs both or neither, an email, and a 6-digit code that isn't `123456`, `654321` or one repeated digit.
+- `REVIEW_LOGIN_EMAIL` + `REVIEW_LOGIN_CODE` are read straight from the environment (secrets, not in `envBindings`). `validateReviewLogin` needs both or neither, an email, and a 6-digit code that isn't `123456`, `654321` or one repeated digit. Bad values never stop startup: the review login is turned off, `ReviewLoginProblem` holds the reason, and `cmd/server` logs `review login disabled` with it (never the code). Unlike the required settings, this optional feature must not take the API down (it did once, as a 500 `FUNCTION_INVOCATION_FAILED` on Vercel).
 
 ## Related
 `_shared/security-invariants.md`
