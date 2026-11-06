@@ -24,7 +24,14 @@ type User struct {
 	Theme         string    `bson:"theme"`
 	CreatedAt     time.Time `bson:"createdAt"`
 	UpdatedAt     time.Time `bson:"updatedAt"`
+	// DeletionRequestedAt and DeleteAfter are set while the account is scheduled for deletion (DELETE /v1/me).
+	// The account is locked until it is restored, and erased once DeleteAfter has passed.
+	DeletionRequestedAt *time.Time `bson:"deletionRequestedAt,omitempty"`
+	DeleteAfter         *time.Time `bson:"deleteAfter,omitempty"`
 }
+
+// PendingDeletion reports whether the account is scheduled for deletion.
+func (u *User) PendingDeletion() bool { return u != nil && u.DeleteAfter != nil }
 
 // IsPeriodTrackerEnabled is the effective tracker setting: the explicit choice if set, else gender == female.
 func (u *User) IsPeriodTrackerEnabled() bool {

@@ -10,6 +10,7 @@ Passwordless sign-up and sign-in by emailed code, JWT access tokens, rotating re
 - Every `VerifyOTP` failure returns the same 401 `invalid or expired code`.
 - `Authenticate` takes the role from the database, never from the token. It only accepts HS256 with the configured issuer and an expiry.
 - Compare OTP hashes with `subtle.ConstantTimeCompare`.
+- `Authenticate` rejects an account whose deletion date has passed, and sets `Actor.DeleteAfter` for a pending one (for a viewer, from the space owner via `spaceOwner`). Sign-in request and verify run `eraseIfOverdue` first, so an overdue account is erased and answers like an unknown one.
 - **Review login (Google Play):** when `REVIEW_LOGIN_EMAIL`/`REVIEW_LOGIN_CODE` are set, a *sign-in* challenge for that email is hashed from the fixed code and not mailed (logged as `signin: review account, code not mailed`). Sign-up and phone-change codes are always random and mailed, so the account must first be created with a real emailed code, and an unknown review email still gets the usual decoy. Attempts, rate limits and the cooldown apply unchanged. The account is an ordinary owner with its own private space.
 
 ## Why

@@ -28,6 +28,7 @@ const testSecret = "0123456789abcdef0123456789abcdef-unit"
 type authMocks struct {
 	users       *mongorepo.MockIUserRepo
 	memberships *mongorepo.MockIMembershipRepo
+	accounts    *mongorepo.MockIAccountRepo
 	otps        *mongorepo.MockIOTPRepo
 	sessions    *mongorepo.MockISessionRepo
 	mailer      *smtp.CaptureMailer
@@ -39,14 +40,14 @@ type authMocks struct {
 func createAuthService(ctrl *gomock.Controller, setup func(m *authMocks)) (IAuthService, *authMocks) {
 	m := &authMocks{
 		users: mongorepo.NewMockIUserRepo(ctrl), memberships: mongorepo.NewMockIMembershipRepo(ctrl),
-		otps: mongorepo.NewMockIOTPRepo(ctrl), sessions: mongorepo.NewMockISessionRepo(ctrl),
+		accounts: mongorepo.NewMockIAccountRepo(ctrl), otps: mongorepo.NewMockIOTPRepo(ctrl), sessions: mongorepo.NewMockISessionRepo(ctrl),
 		mailer: &smtp.CaptureMailer{}, provision: NewMockIProvisionService(ctrl), clock: clock.NewFake(),
 	}
 	if setup != nil {
 		setup(m)
 	}
 	cfg := &config.Store{AccessSecret: testSecret, Issuer: "unit", OTPResendAfter: 30 * time.Second}
-	return NewAuthService(logger.NewDiscard(), cfg, m.users, m.memberships, m.otps, m.sessions, m.mailer, m.provision, m.clock), m
+	return NewAuthService(logger.NewDiscard(), cfg, m.users, m.memberships, m.accounts, m.otps, m.sessions, m.mailer, m.provision, m.clock), m
 }
 
 var (
@@ -481,10 +482,13 @@ func TestAuthenticate(t *testing.T) {
 		token := mintForTest(t, svc, m)
 		m.users.EXPECT().ByID(gomock.Any(), anu.ID).Return(anu, nil)
 		m.memberships.EXPECT().ForUser(gomock.Any(), anu.ID).Return(viewer, nil)
+		// A viewer's access also depends on whether the space owner (anu, per mintForTest) asked for deletion.
+		m.users.EXPECT().ByID(gomock.Any(), anu.ID).Return(anu, nil)
 		actor, herr := svc.Authenticate(ctx, token)
 		require.Nil(t, herr)
 		require.False(t, actor.IsOwner())
 		require.Equal(t, "space1", actor.SpaceID())
+		require.False(t, actor.PendingDeletion())
 	})
 	t.Run("expired token", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
@@ -585,7 +589,7 @@ func TestRequestSignInLogsPhoneMissWithoutTheNumber(t *testing.T) {
 		_, m := createAuthService(ctrl, expect)
 		var out bytes.Buffer
 		cfg := &config.Store{AccessSecret: testSecret, Issuer: "unit", OTPResendAfter: 30 * time.Second}
-		svc := NewAuthService(logger.NewWithWriter(&out, "info"), cfg, m.users, m.memberships, m.otps, m.sessions, m.mailer, m.provision, m.clock)
+		svc := NewAuthService(logger.NewWithWriter(&out, "info"), cfg, m.users, m.memberships, m.accounts, m.otps, m.sessions, m.mailer, m.provision, m.clock)
 		resp, herr := svc.RequestSignIn(ctx, req)
 		require.Nil(t, herr)
 		require.Equal(t, "sent", resp.Status)

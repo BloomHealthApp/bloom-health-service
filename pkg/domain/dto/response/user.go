@@ -17,4 +17,6 @@ type UserResponse struct {
 	Gender           *string `json:"gender"`      // female|male|other|prefer_not_to_say|null
 	// PeriodTrackerEnabled is the effective setting: explicit user choice, else gender == female.
 	PeriodTrackerEnabled bool `json:"periodTrackerEnabled"`
+	// DeletionScheduledAt is when the account will be erased (RFC3339); null unless deletion was requested.
+	DeletionScheduledAt *string `json:"deletionScheduledAt"`
 }

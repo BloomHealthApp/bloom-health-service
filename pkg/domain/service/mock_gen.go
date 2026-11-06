@@ -182,11 +182,12 @@ func (m *MockIUserService) EXPECT() *MockIUserServiceMockRecorder {
 }
 
 // DeleteMe mocks base method.
-func (m *MockIUserService) DeleteMe(arg0 context.Context, arg1 *bo.Actor) errors.IHttpError {
+func (m *MockIUserService) DeleteMe(arg0 context.Context, arg1 *bo.Actor) (*response.DeletionScheduledResponse, errors.IHttpError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteMe", arg0, arg1)
-	ret0, _ := ret[0].(errors.IHttpError)
-	return ret0
+	ret0, _ := ret[0].(*response.DeletionScheduledResponse)
+	ret1, _ := ret[1].(errors.IHttpError)
+	return ret0, ret1
 }
 
 // DeleteMe indicates an expected call of DeleteMe.
@@ -223,6 +224,36 @@ func (m *MockIUserService) PatchMe(arg0 context.Context, arg1 *bo.Actor, arg2 *r
 func (mr *MockIUserServiceMockRecorder) PatchMe(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PatchMe", reflect.TypeOf((*MockIUserService)(nil).PatchMe), arg0, arg1, arg2)
+}
+
+// PurgeDue mocks base method.
+func (m *MockIUserService) PurgeDue(arg0 context.Context) (int, errors.IHttpError) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PurgeDue", arg0)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(errors.IHttpError)
+	return ret0, ret1
+}
+
+// PurgeDue indicates an expected call of PurgeDue.
+func (mr *MockIUserServiceMockRecorder) PurgeDue(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PurgeDue", reflect.TypeOf((*MockIUserService)(nil).PurgeDue), arg0)
+}
+
+// RestoreMe mocks base method.
+func (m *MockIUserService) RestoreMe(arg0 context.Context, arg1 *bo.Actor) (*response.UserResponse, errors.IHttpError) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RestoreMe", arg0, arg1)
+	ret0, _ := ret[0].(*response.UserResponse)
+	ret1, _ := ret[1].(errors.IHttpError)
+	return ret0, ret1
+}
+
+// RestoreMe indicates an expected call of RestoreMe.
+func (mr *MockIUserServiceMockRecorder) RestoreMe(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RestoreMe", reflect.TypeOf((*MockIUserService)(nil).RestoreMe), arg0, arg1)
 }
 
 // SetPhone mocks base method.

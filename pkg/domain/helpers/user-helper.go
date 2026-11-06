@@ -1,6 +1,8 @@
 package helpers
 
 import (
+	"time"
+
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/dto/response"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/models/dao"
 )
@@ -10,8 +12,13 @@ func UserResponse(u *dao.User, m *dao.Membership, owner *dao.User) response.User
 	if owner == nil {
 		owner = u
 	}
+	var scheduled *string
+	if u.DeleteAfter != nil {
+		v := u.DeleteAfter.UTC().Format(time.RFC3339)
+		scheduled = &v
+	}
 	return response.UserResponse{ID: u.ID, Email: u.Email, Phone: u.Phone, DisplayName: u.DisplayName, Avatar: u.Avatar,
 		Timezone: u.Timezone, Theme: u.Theme, Role: string(m.Role), SharedSpaceID: m.SpaceID,
 		OwnerDisplayName: owner.DisplayName, OwnerAvatar: owner.Avatar,
-		Gender: u.Gender, PeriodTrackerEnabled: u.IsPeriodTrackerEnabled()}
+		Gender: u.Gender, PeriodTrackerEnabled: u.IsPeriodTrackerEnabled(), DeletionScheduledAt: scheduled}
 }
