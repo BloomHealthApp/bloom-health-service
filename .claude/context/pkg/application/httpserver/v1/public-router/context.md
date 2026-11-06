@@ -31,6 +31,8 @@ Access: public = no token; both = any member; owner = `RequireOwner`.
 | `GET /v1/me` | both | User | [me.md](me.md) |
 | `PATCH /v1/me` | both | User | [me.md](me.md) |
 | `DELETE /v1/me` | both | User | [me.md](me.md) |
+| `POST /v1/me/restore` | both | User | [me.md](me.md) |
+| `GET /internal/cron/purge-deleted-accounts` | `CRON_SECRET` | User | [me.md](me.md); Vercel Cron, daily |
 | `GET /v1/settings` | both | Settings | [settings.md](settings.md) |
 | `PATCH /v1/settings` | owner | Settings | [settings.md](settings.md) |
 | `GET /v1/habits` | both | Habit | [habits.md](habits.md) |

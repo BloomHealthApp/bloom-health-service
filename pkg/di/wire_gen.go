@@ -33,15 +33,15 @@ func InitializeApp() (AppInterface, func(), error) {
 	}
 	iUserRepo := repositories.Users
 	iMembershipRepo := repositories.Memberships
+	iAccountRepo := repositories.Accounts
 	iotpRepo := repositories.OTPs
 	iSessionRepo := repositories.Sessions
 	iMailer := smtp.NewMailer(store, iLogger)
 	iSpaceRepo := repositories.Spaces
 	iEntityRepo := repositories.Entities
 	iProvisionService := service.NewProvisionService(iLogger, iUserRepo, iSpaceRepo, iMembershipRepo, iEntityRepo, clockClock)
-	iAuthService := service.NewAuthService(iLogger, store, iUserRepo, iMembershipRepo, iotpRepo, iSessionRepo, iMailer, iProvisionService, clockClock)
-	iAccountRepo := repositories.Accounts
-	iUserService := service.NewUserService(iLogger, iUserRepo, iMembershipRepo, iAccountRepo, clockClock)
+	iAuthService := service.NewAuthService(iLogger, store, iUserRepo, iMembershipRepo, iAccountRepo, iotpRepo, iSessionRepo, iMailer, iProvisionService, clockClock)
+	iUserService := service.NewUserService(iLogger, iUserRepo, iMembershipRepo, iAccountRepo, iSessionRepo, iMailer, clockClock)
 	iOpRepo := repositories.Ops
 	iSyncService := service.NewSyncService(iLogger, iEntityRepo, iOpRepo, clockClock)
 	iHabitService := service.NewHabitService(iLogger, iEntityRepo, iSyncService)
@@ -84,14 +84,14 @@ func InitializeTestApp(cfg *config.Store, log logger.ILogger, clk clock.Clock, m
 	set := ratelimit.NewSet()
 	iUserRepo := repos.Users
 	iMembershipRepo := repos.Memberships
+	iAccountRepo := repos.Accounts
 	iotpRepo := repos.OTPs
 	iSessionRepo := repos.Sessions
 	iSpaceRepo := repos.Spaces
 	iEntityRepo := repos.Entities
 	iProvisionService := service.NewProvisionService(log, iUserRepo, iSpaceRepo, iMembershipRepo, iEntityRepo, clk)
-	iAuthService := service.NewAuthService(log, cfg, iUserRepo, iMembershipRepo, iotpRepo, iSessionRepo, mailer, iProvisionService, clk)
-	iAccountRepo := repos.Accounts
-	iUserService := service.NewUserService(log, iUserRepo, iMembershipRepo, iAccountRepo, clk)
+	iAuthService := service.NewAuthService(log, cfg, iUserRepo, iMembershipRepo, iAccountRepo, iotpRepo, iSessionRepo, mailer, iProvisionService, clk)
+	iUserService := service.NewUserService(log, iUserRepo, iMembershipRepo, iAccountRepo, iSessionRepo, mailer, clk)
 	iOpRepo := repos.Ops
 	iSyncService := service.NewSyncService(log, iEntityRepo, iOpRepo, clk)
 	iHabitService := service.NewHabitService(log, iEntityRepo, iSyncService)

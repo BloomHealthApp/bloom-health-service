@@ -12,6 +12,8 @@ An environment override only works if its variable is listed in `envBindings`. `
 
 - `REVIEW_LOGIN_EMAIL` + `REVIEW_LOGIN_CODE` are read straight from the environment (secrets, not in `envBindings`). `validateReviewLogin` needs both or neither, an email, and a 6-digit code that isn't `123456`, `654321` or one repeated digit.
 
+- `CRON_SECRET` (env only) authenticates Vercel Cron's daily `GET /internal/cron/purge-deleted-accounts`; Vercel sends it as `Authorization: Bearer`. Empty turns the endpoint off (404).
+
 ## Related
 `_shared/security-invariants.md`
 

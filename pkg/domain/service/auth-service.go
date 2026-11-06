@@ -64,6 +64,7 @@ type authService struct {
 	log         logger.ILogger
 	users       mongorepo.IUserRepo
 	memberships mongorepo.IMembershipRepo
+	accounts    mongorepo.IAccountRepo
 	otps        mongorepo.IOTPRepo
 	sessions    mongorepo.ISessionRepo
 	mailer      smtp.IMailer
@@ -78,8 +79,9 @@ type authService struct {
 }
 
 func NewAuthService(log logger.ILogger, cfg *config.Store, users mongorepo.IUserRepo, memberships mongorepo.IMembershipRepo,
-	otps mongorepo.IOTPRepo, sessions mongorepo.ISessionRepo, mailer smtp.IMailer, provision IProvisionService, clk clock.Clock) IAuthService {
-	return &authService{log: log, users: users, memberships: memberships, otps: otps, sessions: sessions, mailer: mailer,
+	accounts mongorepo.IAccountRepo, otps mongorepo.IOTPRepo, sessions mongorepo.ISessionRepo, mailer smtp.IMailer, provision IProvisionService,
+	clk clock.Clock) IAuthService {
+	return &authService{log: log, users: users, memberships: memberships, accounts: accounts, otps: otps, sessions: sessions, mailer: mailer,
 		provision: provision, defaultTZ: cfg.DefaultTZ, clock: clk, secret: []byte(cfg.AccessSecret), issuer: cfg.Issuer, resendAfter: cfg.OTPResendAfter,
 		reviewEmail: cfg.ReviewEmail, reviewCode: cfg.ReviewCode}
 }
@@ -221,6 +223,9 @@ func (s *authService) RequestSignIn(ctx context.Context, req *request.SignInReq)
 		}
 		return decoy()
 	}
+	if s.eraseIfOverdue(ctx, u) {
+		return decoy() // the grace period is over: the account no longer exists
+	}
 	email := request.NormalizeEmail(u.Email)
 	if cur, _ := s.cooldown(ctx, email); cur != nil && cur.Purpose == dao.OTPPurposeSignIn {
 		return &response.ChallengeResponse{Status: "sent", ChallengeID: cur.ChallengeID}, nil // code already mailed
@@ -273,6 +278,9 @@ func (s *authService) VerifyOTP(ctx context.Context, req *request.OTPVerifyReq) 
 		}
 		if err != nil {
 			return nil, internalErr(s.log, ctx, "otp: user lookup failed", err)
+		}
+		if s.eraseIfOverdue(ctx, u) {
+			return nil, invalid
 		}
 	default:
 		return nil, invalid
@@ -408,6 +416,9 @@ func (s *authService) Authenticate(ctx context.Context, accessToken string) (*bo
 	if err != nil {
 		return nil, apperrors.UnauthorizedError("invalid token")
 	}
+	if overdue(u, s.clock.Now()) {
+		return nil, apperrors.UnauthorizedError("invalid token")
+	}
 	m, err := s.memberships.ForUser(ctx, claims.Subject)
 	if err != nil {
 		if apperrors.IsNotFound(err) {
@@ -415,7 +426,43 @@ func (s *authService) Authenticate(ctx context.Context, accessToken string) (*bo
 		}
 		return nil, internalErr(s.log, ctx, "membership lookup failed", err)
 	}
-	return &bo.Actor{User: u, Membership: m}, nil
+	actor := &bo.Actor{User: u, Membership: m, DeleteAfter: u.DeleteAfter}
+	if actor.DeleteAfter == nil && !m.Role.IsOwner() {
+		// A viewer loses access as soon as the space owner asks for deletion: the whole space is going away.
+		if owner := s.spaceOwner(ctx, m.SpaceID); owner != nil {
+			actor.DeleteAfter = owner.DeleteAfter
+		}
+	}
+	return actor, nil
+}
+
+func (s *authService) spaceOwner(ctx context.Context, spaceID string) *dao.User {
+	members, err := s.memberships.MembersOfSpace(ctx, spaceID)
+	if err != nil {
+		return nil
+	}
+	for _, mm := range members {
+		if mm.Role.IsOwner() {
+			if ou, err := s.users.ByID(ctx, mm.UserID); err == nil {
+				return ou
+			}
+		}
+	}
+	return nil
+}
+
+// eraseIfOverdue erases an account whose deletion grace period has ended, in case the daily purge hasn't run yet,
+// and reports whether it did. Nobody can sign in to or restore an account after its deletion date.
+func (s *authService) eraseIfOverdue(ctx context.Context, u *dao.User) bool {
+	if !overdue(u, s.clock.Now()) {
+		return false
+	}
+	if err := eraseAccount(ctx, s.accounts, s.memberships, u); err != nil {
+		s.log.Error(ctx, "account purge at sign-in failed", map[string]any{"err": err.Error()})
+	} else {
+		s.log.Info(ctx, "account erased at sign-in", map[string]any{"userId": u.ID})
+	}
+	return true
 }
 
 func deref(s *string) string {

@@ -21,6 +21,8 @@ type ISessionRepo interface {
 	// MarkUsed atomically sets UsedAt; returns false if it was already used or revoked.
 	MarkUsed(ctx context.Context, id string) (bool, error)
 	RevokeFamily(ctx context.Context, familyID string) error
+	// RevokeAllForUser revokes every refresh session of the user, signing out all devices.
+	RevokeAllForUser(ctx context.Context, userID string) error
 }
 
 type sessionRepo struct {
@@ -65,6 +67,13 @@ func (r *sessionRepo) MarkUsed(ctx context.Context, id string) (bool, error) {
 func (r *sessionRepo) RevokeFamily(ctx context.Context, familyID string) error {
 	_, err := r.coll().UpdateMany(ctx,
 		bson.D{{Key: "familyId", Value: familyID}, {Key: "revokedAt", Value: nil}},
+		bson.D{{Key: "$set", Value: bson.D{{Key: "revokedAt", Value: time.Now().UTC()}}}})
+	return err
+}
+
+func (r *sessionRepo) RevokeAllForUser(ctx context.Context, userID string) error {
+	_, err := r.coll().UpdateMany(ctx,
+		bson.D{{Key: "userId", Value: userID}, {Key: "revokedAt", Value: nil}},
 		bson.D{{Key: "$set", Value: bson.D{{Key: "revokedAt", Value: time.Now().UTC()}}}})
 	return err
 }

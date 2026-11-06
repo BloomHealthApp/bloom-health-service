@@ -33,6 +33,7 @@ func NewRouter() *gin.Engine {
 
 	r.GET("/health", publicrouter.HandleHealth)
 	r.GET("/privacy", publicrouter.HandleGetPrivacyPolicy)
+	r.GET("/internal/cron/purge-deleted-accounts", publicrouter.HandlePurgeDeletedAccounts)
 	publicrouter.RegisterRoutes(r.Group("/v1"))
 	return r
 }
