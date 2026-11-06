@@ -68,6 +68,42 @@ func OTPEmail(kind OTPKind, name, code string, minutes int) (subject, text, html
 	return subject, text, layout(html.EscapeString(subject), content)
 }
 
+// AccountKind selects the account-deletion email.
+type AccountKind int
+
+// Account emails: deletion scheduled (with the date it happens), deletion cancelled, account erased.
+const (
+	AccountDeletionScheduled AccountKind = iota
+	AccountRestored
+	AccountDeleted
+)
+
+// AccountEmail renders an account-deletion email. deleteOn is shown for AccountDeletionScheduled, as "6 November 2026".
+func AccountEmail(kind AccountKind, deleteOn string) (subject, text, htmlBody string) {
+	var heading, body string
+	switch kind {
+	case AccountDeletionScheduled:
+		subject = "Your Bloom Health account will be deleted"
+		heading = "Your account is scheduled for deletion"
+		body = fmt.Sprintf("We'll permanently erase your Bloom Health account and all its data on %s. "+
+			"Changed your mind? Sign in to the app before then and tap Restore my account.", deleteOn)
+	case AccountRestored:
+		subject = "Your Bloom Health account has been restored"
+		heading = "Welcome back!"
+		body = "Your account is no longer scheduled for deletion. Your habits, progress and chats are just as you left them."
+	default:
+		subject = "Your Bloom Health account has been deleted"
+		heading = "Your account has been deleted"
+		body = "Your Bloom Health account and all its data have been permanently erased. You can sign up again any time with this email."
+	}
+	text = fmt.Sprintf("Bloom Health\n\n%s\n%s\n\nIf you didn't ask for this, reply to this email.\n", heading, body)
+	content := fmt.Sprintf(`<tr><td style="padding:0 32px 24px 32px;font-family:Arial,Helvetica,sans-serif;">
+          <div style="font-size:22px;line-height:30px;font-weight:700;color:%[1]s;">%[2]s</div>
+          <div style="font-size:15px;line-height:23px;color:%[3]s;padding-top:8px;">%[4]s</div>
+        </td></tr>`, colorInk, html.EscapeString(heading), colorBody, html.EscapeString(body))
+	return subject, text, layout(html.EscapeString(subject), content)
+}
+
 // layout wraps a template's rows in the shared Bloom Health frame: gradient page, logo header, white card, safety
 // note and footer. Every email should use it. Tables and inline CSS only, because mail clients strip <style> blocks
 // and ignore modern layout. No images, because clients list inline ones as attachments and block remote ones, so

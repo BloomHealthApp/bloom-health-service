@@ -18,10 +18,14 @@ func RegisterRoutes(v1 *gin.RouterGroup) {
 	auth.POST("/refresh", HandleRefresh)
 	auth.POST("/logout", HandleLogout)
 
-	authed := v1.Group("", middleware.Authenticate())
-	authed.GET("/me", HandleGetMe)
+	signedIn := v1.Group("", middleware.Authenticate())
+	// While a deletion is pending only these work, so the app can show and restore the account.
+	signedIn.GET("/me", HandleGetMe)
+	signedIn.DELETE("/me", HandleDeleteMe)
+	signedIn.POST("/me/restore", HandleRestoreMe)
+
+	authed := signedIn.Group("", middleware.RequireActiveAccount())
 	authed.PATCH("/me", HandlePatchMe)
-	authed.DELETE("/me", HandleDeleteMe)
 	authed.POST("/me/phone/request", HandleRequestPhoneChange)
 	authed.POST("/me/phone/verify", HandleVerifyPhoneChange)
 	authed.GET("/settings", HandleGetSettings)

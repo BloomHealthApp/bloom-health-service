@@ -41,3 +41,15 @@ func RequireOwner() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+// RequireActiveAccount rejects an actor whose account (or, for a viewer, the space owner's) is scheduled for
+// deletion. Only the routes that show and restore the account sit outside it.
+func RequireActiveAccount() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if a := utils.GetActor(c.Request.Context()); a != nil && a.PendingDeletion() {
+			utils.RespondError(c, apperrors.AccountPendingDeletionError(*a.DeleteAfter))
+			return
+		}
+		c.Next()
+	}
+}

@@ -1,7 +1,10 @@
 // Package errors defines the HTTP-facing error type returned by services and the typed repository errors.
 package errors
 
-import "net/http"
+import (
+	"net/http"
+	"time"
+)
 
 // Machine-readable error codes from docs/api-contract.md.
 const (
@@ -14,6 +17,8 @@ const (
 	CodeAlreadyRegistered = "already_registered"
 	CodeRateLimited       = "rate_limited"
 	CodeInternal          = "internal"
+	// CodeAccountPendingDeletion: the account (or, for a viewer, the space owner's) is scheduled for deletion.
+	CodeAccountPendingDeletion = "account_pending_deletion"
 )
 
 // IHttpError is an error that knows how to render itself as an HTTP response.
@@ -83,6 +88,13 @@ func TokenExpiredError(message string) IHttpError {
 // ForbiddenError is a 403 error.
 func ForbiddenError(message string) IHttpError {
 	return newErr(http.StatusForbidden, CodeForbidden, message)
+}
+
+// AccountPendingDeletionError is the 403 for every locked route while an account is scheduled for deletion.
+func AccountPendingDeletionError(deleteAfter time.Time) IHttpError {
+	e := newErr(http.StatusForbidden, CodeAccountPendingDeletion, "this account is scheduled for deletion")
+	e.Details = map[string]any{"deleteAfter": deleteAfter.UTC().Format(time.RFC3339)}
+	return e
 }
 
 // NotFoundError is a 404 error.

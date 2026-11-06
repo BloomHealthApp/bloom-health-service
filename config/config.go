@@ -55,6 +55,9 @@ type Store struct {
 	// code for one existing account, because they can't read its inbox. Both empty (the default) turns it off.
 	ReviewEmail string
 	ReviewCode  string
+	// InternalAPISecret (INTERNAL_API_SECRET) authenticates bloom-health-task-worker's calls to /internal/*, such as
+	// the daily purge of deleted accounts. Empty turns the internal routes off.
+	InternalAPISecret string
 }
 
 // envBindings maps viper keys to the environment variables that may override them.
@@ -115,6 +118,7 @@ func NewConfig() (*Store, error) {
 		MongoURI: os.Getenv("MONGODB_URI"), AccessSecret: os.Getenv("ACCESS_TOKEN_SECRET"),
 		SMTPHost: os.Getenv("SMTP_HOST"), SMTPUser: os.Getenv("SMTP_USER"), SMTPPass: os.Getenv("SMTP_PASS"),
 		ReviewEmail: strings.ToLower(strings.TrimSpace(os.Getenv("REVIEW_LOGIN_EMAIL"))), ReviewCode: strings.TrimSpace(os.Getenv("REVIEW_LOGIN_CODE")),
+		InternalAPISecret: strings.TrimSpace(os.Getenv("INTERNAL_API_SECRET")),
 	}
 	if c.DefaultCountryCode == "" {
 		c.DefaultCountryCode = utils.DefaultCountryCode

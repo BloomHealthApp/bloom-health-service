@@ -68,3 +68,16 @@ func (r *sessionRepo) RevokeFamily(_ context.Context, family string) error {
 	}
 	return nil
 }
+
+func (r *sessionRepo) RevokeAllForUser(_ context.Context, userID string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	now := time.Now().UTC()
+	for _, s := range r.sessions {
+		if s.UserID == userID && s.RevokedAt == nil {
+			t := now
+			s.RevokedAt = &t
+		}
+	}
+	return nil
+}

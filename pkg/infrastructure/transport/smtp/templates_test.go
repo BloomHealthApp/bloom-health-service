@@ -94,3 +94,17 @@ func TestFormatFromKeepsDisplayName(t *testing.T) {
 	require.Equal(t, "no-reply@example.com", addr)
 	require.Contains(t, h, "Bloom Health")
 }
+
+func TestAccountEmails(t *testing.T) {
+	subject, text, html := AccountEmail(AccountDeletionScheduled, "21 November 2026")
+	require.Equal(t, "Your Bloom Health account will be deleted", subject)
+	require.Contains(t, text, "21 November 2026")
+	require.Contains(t, text, "Restore my account")
+	require.Contains(t, html, "21 November 2026")
+
+	subject, _, _ = AccountEmail(AccountRestored, "")
+	require.Equal(t, "Your Bloom Health account has been restored", subject)
+	subject, text, _ = AccountEmail(AccountDeleted, "")
+	require.Equal(t, "Your Bloom Health account has been deleted", subject)
+	require.Contains(t, text, "permanently erased")
+}

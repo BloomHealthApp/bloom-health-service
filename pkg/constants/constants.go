@@ -21,6 +21,10 @@ const (
 	OpRetention       = 60 * 24 * time.Hour
 	// DeletedChatRetention is how long a deleted chat session's empty tombstone is kept before MongoDB's TTL removes it.
 	DeletedChatRetention = 7 * 24 * time.Hour
+	// AccountDeletionGrace is how long a deleted account stays locked and restorable before it is erased.
+	AccountDeletionGrace = 15 * 24 * time.Hour
+	// PurgeBatch is how many due accounts one purge pass loads at a time.
+	PurgeBatch = 50
 
 	MaxChatContentChars   = 4000
 	MaxChatTitleChars     = 80
