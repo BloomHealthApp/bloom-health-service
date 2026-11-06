@@ -1,16 +1,48 @@
 package httpserver_test
 
 import (
+	"io"
+	"net/http"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/BloomHealthApp/bloom-health-service/config"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/constants"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/di"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/enums/entitytype"
 	apperrors "github.com/BloomHealthApp/bloom-health-service/pkg/errors"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/infrastructure/mongorepo"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/logger"
 )
+
+const internalSecret = "internal-secret-for-tests"
+
+// withInternalAPI rebuilds the app on e's repositories with the internal routes (the daily purge) turned on.
+func withInternalAPI(t *testing.T, e *env) {
+	t.Helper()
+	cfg := &config.Store{ActiveEnv: "DEV", StoreKind: "memory", AccessSecret: secret, Issuer: issuer, Version: "1.0.0",
+		Mailer: "console", InternalAPISecret: internalSecret}
+	app, err := di.InitializeTestApp(cfg, logger.NewDiscard(), e.clock, e.mail, e.repos)
+	require.NoError(t, err)
+	di.AppLogic = app
+}
+
+// purge calls the purge endpoint the way bloom-health-task-worker does and returns the status and body.
+func (e *env) purge(auth string) (int, string) {
+	e.t.Helper()
+	req, err := http.NewRequest("POST", e.srv.URL+"/internal/accounts/purge-deleted", nil)
+	require.NoError(e.t, err)
+	if auth != "" {
+		req.Header.Set("Authorization", auth)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(e.t, err)
+	defer resp.Body.Close()
+	b, _ := io.ReadAll(resp.Body)
+	return resp.StatusCode, string(b)
+}
 
 func (e *env) subjects() []string {
 	var out []string
@@ -69,9 +101,9 @@ func TestDeleteMeLocksTheAccountUntilRestored(t *testing.T) {
 	require.Equal(t, 409, st, "nothing to restore")
 }
 
-// The daily purge runs in bloom-health-task-worker; here the sign-in safety net does the same erase.
-func TestOverdueOwnerIsErasedWithTheWholeSpace(t *testing.T) {
+func TestPurgeErasesOwnerAndSpaceAfterTheGracePeriod(t *testing.T) {
 	e := setup(t)
+	withInternalAPI(t, e)
 	ctx := t.Context()
 	anu, _ := e.login("anu@example.com")
 	other, _ := e.login("other-owner@example.com")
@@ -91,9 +123,21 @@ func TestOverdueOwnerIsErasedWithTheWholeSpace(t *testing.T) {
 	st, _ = e.do("DELETE", "/v1/me", anu, nil)
 	require.Equal(t, 202, st)
 
+	st, b := e.purge("Bearer " + internalSecret)
+	require.Equal(t, 200, st)
+	require.Contains(t, b, `"erased":0`, "nothing is due during the grace period")
+
 	e.clock.SetOffset(constants.AccountDeletionGrace + time.Minute)
-	st, _ = e.do("POST", "/v1/auth/signin/request", "", map[string]any{"identifier": "anu@example.com"})
-	require.Equal(t, 202, st)
+	st, _ = e.purge("")
+	require.Equal(t, 401, st, "the purge endpoint needs the secret")
+	st, _ = e.purge("Bearer wrong")
+	require.Equal(t, 401, st)
+
+	e.mail.Messages = nil
+	st, b = e.purge("Bearer " + internalSecret)
+	require.Equal(t, 200, st)
+	require.Contains(t, b, `"erased":1`)
+	require.Contains(t, e.subjects(), "Your Bloom Health account has been deleted")
 
 	_, err := e.repos.Users.ByEmail(ctx, "anu@example.com")
 	require.ErrorIs(t, err, apperrors.ErrRepoNotFound)
@@ -122,7 +166,7 @@ func TestOverdueOwnerIsErasedWithTheWholeSpace(t *testing.T) {
 	e.signup("Anu", "9876500001", "anu@example.com")
 }
 
-func TestOverdueAccountGetsNoCodeAndCannotBeRestored(t *testing.T) {
+func TestOverdueAccountIsErasedAtSignInEvenBeforeThePurge(t *testing.T) {
 	e := setup(t)
 	anu, _ := e.login("anu@example.com")
 	st, _ := e.do("DELETE", "/v1/me", anu, nil)
@@ -139,6 +183,7 @@ func TestOverdueAccountGetsNoCodeAndCannotBeRestored(t *testing.T) {
 
 func TestViewerDeletionKeepsTheOwnersSpace(t *testing.T) {
 	e := setup(t)
+	withInternalAPI(t, e)
 	anu, _ := e.login("anu@example.com")
 	aman, _ := e.login("aman@example.com")
 	space := e.meSpace(anu)
@@ -149,11 +194,17 @@ func TestViewerDeletionKeepsTheOwnersSpace(t *testing.T) {
 	require.Equal(t, 200, st, "a viewer's request never locks the owner")
 
 	e.clock.SetOffset(constants.AccountDeletionGrace + time.Minute)
-	st, _ = e.do("POST", "/v1/auth/signin/request", "", map[string]any{"identifier": "aman@example.com"})
-	require.Equal(t, 202, st)
+	st, _ = e.purge("Bearer " + internalSecret)
+	require.Equal(t, 200, st)
 	_, err := e.repos.Users.ByEmail(t.Context(), "aman@example.com")
 	require.ErrorIs(t, err, apperrors.ErrRepoNotFound)
 	members, err := e.repos.Memberships.MembersOfSpace(t.Context(), space)
 	require.NoError(t, err)
 	require.Len(t, members, 1, "only the viewer's membership goes")
+}
+
+func TestPurgeEndpointIsOffWithoutASecret(t *testing.T) {
+	e := setup(t)
+	st, _ := e.purge("Bearer anything")
+	require.Equal(t, 404, st)
 }

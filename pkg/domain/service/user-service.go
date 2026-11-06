@@ -28,6 +28,9 @@ type IUserService interface {
 	DeleteMe(ctx context.Context, actor *bo.Actor) (*response.DeletionScheduledResponse, apperrors.IHttpError)
 	// RestoreMe cancels a scheduled deletion while the grace period lasts.
 	RestoreMe(ctx context.Context, actor *bo.Actor) (*response.UserResponse, apperrors.IHttpError)
+	// PurgeDue erases every account whose grace period has ended and returns how many were erased. For an owner
+	// that includes the whole space, so any viewers lose access to it.
+	PurgeDue(ctx context.Context) (int, apperrors.IHttpError)
 }
 
 type userService struct {
@@ -150,6 +153,27 @@ func (s *userService) RestoreMe(ctx context.Context, actor *bo.Actor) (*response
 	s.mail(ctx, &u, smtp.AccountRestored)
 	r := buildUserResponse(ctx, s.users, s.memberships, &u, actor.Membership)
 	return &r, nil
+}
+
+func (s *userService) PurgeDue(ctx context.Context) (int, apperrors.IHttpError) {
+	erased := 0
+	for {
+		due, err := s.users.DueForDeletion(ctx, s.clock.Now().UTC(), constants.PurgeBatch)
+		if err != nil {
+			return erased, internalErr(s.log, ctx, "account purge: lookup failed", err)
+		}
+		for i := range due {
+			if err := eraseAccount(ctx, s.accounts, s.memberships, &due[i]); err != nil {
+				return erased, internalErr(s.log, ctx, "account purge: erase failed", err)
+			}
+			erased++
+			s.mail(ctx, &due[i], smtp.AccountDeleted)
+		}
+		if len(due) < constants.PurgeBatch {
+			s.log.Info(ctx, "accounts purged", map[string]any{"count": erased})
+			return erased, nil
+		}
+	}
 }
 
 // mail sends an account email. A failure is logged and never fails the request: the change has already happened.

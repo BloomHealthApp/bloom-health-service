@@ -32,6 +32,7 @@ Access: public = no token; both = any member; owner = `RequireOwner`.
 | `PATCH /v1/me` | both | User | [me.md](me.md) |
 | `DELETE /v1/me` | both | User | [me.md](me.md) |
 | `POST /v1/me/restore` | both | User | [me.md](me.md) |
+| `POST /internal/accounts/purge-deleted` | `INTERNAL_API_SECRET` | User | [me.md](me.md); called by bloom-health-task-worker daily at 10:00 IST |
 | `GET /v1/settings` | both | Settings | [settings.md](settings.md) |
 | `PATCH /v1/settings` | owner | Settings | [settings.md](settings.md) |
 | `GET /v1/habits` | both | Habit | [habits.md](habits.md) |

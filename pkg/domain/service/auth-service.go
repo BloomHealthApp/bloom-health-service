@@ -451,7 +451,7 @@ func (s *authService) spaceOwner(ctx context.Context, spaceID string) *dao.User 
 	return nil
 }
 
-// eraseIfOverdue erases an account whose deletion grace period has ended, in case the worker's daily purge hasn't run yet,
+// eraseIfOverdue erases an account whose deletion grace period has ended, in case the daily purge hasn't run yet,
 // and reports whether it did. Nobody can sign in to or restore an account after its deletion date.
 func (s *authService) eraseIfOverdue(ctx context.Context, u *dao.User) bool {
 	if !overdue(u, s.clock.Now()) {

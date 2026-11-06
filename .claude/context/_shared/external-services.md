@@ -56,4 +56,4 @@ The app's fallback URL is `http://localhost:8080`, but this service defaults to 
 
 ## Known issues
 - Rate limiters are in-process (`pkg/utils/ratelimit`). Each running instance has its own counts, and a restart clears them.
-- **Account purge:** not in this service. bloom-health-task-worker erases accounts whose 15-day deletion grace has ended, daily at 10:00 IST, using the same erase order (`docs/account-deletion-contract.md`). `authService.eraseIfOverdue` erases an overdue account at its next sign-in before that run.
+- **Account purge trigger:** bloom-health-task-worker calls `POST /internal/accounts/purge-deleted` daily at 10:00 IST with `Authorization: Bearer $INTERNAL_API_SECRET` (`docs/account-deletion-contract.md`). The erase itself runs here (`PurgeDue`). `authService.eraseIfOverdue` covers a late or missed call at sign-in.

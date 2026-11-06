@@ -104,4 +104,7 @@ func TestAccountEmails(t *testing.T) {
 
 	subject, _, _ = AccountEmail(AccountRestored, "")
 	require.Equal(t, "Your Bloom Health account has been restored", subject)
+	subject, text, _ = AccountEmail(AccountDeleted, "")
+	require.Equal(t, "Your Bloom Health account has been deleted", subject)
+	require.Contains(t, text, "permanently erased")
 }

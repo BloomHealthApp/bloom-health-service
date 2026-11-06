@@ -1,35 +1,22 @@
 # Account deletion contract
 
-Shared by **bloom-health-service** (schedules, locks and restores) and **bloom-health-task-worker** (erases). Keep this file identical in both repos.
+Shared by **bloom-health-service** (schedules, locks, restores and erases) and **bloom-health-task-worker** (triggers the daily erase). Keep this file identical in both repos.
 
-## Fields on `users`
-| Field | Type | Written by | Meaning |
-|---|---|---|---|
-| `deletionRequestedAt` | date, absent when not requested | service | when `DELETE /v1/me` was called |
-| `deleteAfter` | date, absent when not requested | service | `deletionRequestedAt` + 15 days; the account is erased once this has passed |
+## Flow
+1. `DELETE /v1/me` (service) sets `users.deletionRequestedAt` and `users.deleteAfter` (+15 days), revokes the user's refresh sessions and emails the date. The account is locked: every authenticated route except `GET /v1/me`, `DELETE /v1/me` and `POST /v1/me/restore` answers `403 account_pending_deletion`, also for viewers of that owner's space.
+2. `POST /v1/me/restore` (service) clears both fields before `deleteAfter`.
+3. **Every day at 10:00 Asia/Kolkata the worker calls the service:**
 
-`users.deleteAfter` has a sparse index (created by the service). `POST /v1/me/restore` removes both fields before `deleteAfter`.
+   `POST https://<service>/internal/accounts/purge-deleted` with `Authorization: Bearer <INTERNAL_API_SECRET>` and no body.
 
-## While pending (service)
-The account is locked: every authenticated route except `GET /v1/me`, `DELETE /v1/me` and `POST /v1/me/restore` answers `403 account_pending_deletion`, also for viewers of that owner's space. Refresh sessions are revoked when deletion is requested.
+   - **200** `{"erased": <n>}`: every account whose `deleteAfter` has passed is now erased.
+   - **401**: wrong or missing secret.
+   - **404**: the service has no `INTERNAL_API_SECRET` set.
+   - **5xx or network error**: the worker retries a few times with backoff. The call is idempotent, so the next day's run also catches up.
+4. The service also erases an overdue account at its next sign-in, so nobody can restore after the date even before the 10:00 run.
 
-## Erase (worker daily at 10:00 Asia/Kolkata; service at sign-in for an overdue account)
-Due: `deleteAfter <= now`. For each due user, in this order. Every step is a `deleteMany` and is idempotent, so a failed erase is retried by the next run.
+## Erase (service, `eraseAccount`)
+For an owner, the whole space first: habits, daily logs, workouts, settings, periods, sync history and every membership. Then the user: chats, refresh sessions, pending codes, memberships and the user document, last. Each step is idempotent.
 
-1. **Space, only if the user is its owner.** Look up the user's membership (`memberships {userId}`). If its `role` is `owner`, delete by its `sharedSpaceId`:
-   - `habits`, `dailyHabitLogs`, `workoutSessions`, `settings`, `periods`: `{spaceId}`
-   - `appliedOperations`: `{spaceId}`
-   - `counters`: `{_id: spaceId}`
-   - `memberships`: `{sharedSpaceId}` (every viewer loses access)
-   - `sharedSpaces`: `{_id: spaceId}`
-2. **User:**
-   - `chatMessages`: `{userId}`
-   - `chatSessions`: `{userId}`
-   - `refreshSessions`: `{userId}`
-   - `otpChallenges`: `{email: <lower-cased user email>}`
-   - `memberships`: `{userId}`
-   - `users`: `{_id}`, last, so a partial failure leaves the user to retry
-
-A new collection holding user or space data must be added here, to the service's `IAccountRepo`, and to the worker's `IAccountRepo`.
-
-Never log emails, names or any erased content; log user ids and counts only.
+## Secret
+`INTERNAL_API_SECRET` is a long random string, set in the service's Vercel env and in the worker's `/etc/bloom-worker/env`. Never commit or log it. Rotate it in both places together.

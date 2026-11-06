@@ -81,6 +81,21 @@ func (mr *MockIUserRepoMockRecorder) ByPhone(arg0, arg1 interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ByPhone", reflect.TypeOf((*MockIUserRepo)(nil).ByPhone), arg0, arg1)
 }
 
+// DueForDeletion mocks base method.
+func (m *MockIUserRepo) DueForDeletion(arg0 context.Context, arg1 time.Time, arg2 int) ([]dao.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DueForDeletion", arg0, arg1, arg2)
+	ret0, _ := ret[0].([]dao.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DueForDeletion indicates an expected call of DueForDeletion.
+func (mr *MockIUserRepoMockRecorder) DueForDeletion(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DueForDeletion", reflect.TypeOf((*MockIUserRepo)(nil).DueForDeletion), arg0, arg1, arg2)
+}
+
 // Save mocks base method.
 func (m *MockIUserRepo) Save(arg0 context.Context, arg1 *dao.User) error {
 	m.ctrl.T.Helper()

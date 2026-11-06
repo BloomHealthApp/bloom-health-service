@@ -3,6 +3,7 @@ package mongorepo
 import (
 	"context"
 	"strings"
+	"time"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -23,6 +24,8 @@ type IUserRepo interface {
 	ByID(ctx context.Context, id string) (*dao.User, error)
 	// Save upserts; returns errors.ErrRepoConflict when the email or phone belongs to another user.
 	Save(ctx context.Context, u *dao.User) error
+	// DueForDeletion returns up to limit accounts whose deletion grace period ended at or before now.
+	DueForDeletion(ctx context.Context, now time.Time, limit int) ([]dao.User, error)
 }
 
 type userRepo struct {
@@ -64,4 +67,14 @@ func (r *userRepo) Save(ctx context.Context, u *dao.User) error {
 		return apperrors.ErrRepoConflict
 	}
 	return err
+}
+
+func (r *userRepo) DueForDeletion(ctx context.Context, now time.Time, limit int) ([]dao.User, error) {
+	cur, err := r.coll().Find(ctx, bson.D{{Key: "deleteAfter", Value: bson.D{{Key: "$lte", Value: now}}}},
+		options.Find().SetLimit(int64(limit)))
+	if err != nil {
+		return nil, err
+	}
+	var out []dao.User
+	return out, cur.All(ctx, &out)
 }
