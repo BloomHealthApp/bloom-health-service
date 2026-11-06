@@ -17,7 +17,7 @@ Service: [user-service.md](../../../../domain/service/user-service.md). Contract
 - `PATCH /me` can't set a phone. A phone is only saved after `POST /me/phone/verify`, so the caller has proved they control the account's email. This doesn't prove they own the number; only an SMS code could.
 - A wrong code on `/me/phone/verify` is a 400, not a 401, because a 401 makes clients treat the session as expired.
 
-- `DELETE /me` is what Google Play's account-deletion rule needs. It takes no body and no code: the app asks for confirmation, and a signed-in caller can only schedule their own account. It doesn't erase anything itself: the account is locked for 15 days (`constants.AccountDeletionGrace`) and then erased by the daily purge or at its next sign-in.
+- `DELETE /me` is what Google Play's account-deletion rule needs. It takes no body and no code: the app asks for confirmation, and a signed-in caller can only schedule their own account. It doesn't erase anything itself: the account is locked for 15 days (`constants.AccountDeletionGrace`) and then erased by bloom-health-task-worker's daily purge (10:00 IST) or at its next sign-in.
 - `GET /me`, `DELETE /me` and `POST /me/restore` are registered on the `signedIn` group, outside `RequireActiveAccount`, so a locked account can still see its deletion date and restore. Every other authenticated route goes through `RequireActiveAccount` and answers 403 `account_pending_deletion`.
 
 ## Gotchas

@@ -56,4 +56,4 @@ The app's fallback URL is `http://localhost:8080`, but this service defaults to 
 
 ## Known issues
 - Rate limiters are in-process (`pkg/utils/ratelimit`). Each running instance has its own counts, and a restart clears them.
-- **Vercel Cron:** `vercel.json` runs `GET /internal/cron/purge-deleted-accounts` daily at 21:30 UTC (03:00 IST) with `Authorization: Bearer $CRON_SECRET`. The Hobby plan allows daily jobs, and its timing is approximate (within the hour). It erases accounts whose 15-day deletion grace has ended; `authService.eraseIfOverdue` covers a late or missed run.
+- **Account purge:** not in this service. bloom-health-task-worker erases accounts whose 15-day deletion grace has ended, daily at 10:00 IST, using the same erase order (`docs/account-deletion-contract.md`). `authService.eraseIfOverdue` erases an overdue account at its next sign-in before that run.

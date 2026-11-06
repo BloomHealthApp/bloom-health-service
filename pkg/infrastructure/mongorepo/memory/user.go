@@ -4,7 +4,6 @@ import (
 	"context"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/models/dao"
 	apperrors "github.com/BloomHealthApp/bloom-health-service/pkg/errors"
@@ -67,16 +66,4 @@ func (r *userRepo) Save(_ context.Context, u *dao.User) error {
 	c.EmailLower = strings.ToLower(u.Email)
 	r.users[u.ID] = &c
 	return nil
-}
-
-func (r *userRepo) DueForDeletion(_ context.Context, now time.Time, limit int) ([]dao.User, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	var out []dao.User
-	for _, u := range r.users {
-		if u.DeleteAfter != nil && !u.DeleteAfter.After(now) && len(out) < limit {
-			out = append(out, *u)
-		}
-	}
-	return out, nil
 }

@@ -71,11 +71,11 @@ func OTPEmail(kind OTPKind, name, code string, minutes int) (subject, text, html
 // AccountKind selects the account-deletion email.
 type AccountKind int
 
-// Account emails: deletion scheduled (with the date it happens), deletion cancelled, account erased.
+// Account emails: deletion scheduled (with the date it happens) and deletion cancelled. The worker erases accounts
+// and sends no email.
 const (
 	AccountDeletionScheduled AccountKind = iota
 	AccountRestored
-	AccountDeleted
 )
 
 // AccountEmail renders an account-deletion email. deleteOn is shown for AccountDeletionScheduled, as "6 November 2026".
@@ -87,14 +87,10 @@ func AccountEmail(kind AccountKind, deleteOn string) (subject, text, htmlBody st
 		heading = "Your account is scheduled for deletion"
 		body = fmt.Sprintf("We'll permanently erase your Bloom Health account and all its data on %s. "+
 			"Changed your mind? Sign in to the app before then and tap Restore my account.", deleteOn)
-	case AccountRestored:
+	default:
 		subject = "Your Bloom Health account has been restored"
 		heading = "Welcome back!"
 		body = "Your account is no longer scheduled for deletion. Your habits, progress and chats are just as you left them."
-	default:
-		subject = "Your Bloom Health account has been deleted"
-		heading = "Your account has been deleted"
-		body = "Your Bloom Health account and all its data have been permanently erased. You can sign up again any time with this email."
 	}
 	text = fmt.Sprintf("Bloom Health\n\n%s\n%s\n\nIf you didn't ask for this, reply to this email.\n", heading, body)
 	content := fmt.Sprintf(`<tr><td style="padding:0 32px 24px 32px;font-family:Arial,Helvetica,sans-serif;">

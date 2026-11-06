@@ -55,8 +55,6 @@ type Store struct {
 	// code for one existing account, because they can't read its inbox. Both empty (the default) turns it off.
 	ReviewEmail string
 	ReviewCode  string
-	// CronSecret (CRON_SECRET) authenticates Vercel Cron's daily purge call; empty turns the cron endpoint off.
-	CronSecret string
 }
 
 // envBindings maps viper keys to the environment variables that may override them.
@@ -117,7 +115,6 @@ func NewConfig() (*Store, error) {
 		MongoURI: os.Getenv("MONGODB_URI"), AccessSecret: os.Getenv("ACCESS_TOKEN_SECRET"),
 		SMTPHost: os.Getenv("SMTP_HOST"), SMTPUser: os.Getenv("SMTP_USER"), SMTPPass: os.Getenv("SMTP_PASS"),
 		ReviewEmail: strings.ToLower(strings.TrimSpace(os.Getenv("REVIEW_LOGIN_EMAIL"))), ReviewCode: strings.TrimSpace(os.Getenv("REVIEW_LOGIN_CODE")),
-		CronSecret: strings.TrimSpace(os.Getenv("CRON_SECRET")),
 	}
 	if c.DefaultCountryCode == "" {
 		c.DefaultCountryCode = utils.DefaultCountryCode

@@ -226,21 +226,6 @@ func (mr *MockIUserServiceMockRecorder) PatchMe(arg0, arg1, arg2 interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PatchMe", reflect.TypeOf((*MockIUserService)(nil).PatchMe), arg0, arg1, arg2)
 }
 
-// PurgeDue mocks base method.
-func (m *MockIUserService) PurgeDue(arg0 context.Context) (int, errors.IHttpError) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PurgeDue", arg0)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(errors.IHttpError)
-	return ret0, ret1
-}
-
-// PurgeDue indicates an expected call of PurgeDue.
-func (mr *MockIUserServiceMockRecorder) PurgeDue(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PurgeDue", reflect.TypeOf((*MockIUserService)(nil).PurgeDue), arg0)
-}
-
 // RestoreMe mocks base method.
 func (m *MockIUserService) RestoreMe(arg0 context.Context, arg1 *bo.Actor) (*response.UserResponse, errors.IHttpError) {
 	m.ctrl.T.Helper()
