@@ -55,6 +55,8 @@ type Store struct {
 	// code for one existing account, because they can't read its inbox. Both empty (the default) turns it off.
 	ReviewEmail string
 	ReviewCode  string
+	// ReviewLoginProblem says why a configured review login was turned off (bad values). The service still starts.
+	ReviewLoginProblem string
 	// InternalAPISecret (INTERNAL_API_SECRET) authenticates bloom-health-task-worker's calls to /internal/*, such as
 	// the daily purge of deleted accounts. Empty turns the internal routes off.
 	InternalAPISecret string
@@ -156,8 +158,9 @@ func (c *Store) Validate() error {
 	if c.Mailer == "smtp" && c.SMTPHost == "" {
 		return errors.New("SMTP_HOST is required when MAILER=smtp")
 	}
+	// A bad optional review login must not take the whole API down: it is turned off and logged at startup instead.
 	if err := validateReviewLogin(c.ReviewEmail, c.ReviewCode); err != nil {
-		return err
+		c.ReviewEmail, c.ReviewCode, c.ReviewLoginProblem = "", "", err.Error()
 	}
 	return c.Chat.Validate()
 }

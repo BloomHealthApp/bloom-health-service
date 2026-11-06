@@ -87,7 +87,12 @@ func TestNewConfigReviewLogin(t *testing.T) {
 	assert.Equal(t, "review@example.com", cfg.ReviewEmail)
 	assert.Equal(t, "481937", cfg.ReviewCode)
 
-	t.Setenv("REVIEW_LOGIN_CODE", "")
-	_, err = NewConfig()
-	assert.Error(t, err)
+	for _, bad := range []string{"", "123456", `"481937"`, "48193 7"} {
+		t.Setenv("REVIEW_LOGIN_CODE", bad)
+		cfg, err = NewConfig()
+		require.NoError(t, err, "a bad review login must not stop the service: %q", bad)
+		assert.Empty(t, cfg.ReviewEmail, bad)
+		assert.Empty(t, cfg.ReviewCode, bad)
+		assert.NotEmpty(t, cfg.ReviewLoginProblem, bad)
+	}
 }
