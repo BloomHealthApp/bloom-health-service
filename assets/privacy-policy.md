@@ -1,6 +1,6 @@
 # Bloom Health privacy policy
 
-_Last updated: 3 November 2026_
+_Last updated: 6 November 2026_
 
 Bloom Health helps you build daily habits, log workouts, track your cycle and chat with Bloomy, an AI assistant. This policy explains what we collect, why, who it goes to and the choices you have.
 
@@ -58,9 +58,9 @@ Data is encrypted in transit (HTTPS) and stored with access limited to the peopl
 
 We keep your data while your account exists. Sign-in codes expire within minutes and old sign-in sessions expire on their own. When you delete a Bloomy chat, its messages are erased at once and nothing of it remains after 7 days.
 
-To delete your account, open Settings → Delete account in the app. Your account and all its data, including habits, workouts, steps, period data and Bloomy chats, are erased from our servers straight away, and from your phone.
+To delete your account, open Settings → Delete account in the app. Your account is locked and you are signed out on every device straight away. Changed your mind? Sign in within 15 days and tap Restore my account. After 15 days your account and all its data, including habits, workouts, steps, period data and Bloomy chats, are erased permanently from our servers. The copy on your phone is erased when you sign out.
 
-If you can't use the app, email support.bloomhealth@gmail.com from the address you signed up with and we will delete your account within 30 days and confirm by email. You can also ask for a copy of your data, or for corrections, the same way.
+If you can't use the app, email support.bloomhealth@gmail.com from the address you signed up with and we will delete your account the same way, erased 15 days after your request, and confirm by email. You can also ask for a copy of your data, or for corrections, the same way.
 
 ## Children
 
