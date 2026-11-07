@@ -14,3 +14,9 @@ func TestRenderPolicyPage(t *testing.T) {
 	require.Contains(t, page, "<h2>Part</h2>\n<ul>\n<li>one</li>\n<li>two</li>\n</ul>\n")
 	require.Contains(t, page, `<p>Mail <a href="mailto:a@b.io">a@b.io</a> now.</p>`)
 }
+
+func TestRenderPolicyPageLinksURLs(t *testing.T) {
+	page := renderPolicyPage("Read https://example.com/privacy. Mail a@b.io.\n")
+	require.Contains(t, page, `<a href="https://example.com/privacy">https://example.com/privacy</a>.`)
+	require.Contains(t, page, `<a href="mailto:a@b.io">a@b.io</a>`)
+}

@@ -1,4 +1,4 @@
-// Package assets embeds the per-environment configuration files and the public privacy policy. They never contain secrets.
+// Package assets embeds the per-environment configuration files and the public policy pages. They never contain secrets.
 package assets
 
 import "embed"
@@ -12,3 +12,9 @@ var Configs embed.FS
 //
 //go:embed privacy-policy.md
 var PrivacyPolicy string
+
+// DeleteAccount is delete-account.md, the account-deletion page served at GET /delete-account (Google Play's
+// Data safety "delete account URL"). Keep it in line with the deletion section of privacy-policy.md.
+//
+//go:embed delete-account.md
+var DeleteAccount string
