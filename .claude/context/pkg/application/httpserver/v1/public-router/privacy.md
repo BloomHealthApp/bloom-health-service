@@ -14,3 +14,9 @@ The public privacy policy that Google Play (Privacy policy and Data deletion fie
 ## Gotchas
 - Registered in `pkg/application/httpserver/router.go`, outside `/v1`.
 - The global per-IP rate limit applies.
+
+## Delete-account page (`get-delete-account.go`)
+- `GET /delete-account` serves `assets/delete-account.md` with the same renderer, CSP and caching. Its URL, `https://bloom-health-service.vercel.app/delete-account`, is the **Delete account URL** in Play's Data safety form.
+- Google wants that page to name the app and developer, show the deletion steps prominently, and say what's deleted, what's kept and for how long. `TestDeleteAccountPage` checks those parts.
+- It isn't generated from the app. When the app's deletion flow, the 15-day grace or the privacy policy's deletion section changes, update it by hand.
+- The renderer also links `https://` URLs (a trailing full stop is left out of the link).

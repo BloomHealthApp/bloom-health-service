@@ -25,11 +25,19 @@ func HandleGetPrivacyPolicy(c *gin.Context) {
 	c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(privacyPage()))
 }
 
-var emailRe = regexp.MustCompile(`[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}`)
+var (
+	emailRe = regexp.MustCompile(`[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}`)
+	// urlRe matches https links; a trailing full stop ends the sentence, not the link.
+	urlRe = regexp.MustCompile(`https://[A-Za-z0-9./_-]*[A-Za-z0-9/_-]`)
+)
 
-// inline escapes a line and links email addresses. It runs after escaping, and addresses contain no escaped characters.
+// inline escapes a line and links https URLs and email addresses. It runs after escaping; neither pattern can match
+// an escaped character, and URLs contain no @, so the two never overlap.
 func inline(s string) string {
-	return emailRe.ReplaceAllStringFunc(html.EscapeString(s), func(m string) string {
+	s = urlRe.ReplaceAllStringFunc(html.EscapeString(s), func(m string) string {
+		return `<a href="` + m + `">` + m + `</a>`
+	})
+	return emailRe.ReplaceAllStringFunc(s, func(m string) string {
 		return `<a href="mailto:` + m + `">` + m + `</a>`
 	})
 }

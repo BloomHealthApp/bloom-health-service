@@ -84,6 +84,24 @@ func TestPrivacyPolicyPage(t *testing.T) {
 	require.Equal(t, 405, resp.StatusCode)
 }
 
+func TestDeleteAccountPage(t *testing.T) {
+	e := setup(t)
+	resp, body := raw(t, e, "GET", "/delete-account", "", "")
+	require.Equal(t, 200, resp.StatusCode)
+	require.Equal(t, "text/html; charset=utf-8", resp.Header.Get("Content-Type"))
+	require.Equal(t, "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'", resp.Header.Get("Content-Security-Policy"))
+	// What Google Play asks of the page: the app name, the steps, and what is deleted or kept and for how long.
+	require.Contains(t, body, "<title>Delete your Bloom Health account</title>")
+	require.Contains(t, body, "<h2>How to delete your account</h2>")
+	require.Contains(t, body, "Settings → Delete account")
+	require.Contains(t, body, "For 15 days")
+	require.Contains(t, body, "<h2>What is deleted</h2>")
+	require.Contains(t, body, "<h2>What is kept</h2>")
+	require.Contains(t, body, `<a href="mailto:support.bloomhealth@gmail.com">support.bloomhealth@gmail.com</a>`)
+	require.Contains(t, body, `<a href="https://bloom-health-service.vercel.app/privacy">`)
+	require.NotContains(t, body, "<script")
+}
+
 func TestPerIdentifierRateLimitDoesNotRevealAndVerifyReturns429(t *testing.T) {
 	e := setup(t)
 	// signin request: burst of 3 per identifier, further requests still answer 202 (decoy challenge)
