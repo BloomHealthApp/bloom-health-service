@@ -143,6 +143,21 @@ func (mr *MockIAuthServiceMockRecorder) RequestSignUp(arg0, arg1 interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestSignUp", reflect.TypeOf((*MockIAuthService)(nil).RequestSignUp), arg0, arg1)
 }
 
+// SignInWithGoogle mocks base method.
+func (m *MockIAuthService) SignInWithGoogle(arg0 context.Context, arg1 *request.GoogleSignInReq) (*response.AuthResponse, errors.IHttpError) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SignInWithGoogle", arg0, arg1)
+	ret0, _ := ret[0].(*response.AuthResponse)
+	ret1, _ := ret[1].(errors.IHttpError)
+	return ret0, ret1
+}
+
+// SignInWithGoogle indicates an expected call of SignInWithGoogle.
+func (mr *MockIAuthServiceMockRecorder) SignInWithGoogle(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignInWithGoogle", reflect.TypeOf((*MockIAuthService)(nil).SignInWithGoogle), arg0, arg1)
+}
+
 // VerifyOTP mocks base method.
 func (m *MockIAuthService) VerifyOTP(arg0 context.Context, arg1 *request.OTPVerifyReq) (*response.AuthResponse, errors.IHttpError) {
 	m.ctrl.T.Helper()

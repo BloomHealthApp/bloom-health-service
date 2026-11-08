@@ -19,17 +19,19 @@ import (
 	"github.com/BloomHealthApp/bloom-health-service/pkg/di"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/bo"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/models/dao"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/drivers"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/infrastructure/transport/smtp"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/logger"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/utils/clock"
 )
 
 type env struct {
-	t     *testing.T
-	repos *di.Repositories
-	srv   *httptest.Server
-	mail  *smtp.CaptureMailer
-	clock *clock.Fake
+	t      *testing.T
+	repos  *di.Repositories
+	srv    *httptest.Server
+	mail   *smtp.CaptureMailer
+	clock  *clock.Fake
+	google *fakeGoogle
 }
 
 const secret = "0123456789abcdef0123456789abcdef-test"
@@ -43,7 +45,8 @@ func setup(t *testing.T) *env {
 		OTPResendAfter: 0, Mailer: "console"}
 	clk := clock.NewFake()
 	mailer := &smtp.CaptureMailer{}
-	app, err := di.InitializeTestApp(cfg, logger.NewDiscard(), clk, mailer, repos)
+	google := &fakeGoogle{ids: map[string]*drivers.GoogleIdentity{}}
+	app, err := di.InitializeTestApp(cfg, logger.NewDiscard(), clk, mailer, google, repos)
 	require.NoError(t, err)
 	di.AppLogic = app
 
@@ -57,7 +60,7 @@ func setup(t *testing.T) *env {
 
 	srv := httptest.NewServer(httpserver.NewRouter())
 	t.Cleanup(srv.Close)
-	return &env{t: t, repos: repos, srv: srv, mail: mailer, clock: clk}
+	return &env{t: t, repos: repos, srv: srv, mail: mailer, clock: clk, google: google}
 }
 
 var codeRe = regexp.MustCompile(`\b(\d{6})\b`)

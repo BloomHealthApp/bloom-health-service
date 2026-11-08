@@ -42,6 +42,18 @@ func (r *userRepo) ByPhone(_ context.Context, phone string) (*dao.User, error) {
 	return nil, apperrors.ErrRepoNotFound
 }
 
+func (r *userRepo) ByGoogleSub(_ context.Context, sub string) (*dao.User, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, u := range r.users {
+		if u.GoogleSub != nil && *u.GoogleSub == sub {
+			c := *u
+			return &c, nil
+		}
+	}
+	return nil, apperrors.ErrRepoNotFound
+}
+
 func (r *userRepo) ByID(_ context.Context, id string) (*dao.User, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -59,7 +71,8 @@ func (r *userRepo) Save(_ context.Context, u *dao.User) error {
 		if x.ID == u.ID {
 			continue
 		}
-		if strings.EqualFold(x.Email, u.Email) || (u.Phone != nil && x.Phone != nil && *x.Phone == *u.Phone) {
+		if strings.EqualFold(x.Email, u.Email) || (u.Phone != nil && x.Phone != nil && *x.Phone == *u.Phone) ||
+			(u.GoogleSub != nil && x.GoogleSub != nil && *x.GoogleSub == *u.GoogleSub) {
 			return apperrors.ErrRepoConflict
 		}
 	}

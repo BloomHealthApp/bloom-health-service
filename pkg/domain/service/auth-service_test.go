@@ -15,6 +15,7 @@ import (
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/bo"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/dto/request"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/models/dao"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/drivers"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/enums/userrole"
 	apperrors "github.com/BloomHealthApp/bloom-health-service/pkg/errors"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/infrastructure/mongorepo"
@@ -33,6 +34,7 @@ type authMocks struct {
 	sessions    *mongorepo.MockISessionRepo
 	mailer      *smtp.CaptureMailer
 	provision   *MockIProvisionService
+	google      *drivers.MockIGoogleVerifier
 	clock       *clock.Fake
 }
 
@@ -41,13 +43,14 @@ func createAuthService(ctrl *gomock.Controller, setup func(m *authMocks)) (IAuth
 	m := &authMocks{
 		users: mongorepo.NewMockIUserRepo(ctrl), memberships: mongorepo.NewMockIMembershipRepo(ctrl),
 		accounts: mongorepo.NewMockIAccountRepo(ctrl), otps: mongorepo.NewMockIOTPRepo(ctrl), sessions: mongorepo.NewMockISessionRepo(ctrl),
-		mailer: &smtp.CaptureMailer{}, provision: NewMockIProvisionService(ctrl), clock: clock.NewFake(),
+		mailer: &smtp.CaptureMailer{}, provision: NewMockIProvisionService(ctrl), google: drivers.NewMockIGoogleVerifier(ctrl),
+		clock: clock.NewFake(),
 	}
 	if setup != nil {
 		setup(m)
 	}
 	cfg := &config.Store{AccessSecret: testSecret, Issuer: "unit", OTPResendAfter: 30 * time.Second}
-	return NewAuthService(logger.NewDiscard(), cfg, m.users, m.memberships, m.accounts, m.otps, m.sessions, m.mailer, m.provision, m.clock), m
+	return NewAuthService(logger.NewDiscard(), cfg, m.users, m.memberships, m.accounts, m.otps, m.sessions, m.mailer, m.provision, m.google, m.clock), m
 }
 
 var (
@@ -589,7 +592,7 @@ func TestRequestSignInLogsPhoneMissWithoutTheNumber(t *testing.T) {
 		_, m := createAuthService(ctrl, expect)
 		var out bytes.Buffer
 		cfg := &config.Store{AccessSecret: testSecret, Issuer: "unit", OTPResendAfter: 30 * time.Second}
-		svc := NewAuthService(logger.NewWithWriter(&out, "info"), cfg, m.users, m.memberships, m.accounts, m.otps, m.sessions, m.mailer, m.provision, m.clock)
+		svc := NewAuthService(logger.NewWithWriter(&out, "info"), cfg, m.users, m.memberships, m.accounts, m.otps, m.sessions, m.mailer, m.provision, m.google, m.clock)
 		resp, herr := svc.RequestSignIn(ctx, req)
 		require.Nil(t, herr)
 		require.Equal(t, "sent", resp.Status)

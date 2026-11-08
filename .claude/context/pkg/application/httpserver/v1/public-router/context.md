@@ -27,6 +27,7 @@ Access: public = no token; both = any member; owner = `RequireOwner`.
 | `POST /v1/auth/signup/request` | public | Auth | [auth.md](auth.md) |
 | `POST /v1/auth/signin/request` | public | Auth | [auth.md](auth.md) |
 | `POST /v1/auth/otp/verify` | public | Auth | [auth.md](auth.md) |
+| `POST /v1/auth/google` | public | Auth | [auth.md](auth.md) |
 | `POST /v1/auth/refresh` | public | Auth | [auth.md](auth.md) |
 | `POST /v1/auth/logout` | public | Auth | [auth.md](auth.md) |
 | `GET /v1/me` | both | User | [me.md](me.md) |

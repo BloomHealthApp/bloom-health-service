@@ -15,6 +15,7 @@ func RegisterRoutes(v1 *gin.RouterGroup) {
 	auth.POST("/signup/request", HandleSignUpRequest)
 	auth.POST("/signin/request", HandleSignInRequest)
 	auth.POST("/otp/verify", HandleVerifyOTP)
+	auth.POST("/google", HandleGoogleSignIn)
 	auth.POST("/refresh", HandleRefresh)
 	auth.POST("/logout", HandleLogout)
 

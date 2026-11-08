@@ -21,8 +21,10 @@ type IUserRepo interface {
 	ByEmail(ctx context.Context, email string) (*dao.User, error)
 	// ByPhone looks up an E.164 number (legacy users have none).
 	ByPhone(ctx context.Context, phone string) (*dao.User, error)
+	// ByGoogleSub looks up the user linked to a Google account id.
+	ByGoogleSub(ctx context.Context, sub string) (*dao.User, error)
 	ByID(ctx context.Context, id string) (*dao.User, error)
-	// Save upserts; returns errors.ErrRepoConflict when the email or phone belongs to another user.
+	// Save upserts; returns errors.ErrRepoConflict when the email, phone or Google account belongs to another user.
 	Save(ctx context.Context, u *dao.User) error
 	// DueForDeletion returns up to limit accounts whose deletion grace period ended at or before now.
 	DueForDeletion(ctx context.Context, now time.Time, limit int) ([]dao.User, error)
@@ -53,6 +55,10 @@ func (r *userRepo) ByEmail(ctx context.Context, email string) (*dao.User, error)
 
 func (r *userRepo) ByPhone(ctx context.Context, phone string) (*dao.User, error) {
 	return r.find(ctx, bson.D{{Key: "phone", Value: phone}})
+}
+
+func (r *userRepo) ByGoogleSub(ctx context.Context, sub string) (*dao.User, error) {
+	return r.find(ctx, bson.D{{Key: "googleSub", Value: sub}})
 }
 
 func (r *userRepo) ByID(ctx context.Context, id string) (*dao.User, error) {

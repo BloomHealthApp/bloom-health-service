@@ -20,7 +20,7 @@ func withReviewLogin(t *testing.T, e *env) {
 	t.Helper()
 	cfg := &config.Store{ActiveEnv: "DEV", StoreKind: "memory", AccessSecret: secret, Issuer: issuer, Version: "1.0.0",
 		Mailer: "console", ReviewEmail: reviewEmail, ReviewCode: reviewCode}
-	app, err := di.InitializeTestApp(cfg, logger.NewDiscard(), e.clock, e.mail, e.repos)
+	app, err := di.InitializeTestApp(cfg, logger.NewDiscard(), e.clock, e.mail, e.google, e.repos)
 	require.NoError(t, err)
 	di.AppLogic = app
 }
