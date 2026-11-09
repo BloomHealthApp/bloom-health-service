@@ -11,7 +11,7 @@ require (
 	github.com/google/wire v0.7.0
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.12.1
-	go.mongodb.org/mongo-driver/v2 v2.9.2
+	go.mongodb.org/mongo-driver/v2 v2.9.3
 	golang.org/x/time v0.16.0
 	google.golang.org/api v0.284.0
 )
