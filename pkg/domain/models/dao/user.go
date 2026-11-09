@@ -12,7 +12,9 @@ type User struct {
 	Email      string `bson:"email"`
 	EmailLower string `bson:"emailLower"`
 	// Phone is E.164 and unique; nil (field absent) for legacy accounts created before phone sign-up.
-	Phone       *string `bson:"phone,omitempty"`
+	Phone *string `bson:"phone,omitempty"`
+	// GoogleSub is the linked Google account id (`sub`), unique; nil until the user signs in with Google.
+	GoogleSub   *string `bson:"googleSub,omitempty"`
 	DisplayName string  `bson:"displayName"`
 	Avatar      *string `bson:"avatar"`
 	// Gender is one of pkg/enums/gender; nil (null) for legacy accounts or when not provided.

@@ -9,6 +9,7 @@ package di
 import (
 	"github.com/BloomHealthApp/bloom-health-service/config"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/service"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/drivers"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/infrastructure/transport/smtp"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/logger"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/utils/clock"
@@ -40,7 +41,12 @@ func InitializeApp() (AppInterface, func(), error) {
 	iSpaceRepo := repositories.Spaces
 	iEntityRepo := repositories.Entities
 	iProvisionService := service.NewProvisionService(iLogger, iUserRepo, iSpaceRepo, iMembershipRepo, iEntityRepo, clockClock)
-	iAuthService := service.NewAuthService(iLogger, store, iUserRepo, iMembershipRepo, iAccountRepo, iotpRepo, iSessionRepo, iMailer, iProvisionService, clockClock)
+	iGoogleVerifier, err := drivers.NewGoogleVerifier(store)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	iAuthService := service.NewAuthService(iLogger, store, iUserRepo, iMembershipRepo, iAccountRepo, iotpRepo, iSessionRepo, iMailer, iProvisionService, iGoogleVerifier, clockClock)
 	iUserService := service.NewUserService(iLogger, iUserRepo, iMembershipRepo, iAccountRepo, iSessionRepo, iMailer, clockClock)
 	iOpRepo := repositories.Ops
 	iSyncService := service.NewSyncService(iLogger, iEntityRepo, iOpRepo, clockClock)
@@ -79,8 +85,8 @@ func InitializeApp() (AppInterface, func(), error) {
 }
 
 // InitializeTestApp builds the graph from explicit dependencies (in-memory repositories, fake clock,
-// capturing mailer) so tests exercise the real services and HTTP layer.
-func InitializeTestApp(cfg *config.Store, log logger.ILogger, clk clock.Clock, mailer smtp.IMailer, repos *Repositories) (AppInterface, error) {
+// capturing mailer, fake Google verifier) so tests exercise the real services and HTTP layer.
+func InitializeTestApp(cfg *config.Store, log logger.ILogger, clk clock.Clock, mailer smtp.IMailer, google drivers.IGoogleVerifier, repos *Repositories) (AppInterface, error) {
 	set := ratelimit.NewSet()
 	iUserRepo := repos.Users
 	iMembershipRepo := repos.Memberships
@@ -90,7 +96,7 @@ func InitializeTestApp(cfg *config.Store, log logger.ILogger, clk clock.Clock, m
 	iSpaceRepo := repos.Spaces
 	iEntityRepo := repos.Entities
 	iProvisionService := service.NewProvisionService(log, iUserRepo, iSpaceRepo, iMembershipRepo, iEntityRepo, clk)
-	iAuthService := service.NewAuthService(log, cfg, iUserRepo, iMembershipRepo, iAccountRepo, iotpRepo, iSessionRepo, mailer, iProvisionService, clk)
+	iAuthService := service.NewAuthService(log, cfg, iUserRepo, iMembershipRepo, iAccountRepo, iotpRepo, iSessionRepo, mailer, iProvisionService, google, clk)
 	iUserService := service.NewUserService(log, iUserRepo, iMembershipRepo, iAccountRepo, iSessionRepo, mailer, clk)
 	iOpRepo := repos.Ops
 	iSyncService := service.NewSyncService(log, iEntityRepo, iOpRepo, clk)

@@ -15,6 +15,8 @@ const d = db.getSiblingDB(dbName);
 d.users.createIndex({ emailLower: 1 }, { unique: true });
 // One user per E.164 phone; partial so legacy users without a phone field do not collide.
 d.users.createIndex({ phone: 1 }, { unique: true, partialFilterExpression: { phone: { $type: "string" } } });
+// One user per linked Google account; partial so users who never used Google sign-in do not collide.
+d.users.createIndex({ googleSub: 1 }, { unique: true, partialFilterExpression: { googleSub: { $type: "string" } } });
 // Accounts scheduled for deletion (DELETE /v1/me); the daily purge finds the due ones by it.
 d.users.createIndex({ deleteAfter: 1 }, { sparse: true });
 

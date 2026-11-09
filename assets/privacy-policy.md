@@ -1,12 +1,12 @@
 # Bloom Health privacy policy
 
-_Last updated: 6 November 2026_
+_Last updated: 8 November 2026_
 
 Bloom Health helps you build daily habits, log workouts, track your cycle and chat with Bloomy, an AI assistant. This policy explains what we collect, why, who it goes to and the choices you have.
 
 ## What we collect
 
-- Account details: your name, email address, phone number, avatar, gender (optional) and time zone.
+- Account details: your name, email address, phone number, avatar, gender (optional) and time zone. If you sign in with Google, also your Google account ID, so we can recognise you next time.
 - Habits and progress: the habits you create, what you complete each day, streaks, your daily goal and reminder times.
 - Workouts: the workouts you log and how long they took.
 - Period tracker: the period dates you enter, if the tracker is on.
@@ -17,7 +17,7 @@ Bloom Health helps you build daily habits, log workouts, track your cycle and ch
 ## How we use it
 
 - To run the app: save your habits and progress, sync them between your devices and show your streaks.
-- To sign you in with a one-time code sent to your email.
+- To sign you in with a one-time code sent to your email, or with your Google account if you choose (Android).
 - To fill your Steps habit from your step totals, and to show steps and calories on the home-screen widget.
 - To answer you in Bloomy.
 - To keep the service secure, fix problems and prevent abuse.
@@ -44,6 +44,7 @@ Bloomy's answers can be wrong and aren't medical advice. Talk to a doctor about 
 
 - People you share your space with (viewers) can see your habits, progress and steps. They never see your period data.
 - Service providers who run Bloom Health for us: cloud hosting and databases (Vercel, MongoDB Atlas, Google Cloud), email delivery for sign-in codes, and Groq for Bloomy. They may use the data only to provide their service to us.
+- Google, if you sign in with Google: Google confirms your name, email address and account ID to us. We get nothing else from your Google account, such as contacts, files or your password. Google's own privacy policy covers what Google does.
 - Authorities, if the law requires it.
 
 ## On your phone

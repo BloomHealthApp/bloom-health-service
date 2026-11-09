@@ -9,6 +9,7 @@ import (
 
 	"github.com/BloomHealthApp/bloom-health-service/config"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/service"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/drivers"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/infrastructure/transport/smtp"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/logger"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/utils/clock"
@@ -49,6 +50,7 @@ func InitializeApp() (AppInterface, func(), error) {
 		logger.NewLogger,
 		clock.NewRealClock,
 		smtp.NewMailer,
+		drivers.NewGoogleVerifier,
 		NewRepositories,
 		app,
 	)
@@ -56,8 +58,9 @@ func InitializeApp() (AppInterface, func(), error) {
 }
 
 // InitializeTestApp builds the graph from explicit dependencies (in-memory repositories, fake clock,
-// capturing mailer) so tests exercise the real services and HTTP layer.
-func InitializeTestApp(cfg *config.Store, log logger.ILogger, clk clock.Clock, mailer smtp.IMailer, repos *Repositories) (AppInterface, error) {
+// capturing mailer, fake Google verifier) so tests exercise the real services and HTTP layer.
+func InitializeTestApp(cfg *config.Store, log logger.ILogger, clk clock.Clock, mailer smtp.IMailer, google drivers.IGoogleVerifier,
+	repos *Repositories) (AppInterface, error) {
 	wire.Build(app)
 	return nil, nil
 }

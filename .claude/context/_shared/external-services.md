@@ -1,11 +1,12 @@
 # External services and dependencies
 
-The service makes no outbound HTTP calls. Its only runtime external services are MongoDB and SMTP. AI chat replies come from `bloom-health-task-worker`, which shares the MongoDB database and calls the model provider (Groq); this service holds no model API key.
+The service's runtime external services are MongoDB, SMTP and, for Google sign-in, Google's public signing keys. That key fetch is its only outbound HTTP call. AI chat replies come from `bloom-health-task-worker`, which shares the MongoDB database and calls the model provider (Groq); this service holds no model API key.
 
 ## Runtime services
 | Service | Used for | Code | Configuration |
 |---|---|---|---|
 | MongoDB (Atlas) | All persistent data | `pkg/drivers/mongodb.go`, `pkg/infrastructure/mongorepo/` | `STORE`, `MONGODB_URI` (secret), `MONGODB_DB` |
+| Google OAuth signing keys | Checking Google ID tokens (`POST /auth/google`) | `pkg/drivers/google-verifier.go` (`google.golang.org/api/idtoken`) | `GOOGLE_CLIENT_ID` (web client id list, not secret) |
 | SMTP server | OTP emails | `pkg/infrastructure/transport/smtp/` | `MAILER`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER` and `SMTP_PASS` (secret), `MAIL_FROM` |
 
 ### MongoDB

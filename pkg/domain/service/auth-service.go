@@ -25,6 +25,7 @@ import (
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/dto/request"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/dto/response"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/models/dao"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/drivers"
 	apperrors "github.com/BloomHealthApp/bloom-health-service/pkg/errors"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/infrastructure/mongorepo"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/infrastructure/transport/smtp"
@@ -32,8 +33,8 @@ import (
 	"github.com/BloomHealthApp/bloom-health-service/pkg/utils/clock"
 )
 
-// IAuthService implements email-OTP sign-up and sign-in (no passwords), short-lived JWT access tokens
-// and rotating refresh tokens.
+// IAuthService implements email-OTP and Google sign-up and sign-in (no passwords), short-lived JWT access
+// tokens and rotating refresh tokens.
 type IAuthService interface {
 	// RequestSignUp emails a code to req.Email and returns the challenge to verify. req must already be
 	// validated and normalized (E.164 phone, lower-case email). 409 already_registered when the email or
@@ -46,6 +47,11 @@ type IAuthService interface {
 	// VerifyOTP consumes the challenge (single use). A sign-up challenge first creates the user, private
 	// space, default habits and settings from the pending name/phone/email.
 	VerifyOTP(ctx context.Context, req *request.OTPVerifyReq) (*response.AuthResponse, apperrors.IHttpError)
+	// SignInWithGoogle signs in with a verified Google ID token: the account linked to that Google id, else the
+	// account with the same (Google-verified) email, which gets linked, else a new account with no phone and its
+	// private space (IsNewUser set). 401 for a bad token or an account past its deletion date; 409
+	// already_registered when the email is already linked to a different Google account.
+	SignInWithGoogle(ctx context.Context, req *request.GoogleSignInReq) (*response.AuthResponse, apperrors.IHttpError)
 	// RequestPhoneChange mails a code to the signed-in user's email to confirm saving req.Phone. 409 when the
 	// phone belongs to another account; 429 during the resend cooldown. Nothing is saved yet.
 	RequestPhoneChange(ctx context.Context, actor *bo.Actor, req *request.PhoneChangeReq) (*response.ChallengeResponse, apperrors.IHttpError)
@@ -69,6 +75,7 @@ type authService struct {
 	sessions    mongorepo.ISessionRepo
 	mailer      smtp.IMailer
 	provision   IProvisionService
+	google      drivers.IGoogleVerifier
 	defaultTZ   string
 	clock       clock.Clock
 	secret      []byte
@@ -80,9 +87,9 @@ type authService struct {
 
 func NewAuthService(log logger.ILogger, cfg *config.Store, users mongorepo.IUserRepo, memberships mongorepo.IMembershipRepo,
 	accounts mongorepo.IAccountRepo, otps mongorepo.IOTPRepo, sessions mongorepo.ISessionRepo, mailer smtp.IMailer, provision IProvisionService,
-	clk clock.Clock) IAuthService {
+	google drivers.IGoogleVerifier, clk clock.Clock) IAuthService {
 	return &authService{log: log, users: users, memberships: memberships, accounts: accounts, otps: otps, sessions: sessions, mailer: mailer,
-		provision: provision, defaultTZ: cfg.DefaultTZ, clock: clk, secret: []byte(cfg.AccessSecret), issuer: cfg.Issuer, resendAfter: cfg.OTPResendAfter,
+		provision: provision, google: google, defaultTZ: cfg.DefaultTZ, clock: clk, secret: []byte(cfg.AccessSecret), issuer: cfg.Issuer, resendAfter: cfg.OTPResendAfter,
 		reviewEmail: cfg.ReviewEmail, reviewCode: cfg.ReviewCode}
 }
 
@@ -332,6 +339,85 @@ func (s *authService) ConfirmPhoneChange(ctx context.Context, actor *bo.Actor, r
 		return "", internalErr(s.log, ctx, "phone change: delete failed", err)
 	}
 	return ch.PendingPhone, nil
+}
+
+func (s *authService) SignInWithGoogle(ctx context.Context, req *request.GoogleSignInReq) (*response.AuthResponse, apperrors.IHttpError) {
+	id, err := s.google.Verify(ctx, req.IDToken)
+	if errors.Is(err, drivers.ErrGoogleSignInOff) {
+		return nil, apperrors.NotFoundError("no such route")
+	}
+	if err != nil {
+		s.log.Info(ctx, "google sign-in: token rejected", map[string]any{"err": err.Error()})
+		return nil, apperrors.UnauthorizedError("invalid google token")
+	}
+	u, created, herr := s.googleUser(ctx, id, true)
+	if herr != nil {
+		return nil, herr
+	}
+	resp, herr := s.issue(ctx, u, uuid.NewString())
+	if herr != nil {
+		return nil, herr
+	}
+	resp.IsNewUser = created
+	return resp, nil
+}
+
+// googleUser finds, links or creates the account for a verified Google identity and reports whether it created one.
+// With retry, a unique-index clash is looked up once more: two first sign-ins with one Google account can race,
+// and the winner's account then exists.
+func (s *authService) googleUser(ctx context.Context, id *drivers.GoogleIdentity, retry bool) (*dao.User, bool, apperrors.IHttpError) {
+	invalid := apperrors.UnauthorizedError("invalid google token")
+	u, err := s.users.ByGoogleSub(ctx, id.Subject)
+	if err == nil {
+		if s.eraseIfOverdue(ctx, u) {
+			return nil, false, invalid
+		}
+		return u, false, nil
+	}
+	if !apperrors.IsNotFound(err) {
+		return nil, false, internalErr(s.log, ctx, "google sign-in: user lookup failed", err)
+	}
+	clash := func() (*dao.User, bool, apperrors.IHttpError) {
+		if retry {
+			return s.googleUser(ctx, id, false)
+		}
+		return nil, false, apperrors.AlreadyRegisteredError("an account with this email already exists")
+	}
+	created := false
+	u, err = s.users.ByEmail(ctx, id.Email)
+	switch {
+	case err == nil:
+		if s.eraseIfOverdue(ctx, u) {
+			return nil, false, invalid
+		}
+		if u.GoogleSub != nil {
+			return nil, false, apperrors.AlreadyRegisteredError("this email is linked to another Google account")
+		}
+	case apperrors.IsNotFound(err):
+		u, err = s.provision.EnsureAccount(ctx, id.Name, "", "", "", id.Email, s.defaultTZ)
+		if apperrors.IsConflict(err) {
+			return clash()
+		}
+		if err != nil {
+			return nil, false, internalErr(s.log, ctx, "google sign-in: account provisioning failed", err)
+		}
+		created = true
+	default:
+		return nil, false, internalErr(s.log, ctx, "google sign-in: user lookup failed", err)
+	}
+	// Security: linking by email is safe only because Verify requires email_verified from Google.
+	u.GoogleSub = &id.Subject
+	u.UpdatedAt = s.clock.Now().UTC()
+	if err := s.users.Save(ctx, u); err != nil {
+		if apperrors.IsConflict(err) {
+			return clash()
+		}
+		return nil, false, internalErr(s.log, ctx, "google sign-in: link failed", err)
+	}
+	if !created {
+		s.log.Info(ctx, "google sign-in: linked to existing account", map[string]any{"userId": u.ID})
+	}
+	return u, created, nil
 }
 
 // issue mints an access/refresh pair for a new session in the given family and renders the response.

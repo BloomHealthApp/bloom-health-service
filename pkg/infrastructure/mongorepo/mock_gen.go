@@ -51,6 +51,21 @@ func (mr *MockIUserRepoMockRecorder) ByEmail(arg0, arg1 interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ByEmail", reflect.TypeOf((*MockIUserRepo)(nil).ByEmail), arg0, arg1)
 }
 
+// ByGoogleSub mocks base method.
+func (m *MockIUserRepo) ByGoogleSub(arg0 context.Context, arg1 string) (*dao.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ByGoogleSub", arg0, arg1)
+	ret0, _ := ret[0].(*dao.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ByGoogleSub indicates an expected call of ByGoogleSub.
+func (mr *MockIUserRepoMockRecorder) ByGoogleSub(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ByGoogleSub", reflect.TypeOf((*MockIUserRepo)(nil).ByGoogleSub), arg0, arg1)
+}
+
 // ByID mocks base method.
 func (m *MockIUserRepo) ByID(arg0 context.Context, arg1 string) (*dao.User, error) {
 	m.ctrl.T.Helper()

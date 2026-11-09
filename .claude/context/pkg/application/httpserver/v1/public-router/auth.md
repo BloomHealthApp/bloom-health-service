@@ -1,4 +1,4 @@
-# Auth API (`signup-request.go`, `signin-request.go`, `verify-otp.go`, `refresh.go`, `logout.go`)
+# Auth API (`signup-request.go`, `signin-request.go`, `verify-otp.go`, `google-signin.go`, `refresh.go`, `logout.go`)
 
 Service: [auth-service.md](../../../../domain/service/auth-service.md). Contract section: Auth. All routes also pass `LimitAuth` (per IP).
 
@@ -7,12 +7,15 @@ Service: [auth-service.md](../../../../domain/service/auth-service.md). Contract
 | `POST /auth/signup/request` | 202 `{status, challengeId}` | `signup\|<email>` and `signup\|<phone>`: 429, `Retry-After: 60` |
 | `POST /auth/signin/request` | 202 `{status, challengeId}` | `signin\|<identifier>`: still 202 |
 | `POST /auth/otp/verify` | 200 tokens + `user` | `verify\|<challengeId>`: 429, `Retry-After: 60` |
+| `POST /auth/google` | 200 tokens + `user` (+ `isNewUser`) | none, only `LimitAuth` |
 | `POST /auth/refresh` | 200 tokens + `user` | none, only `LimitAuth` |
 | `POST /auth/logout` | 204 | none, only `LimitAuth` |
 
 ## Rules
 - Sign-in must never reveal whether an account exists. Over its limit, the handler replaces the identifier with a `decoy|<uuid>` value, so the caller gets the same 202 and nothing is sent.
 - Sign-up and sign-in call `Validate()` and then `Normalize()` before the limiter, so limit keys use the canonical email or phone.
+
+- `POST /auth/google` is a 404 while `GOOGLE_CLIENT_ID` is unset (checked in the handler, before binding).
 
 ## Gotchas
 - Sign-up does reveal a taken email or phone (409 `already_registered`). This is an accepted trade-off.

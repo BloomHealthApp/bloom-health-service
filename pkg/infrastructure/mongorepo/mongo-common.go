@@ -57,6 +57,8 @@ func EnsureIndexes(ctx context.Context, db drivers.IMongoDB) error {
 		mongo.IndexModel{Keys: asc("emailLower"), Options: options.Index().SetUnique(true)},
 		mongo.IndexModel{Keys: asc("phone"), Options: options.Index().SetUnique(true).
 			SetPartialFilterExpression(bson.D{{Key: "phone", Value: bson.D{{Key: "$type", Value: "string"}}}})},
+		mongo.IndexModel{Keys: asc("googleSub"), Options: options.Index().SetUnique(true).
+			SetPartialFilterExpression(bson.D{{Key: "googleSub", Value: bson.D{{Key: "$type", Value: "string"}}}})},
 		// Only accounts scheduled for deletion carry deleteAfter; the daily purge (PurgeDue) looks them up by it.
 		mongo.IndexModel{Keys: asc("deleteAfter"), Options: options.Index().SetSparse(true)}); err != nil {
 		return err

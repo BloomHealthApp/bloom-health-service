@@ -60,6 +60,9 @@ type Store struct {
 	// InternalAPISecret (INTERNAL_API_SECRET) authenticates bloom-health-task-worker's calls to /internal/*, such as
 	// the daily purge of deleted accounts. Empty turns the internal routes off.
 	InternalAPISecret string
+	// GoogleClientIDs (GOOGLE_CLIENT_ID, comma-separated) are the OAuth client ids accepted as the `aud` of a Google
+	// ID token. Empty turns POST /v1/auth/google off.
+	GoogleClientIDs []string
 }
 
 // envBindings maps viper keys to the environment variables that may override them.
@@ -121,6 +124,7 @@ func NewConfig() (*Store, error) {
 		SMTPHost: os.Getenv("SMTP_HOST"), SMTPUser: os.Getenv("SMTP_USER"), SMTPPass: os.Getenv("SMTP_PASS"),
 		ReviewEmail: strings.ToLower(strings.TrimSpace(os.Getenv("REVIEW_LOGIN_EMAIL"))), ReviewCode: strings.TrimSpace(os.Getenv("REVIEW_LOGIN_CODE")),
 		InternalAPISecret: strings.TrimSpace(os.Getenv("INTERNAL_API_SECRET")),
+		GoogleClientIDs:   splitList(os.Getenv("GOOGLE_CLIENT_ID")),
 	}
 	if c.DefaultCountryCode == "" {
 		c.DefaultCountryCode = utils.DefaultCountryCode
