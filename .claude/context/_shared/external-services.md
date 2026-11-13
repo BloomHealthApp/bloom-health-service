@@ -24,6 +24,12 @@ The service's runtime external services are MongoDB, SMTP and, for Google sign-i
 - `prod-config.json` has a `no-reply@localhost` sender, so set `MAIL_FROM` in production.
 - `net/smtp` is used, and it doesn't take the request's context, so there is no per-send timeout from the caller.
 
+## Hosting
+| Host | Notes |
+|---|---|
+| Vercel | Current production (`bloom-health-service.vercel.app`) |
+| Oracle Cloud k3s | Single arm64 VM, `deploy/k8s/`; no public ingress yet (Cloudflare Tunnel planned). Its reserved IP must be in the Atlas allowlist |
+
 ## Sibling services
 | Service | Notes |
 |---|---|

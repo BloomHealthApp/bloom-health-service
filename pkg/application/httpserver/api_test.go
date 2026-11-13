@@ -612,3 +612,10 @@ func TestOversizedBodyRejected(t *testing.T) {
 	defer resp.Body.Close()
 	require.Equal(t, 400, resp.StatusCode)
 }
+
+func TestLivezNeedsNoDependencies(t *testing.T) {
+	e := setup(t)
+	st, body := e.do("GET", "/livez", "", nil)
+	require.Equal(t, 200, st)
+	require.Equal(t, "ok", body["status"])
+}
