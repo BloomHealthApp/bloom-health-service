@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bloom-health-service
+  labels: { app.kubernetes.io/name: bloom-health-service }
+spec:
+  # No replicas field: the HorizontalPodAutoscaler owns the count (2-4), so a deploy never resets it.
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels: { app.kubernetes.io/name: bloom-health-service }
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxSurge: 1, maxUnavailable: 0 }
+  template:
+    metadata:
+      labels: { app.kubernetes.io/name: bloom-health-service }
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: http-server
+          image: bloom-health-service
+          # Images are built on the node and imported into k3s's containerd (deploy.sh); never pulled.
+          imagePullPolicy: Never
+          ports:
+            - { name: http, containerPort: 3000 }
+          envFrom:
+            - secretRef: { name: bloom-health-service }
+          env:
+            - { name: ACTIVE_ENV, value: PROD }
+            - { name: PORT, value: "3000" }
+            - name: GOMEMLIMIT
+              valueFrom:
+                resourceFieldRef: { resource: limits.memory, divisor: "1" }
+          resources:
+            requests: { cpu: 100m, memory: 96Mi }
+            limits: { memory: 384Mi }
+          startupProbe:
+            httpGet: { path: /livez, port: http }
+            periodSeconds: 2
+            failureThreshold: 30
+          livenessProbe:
+            httpGet: { path: /livez, port: http }
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            # /health pings MongoDB: a pod that can't reach the database stops taking traffic but isn't restarted.
+            httpGet: { path: /health, port: http }
+            periodSeconds: 15
+            timeoutSeconds: 6
+            failureThreshold: 2
+          lifecycle:
+            # Give the Service time to drop this pod before the server starts its graceful shutdown.
+            preStop:
+              sleep: { seconds: 5 }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: [ALL] }
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels: { app.kubernetes.io/name: bloom-health-service }

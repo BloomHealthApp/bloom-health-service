@@ -36,6 +36,7 @@ Paths with context have a matching file at `.claude/context/<path>/context.md`. 
 cmd/server/                    entrypoint
 config/  assets/               configuration
 ddl/mongodb/                   documented index set
+deploy/k8s/                    Oracle Cloud k3s deployment (runbook: deploy/k8s/README.md)
 pkg/application/httpserver/    router, HTTP tests; v1/public-router/ = handlers
 pkg/di/                        Wire graph and AppLogic
 pkg/domain/service/            services

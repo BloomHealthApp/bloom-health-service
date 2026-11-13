@@ -1,0 +1,15 @@
+# Only pods in this namespace (later: cloudflared) may open connections to the API. Egress stays open:
+# MongoDB Atlas, SMTP and Google's signing keys are outside the cluster.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: bloom-health-service-ingress
+spec:
+  podSelector:
+    matchLabels: { app.kubernetes.io/name: bloom-health-service }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {}
+      ports:
+        - { port: http, protocol: TCP }

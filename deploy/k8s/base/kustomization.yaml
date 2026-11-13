@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: bloom
+resources:
+  - namespace.yaml
+  - deployment.yaml
+  - service.yaml
+  - pdb.yaml
+  - hpa.yaml
+  - networkpolicy.yaml
+images:
+  # deploy.sh rewrites newTag to the commit being deployed
+  - name: bloom-health-service
+    newTag: latest
