@@ -7,6 +7,8 @@ import (
 
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
+
+	"github.com/BloomHealthApp/bloom-health-service/pkg/telemetry"
 )
 
 // IPinger checks backend reachability (used by /health).
@@ -29,7 +31,7 @@ type mongoDB struct {
 
 // NewMongoDB connects to MongoDB and verifies the connection with a ping.
 func NewMongoDB(ctx context.Context, uri, dbName string) (IMongoDB, error) {
-	c, err := mongo.Connect(options.Client().ApplyURI(uri))
+	c, err := mongo.Connect(options.Client().ApplyURI(uri).SetMonitor(telemetry.MongoMonitor()))
 	if err != nil {
 		return nil, err
 	}

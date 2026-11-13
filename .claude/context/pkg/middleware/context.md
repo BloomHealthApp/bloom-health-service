@@ -1,7 +1,7 @@
 # pkg/middleware/
 
 ## Purpose
-Global chain, in the order set by `pkg/application/httpserver/router.go`: generic request info, recovery, secure headers, CORS, request logger, per-IP rate limit, body limit. Auth, role and `/auth` rate limit middleware are applied per route.
+Global chain, in the order set by `pkg/application/httpserver/router.go`: generic request info, telemetry, recovery, secure headers, CORS, request logger, per-IP rate limit, body limit. Auth, role and `/auth` rate limit middleware are applied per route.
 
 ## Rate limits
 Set in `ratelimit.NewSet`.
@@ -14,6 +14,9 @@ Set in `ratelimit.NewSet`.
 
 ## Why
 Per-email rate limits live in the handlers, not here, because they depend on the request body.
+
+## Telemetry
+- `Telemetry` runs right after request info, so its server span wraps recovery: a panic is recorded as a 500 span. It continues the caller's W3C `traceparent` and names spans and metrics by route pattern only.
 
 ## Related
 `_shared/security-invariants.md`

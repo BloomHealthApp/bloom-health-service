@@ -13,6 +13,7 @@ import (
 
 	"github.com/BloomHealthApp/bloom-health-service/pkg/application/httpserver"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/di"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/telemetry"
 )
 
 func main() {
@@ -24,6 +25,16 @@ func main() {
 	defer cleanup()
 	di.AppLogic = app
 	cfg, log := app.GetConfig(), app.GetLogger()
+	shutdownTelemetry, err := telemetry.Setup(context.Background(), cfg)
+	if err != nil {
+		log.Error(context.Background(), "telemetry disabled", map[string]any{"err": err.Error()})
+		shutdownTelemetry = func(context.Context) error { return nil }
+	}
+	defer func() {
+		flush, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = shutdownTelemetry(flush)
+	}()
 	if cfg.ReviewLoginProblem != "" {
 		log.Error(context.Background(), "review login disabled", map[string]any{"reason": cfg.ReviewLoginProblem})
 	}
