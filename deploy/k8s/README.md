@@ -70,12 +70,35 @@ both hosts share the database and existing sessions keep working. No quotes arou
 deploy/k8s/secrets.sh
 ```
 
-## 4. Deploy (every release)
+## 4. Deploy
+Every push to `main` deploys automatically once CI's `test` job passes (`.github/workflows/ci.yml`, job `deploy`):
+```
+PR merge → push to main → test job passes → deploy job builds on the VM and rolls out
+```
+For the first deploy, or to deploy ad hoc from a non-`main` branch:
 ```bash
 deploy/k8s/deploy.sh
 ```
 The image tag is the commit (plus `-dirty-<time>` for uncommitted changes). The rollout adds a pod before removing
 one, waits for readiness, and ends with `/livez` and `/health` checks through a port-forward.
+
+### CI deploy setup (once)
+Generate a **separate** key for CI (don't reuse `~/.ssh/bloom-oracle`, so it can be revoked without affecting your own
+access):
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/bloom-oracle-ci -C bloom-oracle-ci -N ""
+ssh-copy-id -i ~/.ssh/bloom-oracle-ci.pub bloom-oracle
+```
+Then add these as **repo secrets** (Settings → Secrets and variables → Actions):
+| Secret | Value |
+|---|---|
+| `ORACLE_SSH_HOST` | the reserved public IP |
+| `ORACLE_SSH_USER` | `ubuntu` |
+| `ORACLE_SSH_KEY` | contents of `~/.ssh/bloom-oracle-ci` (the private key) |
+
+The workflow never prints these; it writes the key to a throwaway file on the ephemeral runner and discards it when the
+job ends. Oracle's Ubuntu image grants the `ubuntu` user passwordless `sudo`, which the deploy scripts rely on since
+they already run `sudo` over a non-interactive SSH session.
 
 To call the API from the Mac before Cloudflare Tunnel exists:
 ```bash
@@ -109,4 +132,4 @@ then `curl localhost:3000/health` in another terminal.
 
 ## Next
 Cloudflare Tunnel (`cloudflared` in the `bloom` namespace) for public HTTPS with no open ports, then reading the
-client IP from `CF-Connecting-IP`; GitHub Actions building multi-arch images to GHCR; Prometheus and Grafana.
+client IP from `CF-Connecting-IP`; Prometheus and Grafana.
