@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/bo"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/models/dao"
@@ -59,4 +60,19 @@ func TestChatTextFieldsAreRedacted(t *testing.T) {
 		require.NotContains(t, out, s)
 	}
 	require.Contains(t, out, `"sessionId":"s1"`)
+}
+
+func TestTraceIDsAreAdded(t *testing.T) {
+	var buf bytes.Buffer
+	l := NewWithWriter(&buf, "info")
+	tid, _ := trace.TraceIDFromHex("4bf92f3577b34da6a3ce929d0e0e4736")
+	sid, _ := trace.SpanIDFromHex("00f067aa0ba902b7")
+	ctx := trace.ContextWithSpanContext(context.Background(), trace.NewSpanContext(trace.SpanContextConfig{TraceID: tid, SpanID: sid}))
+	l.Info(ctx, "msg", nil)
+	require.Contains(t, buf.String(), `"traceId":"4bf92f3577b34da6a3ce929d0e0e4736"`)
+	require.Contains(t, buf.String(), `"spanId":"00f067aa0ba902b7"`)
+
+	buf.Reset()
+	l.Info(context.Background(), "msg", nil)
+	require.NotContains(t, buf.String(), "traceId")
 }

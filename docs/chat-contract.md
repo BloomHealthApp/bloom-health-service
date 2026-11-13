@@ -40,6 +40,7 @@ Both repos keep their own copy of this file and of the document shapes below. A 
 | `errorCode` | string | worker | set when `failed` |
 | `usage` | `{inputTokens, outputTokens}` | worker | |
 | `finishReason`, `latencyMs` | string, int | worker | |
+| `traceparent` | string, optional | service | W3C trace context of the request that queued the turn; the worker continues that trace. Absent on older rows |
 | `createdAt`, `updatedAt` | date | both | |
 
 Clients see `running` as `pending`.

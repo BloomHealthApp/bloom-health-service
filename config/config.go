@@ -63,6 +63,9 @@ type Store struct {
 	// GoogleClientIDs (GOOGLE_CLIENT_ID, comma-separated) are the OAuth client ids accepted as the `aud` of a Google
 	// ID token. Empty turns POST /v1/auth/google off.
 	GoogleClientIDs []string
+	// OTLPEndpoint (OTEL_EXPORTER_OTLP_ENDPOINT) turns on OpenTelemetry trace and metric export. Empty = off.
+	// Its auth headers come from OTEL_EXPORTER_OTLP_HEADERS (secret), read by the exporter itself.
+	OTLPEndpoint string
 }
 
 // envBindings maps viper keys to the environment variables that may override them.
@@ -125,6 +128,7 @@ func NewConfig() (*Store, error) {
 		ReviewEmail: strings.ToLower(strings.TrimSpace(os.Getenv("REVIEW_LOGIN_EMAIL"))), ReviewCode: strings.TrimSpace(os.Getenv("REVIEW_LOGIN_CODE")),
 		InternalAPISecret: strings.TrimSpace(os.Getenv("INTERNAL_API_SECRET")),
 		GoogleClientIDs:   splitList(os.Getenv("GOOGLE_CLIENT_ID")),
+		OTLPEndpoint:      strings.TrimSpace(os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")),
 	}
 	if c.DefaultCountryCode == "" {
 		c.DefaultCountryCode = utils.DefaultCountryCode

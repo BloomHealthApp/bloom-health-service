@@ -20,6 +20,7 @@ import (
 	apperrors "github.com/BloomHealthApp/bloom-health-service/pkg/errors"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/infrastructure/mongorepo"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/logger"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/telemetry"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/utils/clock"
 )
 
@@ -190,7 +191,7 @@ func (s *chatService) SendMessage(ctx context.Context, actor *bo.Actor, req *req
 	userMsg := &dao.ChatMessage{ID: uuid.NewString(), SessionID: sess.ID, UserID: actor.User.ID, Idx: idx, Role: chatrole.User,
 		Content: req.Content, Status: chatstatus.Succeeded, ModelID: modelID, RunAt: now, CreatedAt: now, UpdatedAt: now}
 	assistantMsg := &dao.ChatMessage{ID: turnID, SessionID: sess.ID, UserID: actor.User.ID, Idx: idx + 1, Role: chatrole.Assistant,
-		Status: chatstatus.Pending, ModelID: modelID, RunAt: now, CreatedAt: now, UpdatedAt: now}
+		Status: chatstatus.Pending, ModelID: modelID, RunAt: now, CreatedAt: now, UpdatedAt: now, TraceParent: telemetry.TraceParent(ctx)}
 	if err := s.messages.Insert(ctx, userMsg, assistantMsg); err != nil {
 		// No transactions: release the session so the user can retry instead of waiting for the worker's reaper.
 		if rerr := s.sessions.EndTurn(ctx, sess.ID, turnID); rerr != nil {
@@ -198,6 +199,7 @@ func (s *chatService) SendMessage(ctx context.Context, actor *bo.Actor, req *req
 		}
 		return nil, internalErr(s.log, ctx, "chat message insert failed", err)
 	}
+	telemetry.RecordChatTurnEnqueued(ctx, modelID)
 	if idx == 0 && sess.Title == constants.DefaultChatTitle {
 		if err := s.sessions.SetTitle(ctx, actor.User.ID, sess.ID, autoTitle(req.Content)); err != nil {
 			s.log.Warn(ctx, "chat auto-title failed", map[string]any{"sessionId": sess.ID, "err": err.Error()})

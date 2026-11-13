@@ -28,6 +28,8 @@ type ChatMessage struct {
 	Usage        *ChatUsage `bson:"usage,omitempty"`
 	FinishReason string     `bson:"finishReason,omitempty"`
 	LatencyMs    int        `bson:"latencyMs,omitempty"`
-	CreatedAt    time.Time  `bson:"createdAt"`
-	UpdatedAt    time.Time  `bson:"updatedAt"`
+	// TraceParent is the W3C traceparent of the request that queued the turn, so the worker continues its trace.
+	TraceParent string    `bson:"traceparent,omitempty"`
+	CreatedAt   time.Time `bson:"createdAt"`
+	UpdatedAt   time.Time `bson:"updatedAt"`
 }

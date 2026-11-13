@@ -49,6 +49,7 @@ pkg/infrastructure/mongorepo/  repositories; memory/ = in-memory fakes
 pkg/infrastructure/transport/smtp/   mailers
 pkg/infrastructure/validation/ entity allowlists
 pkg/logger/                    redacting logger
+pkg/telemetry/                 OpenTelemetry traces and metrics (off unless OTEL_EXPORTER_OTLP_ENDPOINT)
 pkg/middleware/                middleware chain
 pkg/constants/                 limits, TTLs, header names, collection names
 pkg/drivers/                   IMongoDB / IPinger wrapper (+ mock_gen.go)

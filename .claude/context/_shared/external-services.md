@@ -24,6 +24,9 @@ The service's runtime external services are MongoDB, SMTP and, for Google sign-i
 - `prod-config.json` has a `no-reply@localhost` sender, so set `MAIL_FROM` in production.
 - `net/smtp` is used, and it doesn't take the request's context, so there is no per-send timeout from the caller.
 
+### OpenTelemetry (optional)
+Traces and metrics go over OTLP/HTTP to whatever `OTEL_EXPORTER_OTLP_ENDPOINT` names (e.g. Grafana Cloud); auth goes in `OTEL_EXPORTER_OTLP_HEADERS` (secret). Unset = no export. See `pkg/telemetry/`.
+
 ## Sibling services
 | Service | Notes |
 |---|---|

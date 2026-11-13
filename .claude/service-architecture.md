@@ -55,11 +55,12 @@ pkg/
 │   └── app-logic.go             AppInterface facade used by handlers
 │
 ├── drivers/                     IMongoDB / IPinger
-├── middleware/                  request info, recovery, headers, CORS, logging, rate limits, body limit, auth
+├── middleware/                  request info, telemetry, recovery, headers, CORS, logging, rate limits, body limit, auth
 ├── constants/                   limits, TTLs, header and collection names
 ├── enums/                       one package per enum
 ├── errors/                      IHttpError + factories, typed repo errors
 ├── logger/                      redacting logger
+├── telemetry/                   OpenTelemetry setup, metric instruments, MongoDB command monitor
 └── utils/                       context accessors, dates, cursors, HTTP helpers; scoring/, clock/, ratelimit/
 
 ddl/mongodb/                     documented index set
@@ -72,7 +73,7 @@ docs/                            public API contract
 
 ```text
 Request
-  → Middleware  (request info → recovery → secure headers → CORS → request log → IP limit → body limit → auth)
+  → Middleware  (request info → telemetry → recovery → secure headers → CORS → request log → IP limit → body limit → auth)
   → Handler     (bind DTO → read ctx values → validate → call service → write JSON)
   → Service     (business rules and orchestration; works in BOs and DAOs)
   → Repository  (MongoDB or memory; returns DAOs)

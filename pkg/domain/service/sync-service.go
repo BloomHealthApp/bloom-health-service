@@ -16,6 +16,7 @@ import (
 	"github.com/BloomHealthApp/bloom-health-service/pkg/infrastructure/mongorepo"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/infrastructure/validation"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/logger"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/telemetry"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/utils"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/utils/clock"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/utils/scoring"
@@ -256,6 +257,7 @@ func (s *syncService) Push(ctx context.Context, a *bo.Actor, req *request.SyncPu
 		if herr != nil {
 			return nil, herr
 		}
+		telemetry.RecordSyncOp(ctx, o.EntityType, o.Op, res.Status)
 		results = append(results, helpers.SyncResult(o.OperationID, res))
 	}
 	return &response.SyncPushResponse{Results: results}, nil

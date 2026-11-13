@@ -21,6 +21,7 @@ func NewRouter() *gin.Engine {
 
 	r.Use(
 		middleware.GenericRequestInfo(),
+		middleware.Telemetry(),
 		middleware.Recovery(),
 		middleware.SecureHeaders(),
 		middleware.CORS(),
