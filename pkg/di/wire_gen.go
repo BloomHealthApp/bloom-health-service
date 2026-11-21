@@ -61,23 +61,26 @@ func InitializeApp() (AppInterface, func(), error) {
 	iChatSessionRepo := repositories.ChatSessions
 	iChatMessageRepo := repositories.ChatMessages
 	iChatService := service.NewChatService(iLogger, store, iChatSessionRepo, iChatMessageRepo, clockClock)
+	iConnectionRepo := repositories.Connections
+	iConnectionService := service.NewConnectionService(iLogger, store, iUserRepo, iConnectionRepo, iStatsService, clockClock)
 	diAppLogic := &appLogic{
-		logger:    iLogger,
-		config:    store,
-		clock:     clockClock,
-		limiters:  set,
-		auth:      iAuthService,
-		user:      iUserService,
-		habit:     iHabitService,
-		dailyLog:  iDailyLogService,
-		workout:   iWorkoutService,
-		period:    iPeriodService,
-		settings:  iSettingsService,
-		sync:      iSyncService,
-		stats:     iStatsService,
-		provision: iProvisionService,
-		health:    iHealthService,
-		chat:      iChatService,
+		logger:     iLogger,
+		config:     store,
+		clock:      clockClock,
+		limiters:   set,
+		auth:       iAuthService,
+		user:       iUserService,
+		habit:      iHabitService,
+		dailyLog:   iDailyLogService,
+		workout:    iWorkoutService,
+		period:     iPeriodService,
+		settings:   iSettingsService,
+		sync:       iSyncService,
+		stats:      iStatsService,
+		provision:  iProvisionService,
+		health:     iHealthService,
+		chat:       iChatService,
+		connection: iConnectionService,
 	}
 	return diAppLogic, func() {
 		cleanup()
@@ -111,23 +114,26 @@ func InitializeTestApp(cfg *config.Store, log logger.ILogger, clk clock.Clock, m
 	iChatSessionRepo := repos.ChatSessions
 	iChatMessageRepo := repos.ChatMessages
 	iChatService := service.NewChatService(log, cfg, iChatSessionRepo, iChatMessageRepo, clk)
+	iConnectionRepo := repos.Connections
+	iConnectionService := service.NewConnectionService(log, cfg, iUserRepo, iConnectionRepo, iStatsService, clk)
 	diAppLogic := &appLogic{
-		logger:    log,
-		config:    cfg,
-		clock:     clk,
-		limiters:  set,
-		auth:      iAuthService,
-		user:      iUserService,
-		habit:     iHabitService,
-		dailyLog:  iDailyLogService,
-		workout:   iWorkoutService,
-		period:    iPeriodService,
-		settings:  iSettingsService,
-		sync:      iSyncService,
-		stats:     iStatsService,
-		provision: iProvisionService,
-		health:    iHealthService,
-		chat:      iChatService,
+		logger:     log,
+		config:     cfg,
+		clock:      clk,
+		limiters:   set,
+		auth:       iAuthService,
+		user:       iUserService,
+		habit:      iHabitService,
+		dailyLog:   iDailyLogService,
+		workout:    iWorkoutService,
+		period:     iPeriodService,
+		settings:   iSettingsService,
+		sync:       iSyncService,
+		stats:      iStatsService,
+		provision:  iProvisionService,
+		health:     iHealthService,
+		chat:       iChatService,
+		connection: iConnectionService,
 	}
 	return diAppLogic, nil
 }
@@ -135,10 +141,10 @@ func InitializeTestApp(cfg *config.Store, log logger.ILogger, clk clock.Clock, m
 // container.go:
 
 // services are shared by the production and the test injector.
-var services = wire.NewSet(service.NewAuthService, service.NewUserService, service.NewHabitService, service.NewDailyLogService, service.NewWorkoutService, service.NewPeriodService, service.NewSettingsService, service.NewSyncService, service.NewStatsService, service.NewProvisionService, service.NewHealthService, service.NewChatService)
+var services = wire.NewSet(service.NewAuthService, service.NewUserService, service.NewHabitService, service.NewDailyLogService, service.NewWorkoutService, service.NewPeriodService, service.NewSettingsService, service.NewSyncService, service.NewStatsService, service.NewProvisionService, service.NewHealthService, service.NewChatService, service.NewConnectionService)
 
 var repositoryFields = wire.FieldsOf(new(*Repositories),
-	"Users", "Spaces", "Memberships", "Entities", "Ops", "OTPs", "Sessions", "ChatSessions", "ChatMessages", "Accounts", "Pinger")
+	"Users", "Spaces", "Memberships", "Entities", "Ops", "OTPs", "Sessions", "ChatSessions", "ChatMessages", "Connections", "Accounts", "Pinger")
 
 var app = wire.NewSet(ratelimit.NewSet, services,
 	repositoryFields, wire.Struct(new(appLogic), "*"), wire.Bind(new(AppInterface), new(*appLogic)),

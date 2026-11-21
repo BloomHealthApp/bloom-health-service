@@ -8,6 +8,13 @@ const (
 	// the host kills it. 12s leaves room for a full 100-operation sync push and stays under the clients' 15s timeout.
 	RequestTimeout = 12 * time.Second
 
+	// ProfileLinkCodeLen is the length of the random base62 code in a profile link (about 71 bits).
+	ProfileLinkCodeLen = 12
+	// DeclinedRequestCooldown is how long a declined requester must wait before asking the same user again.
+	DeclinedRequestCooldown = 7 * 24 * time.Hour
+	// MaxConnectionsListed caps each list returned by GET /v1/connections.
+	MaxConnectionsListed = 200
+
 	// MaxBodyBytes is the request body limit (1 MiB).
 	MaxBodyBytes = 1 << 20
 
@@ -78,4 +85,5 @@ const (
 	// Chat collections are shared with bloom-health-task-worker (docs/chat-contract.md).
 	CollChatSessions = "chatSessions"
 	CollChatMessages = "chatMessages"
+	CollConnections  = "connections"
 )

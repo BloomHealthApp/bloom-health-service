@@ -24,7 +24,10 @@ type IUserRepo interface {
 	// ByGoogleSub looks up the user linked to a Google account id.
 	ByGoogleSub(ctx context.Context, sub string) (*dao.User, error)
 	ByID(ctx context.Context, id string) (*dao.User, error)
-	// Save upserts; returns errors.ErrRepoConflict when the email, phone or Google account belongs to another user.
+	// ByLinkCode looks up the user whose profile link code is code.
+	ByLinkCode(ctx context.Context, code string) (*dao.User, error)
+	// Save upserts; returns errors.ErrRepoConflict when the email, phone, Google account or profile link code belongs to
+	// another user.
 	Save(ctx context.Context, u *dao.User) error
 	// DueForDeletion returns up to limit accounts whose deletion grace period ended at or before now.
 	DueForDeletion(ctx context.Context, now time.Time, limit int) ([]dao.User, error)
@@ -63,6 +66,10 @@ func (r *userRepo) ByGoogleSub(ctx context.Context, sub string) (*dao.User, erro
 
 func (r *userRepo) ByID(ctx context.Context, id string) (*dao.User, error) {
 	return r.find(ctx, byID(id))
+}
+
+func (r *userRepo) ByLinkCode(ctx context.Context, code string) (*dao.User, error) {
+	return r.find(ctx, bson.D{{Key: "profileLinkCode", Value: code}})
 }
 
 func (r *userRepo) Save(ctx context.Context, u *dao.User) error {

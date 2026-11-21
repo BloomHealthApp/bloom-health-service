@@ -44,6 +44,18 @@ func RegisterRoutes(v1 *gin.RouterGroup) {
 	authed.GET("/chat/sessions/:sid/messages", HandleListChatMessages)
 	authed.POST("/chat/sessions/:sid/messages", HandleSendChatMessage)
 
+	// Friends: any role. A request can only be made through a profile link; others are only seen as public profiles.
+	authed.GET("/me/profile-link", HandleGetProfileLink)
+	authed.POST("/me/profile-link/reset", HandleResetProfileLink)
+	authed.GET("/connections", HandleListConnections)
+	authed.POST("/connections/:id/accept", HandleAcceptConnection)
+	authed.POST("/connections/:id/decline", HandleDeclineConnection)
+	authed.DELETE("/connections/:id", HandleDeleteConnection)
+	authed.GET("/profiles/:id", HandleGetProfile)
+	byLink := authed.Group("", middleware.LimitFriends())
+	byLink.GET("/profiles/by-link/:code", HandleGetProfileByLink)
+	byLink.POST("/connections", HandleSendConnectionRequest)
+
 	owner := authed.Group("", middleware.RequireOwner())
 	owner.PATCH("/settings", HandlePatchSettings)
 	owner.POST("/habits", HandleCreateHabit)

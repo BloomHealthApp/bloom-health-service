@@ -14,9 +14,12 @@ type User struct {
 	// Phone is E.164 and unique; nil (field absent) for legacy accounts created before phone sign-up.
 	Phone *string `bson:"phone,omitempty"`
 	// GoogleSub is the linked Google account id (`sub`), unique; nil until the user signs in with Google.
-	GoogleSub   *string `bson:"googleSub,omitempty"`
-	DisplayName string  `bson:"displayName"`
-	Avatar      *string `bson:"avatar"`
+	GoogleSub *string `bson:"googleSub,omitempty"`
+	// ProfileLinkCode is the random code in the user's shareable profile link (/u/{code}); nil until first requested.
+	// Resetting it replaces it, so old links stop working. Unique.
+	ProfileLinkCode *string `bson:"profileLinkCode,omitempty"`
+	DisplayName     string  `bson:"displayName"`
+	Avatar          *string `bson:"avatar"`
 	// Gender is one of pkg/enums/gender; nil (null) for legacy accounts or when not provided.
 	Gender *string `bson:"gender,omitempty"`
 	// PeriodTracker is the explicit period-tracker setting; nil means "default for the gender"

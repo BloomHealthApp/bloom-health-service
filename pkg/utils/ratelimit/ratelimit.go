@@ -52,13 +52,19 @@ type Set struct {
 	IP    *Keyed // every request, per client IP
 	Auth  *Keyed // /v1/auth/*, per client IP
 	Email *Keyed // OTP request/verify, per email
+	// Friends limits profile-link lookups and friend requests per user, so link codes can't be guessed.
+	Friends *Keyed
+	// ProfilePage limits the public /u/{code} page per client IP, for the same reason.
+	ProfilePage *Keyed
 }
 
 // NewSet builds the production limits.
 func NewSet() *Set {
 	return &Set{
-		IP:    NewKeyed(rate.Limit(30), 90),
-		Auth:  NewKeyed(rate.Every(6*time.Second), 10),
-		Email: NewKeyed(rate.Every(2*time.Minute), 3),
+		IP:          NewKeyed(rate.Limit(30), 90),
+		Auth:        NewKeyed(rate.Every(6*time.Second), 10),
+		Email:       NewKeyed(rate.Every(2*time.Minute), 3),
+		Friends:     NewKeyed(rate.Every(2*time.Second), 20),
+		ProfilePage: NewKeyed(rate.Every(time.Second), 20),
 	}
 }
