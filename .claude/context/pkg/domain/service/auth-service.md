@@ -8,6 +8,7 @@ Passwordless sign-up and sign-in by emailed code or Google ID token, JWT access 
 - A phone sign-in that finds no account logs `signin: no account for phone`, without the number. An email that finds none logs nothing.
 - A `phone_change` challenge is only consumed by `ConfirmPhoneChange`, for the user whose email it was mailed to. `VerifyOTP` never issues tokens for it.
 - Every `VerifyOTP` failure returns the same 401 `invalid or expired code`.
+- `Authenticate` answers 401 only for a bad or expired token or an unknown user. A database error while loading the user or membership is 503 (`unavailableErr`), because a 401 makes the app refresh tokens and, if that fails too, sign the user out. `internalErr` also turns timeouts and network errors (`isTimeout`) into 503, for every service that uses it.
 - `Authenticate` takes the role from the database, never from the token. It only accepts HS256 with the configured issuer and an expiry.
 - Compare OTP hashes with `subtle.ConstantTimeCompare`.
 - `Authenticate` rejects an account whose deletion date has passed, and sets `Actor.DeleteAfter` for a pending one (for a viewer, from the space owner via `spaceOwner`). Sign-in request and verify run `eraseIfOverdue` first, so an overdue account is erased and answers like an unknown one.

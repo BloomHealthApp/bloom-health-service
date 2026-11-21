@@ -18,6 +18,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 
 	"github.com/BloomHealthApp/bloom-health-service/config"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/constants"
@@ -94,8 +95,23 @@ func NewAuthService(log logger.ILogger, cfg *config.Store, users mongorepo.IUser
 }
 
 func internalErr(log logger.ILogger, ctx context.Context, msg string, err error) apperrors.IHttpError {
+	if isTimeout(err) {
+		return unavailableErr(log, ctx, msg, err)
+	}
 	log.Error(ctx, msg, map[string]any{"err": err.Error()})
 	return apperrors.InternalServerError("something went wrong")
+}
+
+// isTimeout reports a database call that ran out of time (the request deadline or the driver's own), which is
+// temporary, unlike a real bug.
+func isTimeout(err error) bool {
+	return errors.Is(err, context.DeadlineExceeded) || mongo.IsTimeout(err) || mongo.IsNetworkError(err)
+}
+
+// unavailableErr logs err and answers 503, which clients treat as temporary and safe to retry.
+func unavailableErr(log logger.ILogger, ctx context.Context, msg string, err error) apperrors.IHttpError {
+	log.Error(ctx, msg, map[string]any{"err": err.Error()})
+	return apperrors.ServiceUnavailableError("service is busy, please try again")
 }
 
 func (s *authService) otpHash(challengeID, code string) string {
@@ -443,7 +459,7 @@ func (s *authService) issue(ctx context.Context, u *dao.User, family string) (*r
 		if apperrors.IsNotFound(err) {
 			return nil, apperrors.ForbiddenError("not a member of a shared space")
 		}
-		return nil, internalErr(s.log, ctx, "membership lookup failed", err)
+		return nil, unavailableErr(s.log, ctx, "membership lookup failed", err)
 	}
 	return &response.AuthResponse{AccessToken: at, RefreshToken: rt, ExpiresIn: int(constants.AccessTokenTTL.Seconds()),
 		User: buildUserResponse(ctx, s.users, s.memberships, u, m)}, nil
@@ -499,8 +515,12 @@ func (s *authService) Authenticate(ctx context.Context, accessToken string) (*bo
 		return nil, apperrors.UnauthorizedError("invalid token")
 	}
 	u, err := s.users.ByID(ctx, claims.Subject)
-	if err != nil {
+	if apperrors.IsNotFound(err) {
 		return nil, apperrors.UnauthorizedError("invalid token")
+	}
+	if err != nil {
+		// Not 401: a database hiccup must not make the app refresh tokens or sign the user out.
+		return nil, unavailableErr(s.log, ctx, "user lookup failed", err)
 	}
 	if overdue(u, s.clock.Now()) {
 		return nil, apperrors.UnauthorizedError("invalid token")
@@ -510,7 +530,7 @@ func (s *authService) Authenticate(ctx context.Context, accessToken string) (*bo
 		if apperrors.IsNotFound(err) {
 			return nil, apperrors.ForbiddenError("not a member of a shared space")
 		}
-		return nil, internalErr(s.log, ctx, "membership lookup failed", err)
+		return nil, unavailableErr(s.log, ctx, "membership lookup failed", err)
 	}
 	actor := &bo.Actor{User: u, Membership: m, DeleteAfter: u.DeleteAfter}
 	if actor.DeleteAfter == nil && !m.Role.IsOwner() {

@@ -27,9 +27,20 @@ type mongoDB struct {
 	db     *mongo.Database
 }
 
+// MongoMaxConnIdle is how long a pooled connection may sit unused before it is closed.
+const MongoMaxConnIdle = 45 * time.Second
+
 // NewMongoDB connects to MongoDB and verifies the connection with a ping.
 func NewMongoDB(ctx context.Context, uri, dbName string) (IMongoDB, error) {
-	c, err := mongo.Connect(options.Client().ApplyURI(uri))
+	// Tuned for a host that freezes idle instances (Vercel): drop pooled connections before they go stale, keep the
+	// pool small, and fail fast instead of waiting the driver's default 30s for a server. Options in the URI still win.
+	opts := options.Client().
+		SetMaxConnIdleTime(MongoMaxConnIdle).
+		SetMaxPoolSize(10).
+		SetServerSelectionTimeout(5 * time.Second).
+		SetConnectTimeout(5 * time.Second).
+		ApplyURI(uri)
+	c, err := mongo.Connect(opts)
 	if err != nil {
 		return nil, err
 	}

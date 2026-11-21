@@ -58,3 +58,6 @@ The app's fallback URL is `http://localhost:8080`, but this service defaults to 
 ## Known issues
 - Rate limiters are in-process (`pkg/utils/ratelimit`). Each running instance has its own counts, and a restart clears them.
 - **Account purge trigger:** bloom-health-task-worker calls `POST /internal/accounts/purge-deleted` daily at 10:00 IST with `Authorization: Bearer $INTERNAL_API_SECRET` (`docs/account-deletion-contract.md`). The erase itself runs here (`PurgeDue`). `authService.eraseIfOverdue` covers a late or missed call at sign-in.
+
+## MongoDB client on Vercel
+`drivers.NewMongoDB` sets the client for a host that freezes idle instances: pooled connections close after 45s idle (`MongoMaxConnIdle`), the pool is capped at 10, and server selection and connect give up after 5s instead of the driver's 30s. Options in `MONGODB_URI` override these. Without them, the first request after an idle period could wait on dead connections until the platform timed it out, which showed up as a slow or failing chat list.

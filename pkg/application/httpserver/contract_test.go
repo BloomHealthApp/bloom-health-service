@@ -74,7 +74,7 @@ func TestPrivacyPolicyPage(t *testing.T) {
 	require.Equal(t, "text/html; charset=utf-8", resp.Header.Get("Content-Type"))
 	require.Equal(t, "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'", resp.Header.Get("Content-Security-Policy"), "styles only, still no scripts")
 	require.Equal(t, "nosniff", resp.Header.Get("X-Content-Type-Options"))
-	require.Contains(t, body, "<title>Bloom Health privacy policy</title>")
+	require.Contains(t, body, "<title>Bloom privacy policy</title>")
 	require.Contains(t, body, "<h2>Keeping and deleting your data</h2>")
 	require.Contains(t, body, `<a href="mailto:support.bloomhealth@gmail.com">support.bloomhealth@gmail.com</a>`)
 	require.Contains(t, body, "<li>Account details:")
@@ -91,7 +91,7 @@ func TestDeleteAccountPage(t *testing.T) {
 	require.Equal(t, "text/html; charset=utf-8", resp.Header.Get("Content-Type"))
 	require.Equal(t, "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'", resp.Header.Get("Content-Security-Policy"))
 	// What Google Play asks of the page: the app name, the steps, and what is deleted or kept and for how long.
-	require.Contains(t, body, "<title>Delete your Bloom Health account</title>")
+	require.Contains(t, body, "<title>Delete your Bloom account</title>")
 	require.Contains(t, body, "<h2>How to delete your account</h2>")
 	require.Contains(t, body, "Settings → Delete account")
 	require.Contains(t, body, "For 15 days")

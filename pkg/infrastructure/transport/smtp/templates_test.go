@@ -14,12 +14,12 @@ import (
 
 func TestOTPEmailSignInContent(t *testing.T) {
 	subject, text, html := OTPEmail(OTPSignIn, "", "123456", 10)
-	require.Equal(t, "Your Bloom Health sign-in code", subject)
+	require.Equal(t, "Your Bloom sign-in code", subject)
 	require.Contains(t, text, "123456")
 	require.Contains(t, text, "10 minutes")
 	require.Contains(t, text, "Welcome back")
 	require.Contains(t, html, "<!DOCTYPE html>")
-	require.Contains(t, html, "Bloom Health")
+	require.Contains(t, html, "Bloom")
 	require.Contains(t, html, "Welcome back")
 	require.Contains(t, html, "10 minutes")
 	require.Contains(t, html, ">123456<", "the code stays one unbroken string, so it copies cleanly")
@@ -34,7 +34,7 @@ func TestOTPEmailSignInContent(t *testing.T) {
 
 func TestOTPEmailSignUpGreetsByName(t *testing.T) {
 	subject, text, html := OTPEmail(OTPSignUp, "Anu", "123456", 10)
-	require.Equal(t, "Your Bloom Health verification code", subject)
+	require.Equal(t, "Your Bloom verification code", subject)
 	require.Contains(t, text, "Welcome, Anu!")
 	require.Contains(t, html, "Welcome, Anu!")
 	require.NotContains(t, html, "Welcome back")
@@ -53,8 +53,8 @@ func TestOTPEmailEscapesNameAndCode(t *testing.T) {
 
 func TestBuildMessageIsValidMultipart(t *testing.T) {
 	from, _ := formatFrom("no-reply@example.com")
-	require.Equal(t, `"Bloom Health" <no-reply@example.com>`, from)
-	raw, err := buildMessage(from, "user@example.com", "Your Bloom Health sign-in code", "plain 123456", "<p>html 123456 🌸</p>")
+	require.Equal(t, `"Bloom" <no-reply@example.com>`, from)
+	raw, err := buildMessage(from, "user@example.com", "Your Bloom sign-in code", "plain 123456", "<p>html 123456 🌸</p>")
 	require.NoError(t, err)
 
 	m, err := mail.ReadMessage(strings.NewReader(string(raw)))
@@ -90,21 +90,21 @@ func TestBuildMessageIsValidMultipart(t *testing.T) {
 }
 
 func TestFormatFromKeepsDisplayName(t *testing.T) {
-	h, addr := formatFrom("Bloom Health <no-reply@example.com>")
+	h, addr := formatFrom("Bloom <no-reply@example.com>")
 	require.Equal(t, "no-reply@example.com", addr)
-	require.Contains(t, h, "Bloom Health")
+	require.Contains(t, h, "Bloom")
 }
 
 func TestAccountEmails(t *testing.T) {
 	subject, text, html := AccountEmail(AccountDeletionScheduled, "21 November 2026")
-	require.Equal(t, "Your Bloom Health account will be deleted", subject)
+	require.Equal(t, "Your Bloom account will be deleted", subject)
 	require.Contains(t, text, "21 November 2026")
 	require.Contains(t, text, "Restore my account")
 	require.Contains(t, html, "21 November 2026")
 
 	subject, _, _ = AccountEmail(AccountRestored, "")
-	require.Equal(t, "Your Bloom Health account has been restored", subject)
+	require.Equal(t, "Your Bloom account has been restored", subject)
 	subject, text, _ = AccountEmail(AccountDeleted, "")
-	require.Equal(t, "Your Bloom Health account has been deleted", subject)
+	require.Equal(t, "Your Bloom account has been deleted", subject)
 	require.Contains(t, text, "permanently erased")
 }
