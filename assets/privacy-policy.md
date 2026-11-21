@@ -1,8 +1,8 @@
-# Bloom Health privacy policy
+# Bloom privacy policy
 
-_Last updated: 8 November 2026_
+_Last updated: 21 November 2026_
 
-Bloom Health helps you build daily habits, log workouts, track your cycle and chat with Bloomy, an AI assistant. This policy explains what we collect, why, who it goes to and the choices you have.
+Bloom helps you build daily habits, log workouts, track your cycle and chat with Bloomy, an AI assistant. This policy explains what we collect, why, who it goes to and the choices you have.
 
 ## What we collect
 
@@ -28,7 +28,7 @@ We do not sell your data, show ads, or use your data for advertising or to build
 
 Steps, calories, workouts and period data are health information. We use them only to show your progress in the app. We never use them for advertising, never sell them and never share them with data brokers.
 
-Bloom Health's use of information received from Health Connect adheres to the Health Connect Permissions policy, including the Limited Use requirements. Data from Apple Health is used the same way.
+Bloom's use of information received from Health Connect adheres to the Health Connect Permissions policy, including the Limited Use requirements. Data from Apple Health is used the same way.
 
 You can turn off Auto-track steps at any time in Settings, or remove the permission in Health Connect or the Health app.
 
@@ -43,7 +43,7 @@ Bloomy's answers can be wrong and aren't medical advice. Talk to a doctor about 
 ## Who else sees your data
 
 - People you share your space with (viewers) can see your habits, progress and steps. They never see your period data.
-- Service providers who run Bloom Health for us: cloud hosting and databases (Vercel, MongoDB Atlas, Google Cloud), email delivery for sign-in codes, and Groq for Bloomy. They may use the data only to provide their service to us.
+- Service providers who run Bloom for us: cloud hosting and databases (Vercel, MongoDB Atlas, Google Cloud), email delivery for sign-in codes, and Groq for Bloomy. They may use the data only to provide their service to us.
 - Google, if you sign in with Google: Google confirms your name, email address and account ID to us. We get nothing else from your Google account, such as contacts, files or your password. Google's own privacy policy covers what Google does.
 - Authorities, if the law requires it.
 
@@ -65,7 +65,7 @@ If you can't use the app, email support.bloomhealth@gmail.com from the address y
 
 ## Children
 
-Bloom Health is not meant for children under 13, and we do not knowingly collect their data. If you think a child has signed up, contact us and we will delete the account.
+Bloom is not meant for children under 13, and we do not knowingly collect their data. If you think a child has signed up, contact us and we will delete the account.
 
 ## Changes
 

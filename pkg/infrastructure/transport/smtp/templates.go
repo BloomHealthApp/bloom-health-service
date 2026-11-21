@@ -38,19 +38,19 @@ const (
 func OTPEmail(kind OTPKind, name, code string, minutes int) (subject, text, htmlBody string) {
 	var greeting, intro string
 	if kind == OTPPhoneChange {
-		subject = "Confirm your Bloom Health phone number"
+		subject = "Confirm your Bloom phone number"
 		greeting = "Hello!"
-		intro = "Use this code to add this phone number to your Bloom Health account"
+		intro = "Use this code to add this phone number to your Bloom account"
 	} else if kind == OTPSignUp {
-		subject = "Your Bloom Health verification code"
+		subject = "Your Bloom verification code"
 		greeting = fmt.Sprintf("Welcome, %s!", name)
-		intro = "Use this code to finish creating your Bloom Health account"
+		intro = "Use this code to finish creating your Bloom account"
 	} else {
-		subject = "Your Bloom Health sign-in code"
+		subject = "Your Bloom sign-in code"
 		greeting = "Welcome back!"
-		intro = "Use this code to sign in to Bloom Health"
+		intro = "Use this code to sign in to Bloom"
 	}
-	text = fmt.Sprintf("Bloom Health\n\n%s\n%s: %s\n\nIt expires in %d minutes. "+
+	text = fmt.Sprintf("Bloom\n\n%s\n%s: %s\n\nIt expires in %d minutes. "+
 		"If you didn't ask for this, you can safely ignore this email.\n", greeting, intro, code, minutes)
 
 	content := fmt.Sprintf(`<tr><td style="padding:0 32px;font-family:Arial,Helvetica,sans-serif;">
@@ -83,20 +83,20 @@ func AccountEmail(kind AccountKind, deleteOn string) (subject, text, htmlBody st
 	var heading, body string
 	switch kind {
 	case AccountDeletionScheduled:
-		subject = "Your Bloom Health account will be deleted"
+		subject = "Your Bloom account will be deleted"
 		heading = "Your account is scheduled for deletion"
-		body = fmt.Sprintf("We'll permanently erase your Bloom Health account and all its data on %s. "+
+		body = fmt.Sprintf("We'll permanently erase your Bloom account and all its data on %s. "+
 			"Changed your mind? Sign in to the app before then and tap Restore my account.", deleteOn)
 	case AccountRestored:
-		subject = "Your Bloom Health account has been restored"
+		subject = "Your Bloom account has been restored"
 		heading = "Welcome back!"
 		body = "Your account is no longer scheduled for deletion. Your habits, progress and chats are just as you left them."
 	default:
-		subject = "Your Bloom Health account has been deleted"
+		subject = "Your Bloom account has been deleted"
 		heading = "Your account has been deleted"
-		body = "Your Bloom Health account and all its data have been permanently erased. You can sign up again any time with this email."
+		body = "Your Bloom account and all its data have been permanently erased. You can sign up again any time with this email."
 	}
-	text = fmt.Sprintf("Bloom Health\n\n%s\n%s\n\nIf you didn't ask for this, reply to this email.\n", heading, body)
+	text = fmt.Sprintf("Bloom\n\n%s\n%s\n\nIf you didn't ask for this, reply to this email.\n", heading, body)
 	content := fmt.Sprintf(`<tr><td style="padding:0 32px 24px 32px;font-family:Arial,Helvetica,sans-serif;">
           <div style="font-size:22px;line-height:30px;font-weight:700;color:%[1]s;">%[2]s</div>
           <div style="font-size:15px;line-height:23px;color:%[3]s;padding-top:8px;">%[4]s</div>
@@ -104,7 +104,7 @@ func AccountEmail(kind AccountKind, deleteOn string) (subject, text, htmlBody st
 	return subject, text, layout(html.EscapeString(subject), content)
 }
 
-// layout wraps a template's rows in the shared Bloom Health frame: gradient page, logo header, white card, safety
+// layout wraps a template's rows in the shared Bloom frame: gradient page, logo header, white card, safety
 // note and footer. Every email should use it. Tables and inline CSS only, because mail clients strip <style> blocks
 // and ignore modern layout. No images, because clients list inline ones as attachments and block remote ones, so
 // the logo is an emoji. title and content must already be HTML-escaped.
@@ -123,7 +123,7 @@ func layout(title, content string) string {
     <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
       <td style="padding-right:12px;font-size:40px;line-height:48px;">&#129419;</td>
       <td align="left" style="font-family:Arial,Helvetica,sans-serif;color:#FFFFFF;">
-        <div style="font-size:24px;line-height:30px;font-weight:700;">Bloom Health</div>
+        <div style="font-size:24px;line-height:30px;font-weight:700;">Bloom</div>
         <div style="font-size:14px;line-height:20px;">small steps, kind streaks</div>
       </td>
     </tr></table>
@@ -133,7 +133,7 @@ func layout(title, content string) string {
       <tr><td style="padding:0 32px;"><div style="border-top:1px solid %[6]s;font-size:1px;line-height:1px;">&nbsp;</div></td></tr>
       <tr><td style="padding:20px 32px 28px 32px;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:20px;color:%[7]s;">
         Didn&rsquo;t ask for this? You can safely ignore this email. Nobody can sign in without the code.<br><br>
-        Bloom Health is a personal wellness tracker, not medical advice.
+        Bloom is a personal wellness tracker, not medical advice.
       </td></tr>
     </table>
   </td></tr>

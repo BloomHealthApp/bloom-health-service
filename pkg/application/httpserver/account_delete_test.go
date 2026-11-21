@@ -63,7 +63,7 @@ func TestDeleteMeLocksTheAccountUntilRestored(t *testing.T) {
 	deleteAfter, err := time.Parse(time.RFC3339, body["deleteAfter"].(string))
 	require.NoError(t, err)
 	require.WithinDuration(t, e.clock.Now().Add(constants.AccountDeletionGrace), deleteAfter, time.Minute)
-	require.Contains(t, e.subjects(), "Your Bloom Health account will be deleted")
+	require.Contains(t, e.subjects(), "Your Bloom account will be deleted")
 
 	st, again := e.do("DELETE", "/v1/me", anu, nil)
 	require.Equal(t, 202, st)
@@ -92,7 +92,7 @@ func TestDeleteMeLocksTheAccountUntilRestored(t *testing.T) {
 	st, me = e.do("POST", "/v1/me/restore", anu, nil)
 	require.Equal(t, 200, st, me)
 	require.Nil(t, me["deletionScheduledAt"])
-	require.Contains(t, e.subjects(), "Your Bloom Health account has been restored")
+	require.Contains(t, e.subjects(), "Your Bloom account has been restored")
 	for _, tok := range []string{anu, aman} {
 		st, _ = e.do("GET", "/v1/habits", tok, nil)
 		require.Equal(t, 200, st)
@@ -137,7 +137,7 @@ func TestPurgeErasesOwnerAndSpaceAfterTheGracePeriod(t *testing.T) {
 	st, b = e.purge("Bearer " + internalSecret)
 	require.Equal(t, 200, st)
 	require.Contains(t, b, `"erased":1`)
-	require.Contains(t, e.subjects(), "Your Bloom Health account has been deleted")
+	require.Contains(t, e.subjects(), "Your Bloom account has been deleted")
 
 	_, err := e.repos.Users.ByEmail(ctx, "anu@example.com")
 	require.ErrorIs(t, err, apperrors.ErrRepoNotFound)

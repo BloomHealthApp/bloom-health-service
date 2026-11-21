@@ -1,12 +1,12 @@
-# Delete your Bloom Health account
+# Delete your Bloom account
 
-_App: Bloom Health · Developer: BloomHealth · Last updated: 7 November 2026_
+_App: Bloom · Developer: BloomHealth · Last updated: 7 November 2026_
 
-You can delete your Bloom Health account and all its data at any time.
+You can delete your Bloom account and all its data at any time.
 
 ## How to delete your account
 
-- Step 1: Open the Bloom Health app and sign in.
+- Step 1: Open the Bloom app and sign in.
 - Step 2: Go to Profile → Settings → Delete account.
 - Step 3: Read what will be erased, tap Delete my account, then confirm.
 

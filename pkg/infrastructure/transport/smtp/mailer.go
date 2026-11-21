@@ -60,14 +60,14 @@ func (s *smtpMailer) Send(_ context.Context, to, subject, text, html string) err
 	return smtp.SendMail(s.host+":"+s.port, auth, fromAddr, []string{to}, msg)
 }
 
-// formatFrom returns the From header (display name "Bloom Health" added when missing) and the bare address.
+// formatFrom returns the From header (display name "Bloom" added when missing) and the bare address.
 func formatFrom(from string) (header, addr string) {
 	a, err := mail.ParseAddress(from)
 	if err != nil {
 		return from, from
 	}
 	if a.Name == "" {
-		a.Name = "Bloom Health"
+		a.Name = "Bloom"
 	}
 	return a.String(), a.Address
 }
