@@ -64,6 +64,18 @@ func (r *userRepo) ByID(_ context.Context, id string) (*dao.User, error) {
 	return nil, apperrors.ErrRepoNotFound
 }
 
+func (r *userRepo) ByLinkCode(_ context.Context, code string) (*dao.User, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, u := range r.users {
+		if u.ProfileLinkCode != nil && *u.ProfileLinkCode == code {
+			c := *u
+			return &c, nil
+		}
+	}
+	return nil, apperrors.ErrRepoNotFound
+}
+
 func (r *userRepo) Save(_ context.Context, u *dao.User) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -72,7 +84,8 @@ func (r *userRepo) Save(_ context.Context, u *dao.User) error {
 			continue
 		}
 		if strings.EqualFold(x.Email, u.Email) || (u.Phone != nil && x.Phone != nil && *x.Phone == *u.Phone) ||
-			(u.GoogleSub != nil && x.GoogleSub != nil && *x.GoogleSub == *u.GoogleSub) {
+			(u.GoogleSub != nil && x.GoogleSub != nil && *x.GoogleSub == *u.GoogleSub) ||
+			(u.ProfileLinkCode != nil && x.ProfileLinkCode != nil && *x.ProfileLinkCode == *u.ProfileLinkCode) {
 			return apperrors.ErrRepoConflict
 		}
 	}

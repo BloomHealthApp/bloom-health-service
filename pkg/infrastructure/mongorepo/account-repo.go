@@ -18,7 +18,7 @@ type IAccountRepo interface {
 	// counter and all its memberships.
 	EraseSpace(ctx context.Context, spaceID string) error
 	// EraseUser deletes the user and everything tied to them: memberships, refresh sessions, pending codes mailed
-	// to their email, and their chat sessions and messages.
+	// to their email, their chat sessions and messages, and their friend requests and friendships.
 	EraseUser(ctx context.Context, user *dao.User) error
 }
 
@@ -63,6 +63,7 @@ func (r *accountRepo) EraseSpace(ctx context.Context, spaceID string) error {
 func (r *accountRepo) EraseUser(ctx context.Context, u *dao.User) error {
 	byUser := bson.D{{Key: "userId", Value: u.ID}}
 	return r.deleteAll(ctx, []deletion{
+		{constants.CollConnections, involving(u.ID)},
 		{constants.CollChatMessages, byUser},
 		{constants.CollChatSessions, byUser},
 		{constants.CollSessions, byUser},

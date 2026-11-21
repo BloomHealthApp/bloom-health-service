@@ -31,40 +31,43 @@ type AppInterface interface {
 	GetProvisionService() service.IProvisionService
 	GetHealthService() service.IHealthService
 	GetChatService() service.IChatService
+	GetConnectionService() service.IConnectionService
 }
 
 type appLogic struct {
-	logger    logger.ILogger
-	config    *config.Store
-	clock     clock.Clock
-	limiters  *ratelimit.Set
-	auth      service.IAuthService
-	user      service.IUserService
-	habit     service.IHabitService
-	dailyLog  service.IDailyLogService
-	workout   service.IWorkoutService
-	period    service.IPeriodService
-	settings  service.ISettingsService
-	sync      service.ISyncService
-	stats     service.IStatsService
-	provision service.IProvisionService
-	health    service.IHealthService
-	chat      service.IChatService
+	logger     logger.ILogger
+	config     *config.Store
+	clock      clock.Clock
+	limiters   *ratelimit.Set
+	auth       service.IAuthService
+	user       service.IUserService
+	habit      service.IHabitService
+	dailyLog   service.IDailyLogService
+	workout    service.IWorkoutService
+	period     service.IPeriodService
+	settings   service.ISettingsService
+	sync       service.ISyncService
+	stats      service.IStatsService
+	provision  service.IProvisionService
+	health     service.IHealthService
+	chat       service.IChatService
+	connection service.IConnectionService
 }
 
-func (a *appLogic) GetLogger() logger.ILogger                      { return a.logger }
-func (a *appLogic) GetConfig() *config.Store                       { return a.config }
-func (a *appLogic) GetClock() clock.Clock                          { return a.clock }
-func (a *appLogic) GetRateLimiters() *ratelimit.Set                { return a.limiters }
-func (a *appLogic) GetAuthService() service.IAuthService           { return a.auth }
-func (a *appLogic) GetUserService() service.IUserService           { return a.user }
-func (a *appLogic) GetHabitService() service.IHabitService         { return a.habit }
-func (a *appLogic) GetDailyLogService() service.IDailyLogService   { return a.dailyLog }
-func (a *appLogic) GetWorkoutService() service.IWorkoutService     { return a.workout }
-func (a *appLogic) GetPeriodService() service.IPeriodService       { return a.period }
-func (a *appLogic) GetSettingsService() service.ISettingsService   { return a.settings }
-func (a *appLogic) GetSyncService() service.ISyncService           { return a.sync }
-func (a *appLogic) GetStatsService() service.IStatsService         { return a.stats }
-func (a *appLogic) GetProvisionService() service.IProvisionService { return a.provision }
-func (a *appLogic) GetHealthService() service.IHealthService       { return a.health }
-func (a *appLogic) GetChatService() service.IChatService           { return a.chat }
+func (a *appLogic) GetLogger() logger.ILogger                        { return a.logger }
+func (a *appLogic) GetConfig() *config.Store                         { return a.config }
+func (a *appLogic) GetClock() clock.Clock                            { return a.clock }
+func (a *appLogic) GetRateLimiters() *ratelimit.Set                  { return a.limiters }
+func (a *appLogic) GetAuthService() service.IAuthService             { return a.auth }
+func (a *appLogic) GetUserService() service.IUserService             { return a.user }
+func (a *appLogic) GetHabitService() service.IHabitService           { return a.habit }
+func (a *appLogic) GetDailyLogService() service.IDailyLogService     { return a.dailyLog }
+func (a *appLogic) GetWorkoutService() service.IWorkoutService       { return a.workout }
+func (a *appLogic) GetPeriodService() service.IPeriodService         { return a.period }
+func (a *appLogic) GetSettingsService() service.ISettingsService     { return a.settings }
+func (a *appLogic) GetSyncService() service.ISyncService             { return a.sync }
+func (a *appLogic) GetStatsService() service.IStatsService           { return a.stats }
+func (a *appLogic) GetProvisionService() service.IProvisionService   { return a.provision }
+func (a *appLogic) GetHealthService() service.IHealthService         { return a.health }
+func (a *appLogic) GetChatService() service.IChatService             { return a.chat }
+func (a *appLogic) GetConnectionService() service.IConnectionService { return a.connection }

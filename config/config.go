@@ -42,6 +42,14 @@ type Store struct {
 	// DefaultCountryCode ("+91") is prefixed to bare 10-digit phone numbers.
 	DefaultCountryCode string
 
+	// PublicBaseURL is the https origin shared profile links point at (PUBLIC_BASE_URL), e.g. https://host.
+	PublicBaseURL string
+	// PlayStoreURL is where the public profile page sends people who don't have the app.
+	PlayStoreURL string
+	// AndroidCertSHA256s (ANDROID_CERT_SHA256S, comma-separated) are the app's signing certificate fingerprints,
+	// served in /.well-known/assetlinks.json so Android opens profile links in the app. Empty serves an empty list.
+	AndroidCertSHA256s []string
+
 	// Chat configures the AI chat API (model catalogue, quotas). The model is called by bloom-health-task-worker.
 	Chat ChatConfig
 
@@ -80,6 +88,9 @@ var envBindings = map[string]string{
 	"account.defaultTimezone":    "DEFAULT_TIMEZONE",
 	"account.defaultCountryCode": "DEFAULT_COUNTRY_CODE",
 	"chat.dailyMessageCap":       "CHAT_DAILY_MESSAGE_CAP",
+	"profiles.publicBaseUrl":     "PUBLIC_BASE_URL",
+	"profiles.playStoreUrl":      "PLAY_STORE_URL",
+	"profiles.androidCertSha256": "ANDROID_CERT_SHA256S",
 }
 
 // NewConfig reads the file for ACTIVE_ENV (default DEV), applies env overrides and validates.
@@ -123,8 +134,11 @@ func NewConfig() (*Store, error) {
 		MongoURI: os.Getenv("MONGODB_URI"), AccessSecret: os.Getenv("ACCESS_TOKEN_SECRET"),
 		SMTPHost: os.Getenv("SMTP_HOST"), SMTPUser: os.Getenv("SMTP_USER"), SMTPPass: os.Getenv("SMTP_PASS"),
 		ReviewEmail: strings.ToLower(strings.TrimSpace(os.Getenv("REVIEW_LOGIN_EMAIL"))), ReviewCode: strings.TrimSpace(os.Getenv("REVIEW_LOGIN_CODE")),
-		InternalAPISecret: strings.TrimSpace(os.Getenv("INTERNAL_API_SECRET")),
-		GoogleClientIDs:   splitList(os.Getenv("GOOGLE_CLIENT_ID")),
+		InternalAPISecret:  strings.TrimSpace(os.Getenv("INTERNAL_API_SECRET")),
+		GoogleClientIDs:    splitList(os.Getenv("GOOGLE_CLIENT_ID")),
+		PublicBaseURL:      strings.TrimRight(strings.TrimSpace(v.GetString("profiles.publicBaseUrl")), "/"),
+		PlayStoreURL:       strings.TrimSpace(v.GetString("profiles.playStoreUrl")),
+		AndroidCertSHA256s: splitList(v.GetString("profiles.androidCertSha256")),
 	}
 	if c.DefaultCountryCode == "" {
 		c.DefaultCountryCode = utils.DefaultCountryCode

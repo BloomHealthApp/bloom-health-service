@@ -5,7 +5,8 @@
 //   mongosh "$MONGODB_URI" --file ddl/mongodb/indexes.js
 //
 // Collections: users, memberships, sharedSpaces, habits, dailyHabitLogs, workoutSessions, settings, periods,
-// appliedOperations, otpChallenges, refreshSessions, counters (per-space sync sequence), chatSessions, chatMessages.
+// appliedOperations, otpChallenges, refreshSessions, counters (per-space sync sequence), chatSessions, chatMessages,
+// connections.
 // Writes use single-document compare-and-swap on `version`; no multi-document transactions are needed.
 
 const dbName = process.env.MONGODB_DB || "bubu_bloom";
@@ -17,6 +18,7 @@ d.users.createIndex({ emailLower: 1 }, { unique: true });
 d.users.createIndex({ phone: 1 }, { unique: true, partialFilterExpression: { phone: { $type: "string" } } });
 // One user per linked Google account; partial so users who never used Google sign-in do not collide.
 d.users.createIndex({ googleSub: 1 }, { unique: true, partialFilterExpression: { googleSub: { $type: "string" } } });
+d.users.createIndex({ profileLinkCode: 1 }, { unique: true, partialFilterExpression: { profileLinkCode: { $type: "string" } } });
 // Accounts scheduled for deletion (DELETE /v1/me); the daily purge finds the due ones by it.
 d.users.createIndex({ deleteAfter: 1 }, { sparse: true });
 
@@ -55,3 +57,10 @@ d.chatSessions.createIndex({ deletedAt: 1 }, { expireAfterSeconds: 7 * 24 * 3600
 d.chatMessages.createIndex({ sessionId: 1, idx: 1 }, { unique: true });
 d.chatMessages.createIndex({ status: 1, runAt: 1, createdAt: 1 });
 d.chatMessages.createIndex({ userId: 1, role: 1, createdAt: 1 });
+
+// Friends: one connection per pair (pairKey is the two user ids sorted), lists by either side, and declined-request
+// cooldown markers expire at expiresAt (pending and accepted connections have none, so they never expire).
+d.connections.createIndex({ pairKey: 1 }, { unique: true });
+d.connections.createIndex({ requesterId: 1, status: 1 });
+d.connections.createIndex({ addresseeId: 1, status: 1 });
+d.connections.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });

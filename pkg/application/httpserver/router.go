@@ -35,6 +35,8 @@ func NewRouter() *gin.Engine {
 	r.GET("/health", publicrouter.HandleHealth)
 	r.GET("/privacy", publicrouter.HandleGetPrivacyPolicy)
 	r.GET("/delete-account", publicrouter.HandleGetDeleteAccount)
+	r.GET("/u/:code", middleware.LimitProfilePage(), publicrouter.HandleGetPublicProfilePage)
+	r.GET("/.well-known/assetlinks.json", publicrouter.HandleGetAssetLinks)
 	r.POST("/internal/accounts/purge-deleted", publicrouter.HandlePurgeDeletedAccounts)
 	publicrouter.RegisterRoutes(r.Group("/v1", middleware.RequestTimeout(constants.RequestTimeout)))
 	return r

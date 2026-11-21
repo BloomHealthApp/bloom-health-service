@@ -15,5 +15,6 @@ Repository interfaces and MongoDB implementations, with in-memory fakes in `memo
 ## Gotchas
 - `chat-session-repo.go` and `chat-message-repo.go` shares its collections with `bloom-health-task-worker`; field names are fixed by `docs/chat-contract.md`. `BeginTurn` returns the session's `nextIdx` before the `$inc` and tells "missing" from "turn in flight" with a follow-up `Get`.
 - `memory.SettleForTest` and `memory.ChatSessionTombstoneForTest` let HTTP tests play the worker's part or inspect a deleted session; they are not part of the interfaces.
-- `account-repo.go` (`IAccountRepo`) erases across collections for `DELETE /v1/me`. Any new collection holding user or space data must be added to `EraseSpace` or `EraseUser` (and to `memory/account.go`), or account deletion leaves it behind.
+- `connection-repo.go` (`IConnectionRepo`): one document per pair of users (`pairKey`, unique, both directions). `ListForUser` leaves out `declined` cooldown markers, which a TTL index on `expiresAt` removes. `users.profileLinkCode` has a partial unique index (only string values), like `googleSub`.
+- `account-repo.go` (`IAccountRepo`) erases across collections for `DELETE /v1/me`. Any new collection holding user or space data must be added (connections are, in `EraseUser`) to `EraseSpace` or `EraseUser` (and to `memory/account.go`), or account deletion leaves it behind.
 - Deleting a chat hard-deletes its messages and keeps a title-less tombstone; a TTL index on `chatSessions.deletedAt` removes it after `constants.DeletedChatRetention` (7 days).

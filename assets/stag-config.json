@@ -5,6 +5,7 @@
   "auth": { "issuer": "bloom-health", "otpResendSeconds": 30 },
   "mail": { "kind": "smtp", "smtpPort": "587", "from": "Bloom <no-reply@localhost>" },
   "account": { "defaultTimezone": "Asia/Kolkata", "defaultCountryCode": "+91" },
+  "profiles": { "publicBaseUrl": "https://bloom-health-service.vercel.app", "playStoreUrl": "https://play.google.com/store/apps/details?id=com.bloomhealthapp.app", "androidCertSha256": "" },
   "chat": {
     "dailyMessageCap": 100,
     "models": [

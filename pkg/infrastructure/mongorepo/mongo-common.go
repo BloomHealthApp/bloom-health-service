@@ -59,6 +59,8 @@ func EnsureIndexes(ctx context.Context, db drivers.IMongoDB) error {
 			SetPartialFilterExpression(bson.D{{Key: "phone", Value: bson.D{{Key: "$type", Value: "string"}}}})},
 		mongo.IndexModel{Keys: asc("googleSub"), Options: options.Index().SetUnique(true).
 			SetPartialFilterExpression(bson.D{{Key: "googleSub", Value: bson.D{{Key: "$type", Value: "string"}}}})},
+		mongo.IndexModel{Keys: asc("profileLinkCode"), Options: options.Index().SetUnique(true).
+			SetPartialFilterExpression(bson.D{{Key: "profileLinkCode", Value: bson.D{{Key: "$type", Value: "string"}}}})},
 		// Only accounts scheduled for deletion carry deleteAfter; the daily purge (PurgeDue) looks them up by it.
 		mongo.IndexModel{Keys: asc("deleteAfter"), Options: options.Index().SetSparse(true)}); err != nil {
 		return err
@@ -97,6 +99,14 @@ func EnsureIndexes(ctx context.Context, db drivers.IMongoDB) error {
 		mongo.IndexModel{Keys: bson.D{{Key: "userId", Value: 1}, {Key: "updatedAt", Value: -1}}},
 		// TTL ignores documents whose deletedAt is null, so only deleted sessions expire.
 		mongo.IndexModel{Keys: asc("deletedAt"), Options: options.Index().SetExpireAfterSeconds(int32(constants.DeletedChatRetention.Seconds()))}); err != nil {
+		return err
+	}
+	// One connection per pair of users; a declined request is a cooldown marker removed at expiresAt.
+	if err := idx(constants.CollConnections,
+		mongo.IndexModel{Keys: asc("pairKey"), Options: options.Index().SetUnique(true)},
+		mongo.IndexModel{Keys: asc("requesterId", "status")},
+		mongo.IndexModel{Keys: asc("addresseeId", "status")},
+		mongo.IndexModel{Keys: asc("expiresAt"), Options: options.Index().SetExpireAfterSeconds(0)}); err != nil {
 		return err
 	}
 	// The status/runAt/createdAt index serves bloom-health-task-worker's claim query.

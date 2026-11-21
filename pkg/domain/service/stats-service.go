@@ -23,6 +23,9 @@ import (
 // IStatsService computes streaks and completion server-side with the same algorithm as the app.
 type IStatsService interface {
 	Summary(ctx context.Context, actor *bo.Actor, req *request.RangeReq) (*response.SummaryResponse, apperrors.IHttpError)
+	// ProfileStats returns the streaks and active habit count of the space userID owns, for their public profile.
+	// It is nil, with no error, when they own no space (a viewer).
+	ProfileStats(ctx context.Context, userID string) (*bo.ProfileStats, error)
 }
 
 type statsService struct {
@@ -86,6 +89,34 @@ func (s *statsService) Summary(ctx context.Context, a *bo.Actor, req *request.Ra
 		return nil, internalErr(s.log, ctx, "stats failed", err)
 	}
 	return sum, nil
+}
+
+func (s *statsService) ProfileStats(ctx context.Context, userID string) (*bo.ProfileStats, error) {
+	m, err := s.memberships.ForUser(ctx, userID)
+	if apperrors.IsNotFound(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	if m.Role != userrole.Owner {
+		return nil, nil
+	}
+	sum, err := s.summary(ctx, m.SpaceID, &request.RangeReq{})
+	if err != nil {
+		return nil, err
+	}
+	habits, err := s.entities.List(ctx, m.SpaceID, entitytype.Habit, mongorepo.EntityQuery{})
+	if err != nil {
+		return nil, err
+	}
+	active := 0
+	for i := range habits {
+		if habitFromEntity(&habits[i]).Active {
+			active++
+		}
+	}
+	return &bo.ProfileStats{CurrentStreak: sum.CurrentStreak, LongestStreak: sum.LongestStreak, Habits: active}, nil
 }
 
 func (s *statsService) summary(ctx context.Context, spaceID string, req *request.RangeReq) (*response.SummaryResponse, error) {

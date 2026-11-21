@@ -61,3 +61,6 @@ The app's fallback URL is `http://localhost:8080`, but this service defaults to 
 
 ## MongoDB client on Vercel
 `drivers.NewMongoDB` sets the client for a host that freezes idle instances: pooled connections close after 45s idle (`MongoMaxConnIdle`), the pool is capped at 10, and server selection and connect give up after 5s instead of the driver's 30s. Options in `MONGODB_URI` override these. Without them, the first request after an idle period could wait on dead connections until the platform timed it out, which showed up as a slow or failing chat list.
+
+## Android App Links
+Shared profile links are `PUBLIC_BASE_URL/u/{code}` (default `https://bloom-health-service.vercel.app`). Android opens them in the app only if `/.well-known/assetlinks.json` on that host lists `com.bloomhealthapp.app` with the release signing certificate's SHA-256 fingerprint: set `ANDROID_CERT_SHA256S` (comma-separated, `AA:BB:…`; Play App Signing's key from the Play Console, plus the upload or debug key for test builds). Until it's set, links open the `/u/{code}` web page. Changing the host means changing the app's `intentFilters` too. `PLAY_STORE_URL` is where that page's "Get Bloom" button goes.

@@ -24,6 +24,8 @@ Access: public = no token; both = any member; owner = `RequireOwner`.
 | `GET /health`, `GET /v1/health` | public | Health | [health.md](health.md) |
 | `GET /privacy` | public | — | [privacy.md](privacy.md) |
 | `GET /delete-account` | public | — | [privacy.md](privacy.md) |
+| `GET /u/:code` | public (per-IP limit) | Connection | [friends.md](friends.md) |
+| `GET /.well-known/assetlinks.json` | public | — | [friends.md](friends.md) |
 | `POST /v1/auth/signup/request` | public | Auth | [auth.md](auth.md) |
 | `POST /v1/auth/signin/request` | public | Auth | [auth.md](auth.md) |
 | `POST /v1/auth/otp/verify` | public | Auth | [auth.md](auth.md) |
@@ -52,6 +54,15 @@ Access: public = no token; both = any member; owner = `RequireOwner`.
 | `PATCH /v1/periods/:id` | owner | Period | [periods.md](periods.md) |
 | `DELETE /v1/periods/:id` | owner | Period | [periods.md](periods.md) |
 | `GET /v1/stats/summary` | both | Stats | [stats.md](stats.md) |
+| `GET /v1/me/profile-link` | both | Connection | [friends.md](friends.md) |
+| `POST /v1/me/profile-link/reset` | both | Connection | [friends.md](friends.md) |
+| `GET /v1/profiles/by-link/:code` | both (per-user limit) | Connection | [friends.md](friends.md) |
+| `POST /v1/connections` | both (per-user limit) | Connection | [friends.md](friends.md) |
+| `GET /v1/connections` | both | Connection | [friends.md](friends.md) |
+| `POST /v1/connections/:id/accept` | both | Connection | [friends.md](friends.md) |
+| `POST /v1/connections/:id/decline` | both | Connection | [friends.md](friends.md) |
+| `DELETE /v1/connections/:id` | both | Connection | [friends.md](friends.md) |
+| `GET /v1/profiles/:id` | both | Connection | [friends.md](friends.md) |
 | `POST /v1/sync/push` | owner | Sync | [sync.md](sync.md) |
 | `GET /v1/sync/pull` | both | Sync | [sync.md](sync.md) |
 | `GET /v1/chat/models` | both | Chat | [chat.md](chat.md) |

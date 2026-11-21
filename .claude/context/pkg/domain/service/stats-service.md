@@ -18,3 +18,6 @@ Computes streaks, completion and workout totals on the server, as a cross-check 
 
 ## Related
 `pkg/utils/scoring/context.md`, `_shared/privacy-invariants.md`
+
+## ProfileStats
+`ProfileStats(userID)` gives the public-profile numbers for the space the user owns: `currentStreak` and `longestStreak` from the same summary, and the count of active habits. It returns nil (no error) for a viewer, who has no space of their own. Only these three numbers may leave it: never days, `restDay` or anything period-related, because friends see them.

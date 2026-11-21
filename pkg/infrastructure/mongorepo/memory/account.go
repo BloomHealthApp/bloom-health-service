@@ -18,15 +18,16 @@ type accountRepo struct {
 	sessions     *sessionRepo
 	chatSessions *chatSessionRepo
 	chatMessages *chatMessageRepo
+	connections  *connectionRepo
 }
 
 // NewAccountRepo erases from the given memory repositories, which must come from this package's constructors.
 func NewAccountRepo(users mongorepo.IUserRepo, spaces mongorepo.ISpaceRepo, memberships mongorepo.IMembershipRepo,
 	entities mongorepo.IEntityRepo, ops mongorepo.IOpRepo, otps mongorepo.IOTPRepo, sessions mongorepo.ISessionRepo,
-	chatSessions mongorepo.IChatSessionRepo, chatMessages mongorepo.IChatMessageRepo) mongorepo.IAccountRepo {
+	chatSessions mongorepo.IChatSessionRepo, chatMessages mongorepo.IChatMessageRepo, connections mongorepo.IConnectionRepo) mongorepo.IAccountRepo {
 	return &accountRepo{users: users.(*userRepo), spaces: spaces.(*spaceRepo), memberships: memberships.(*membershipRepo),
 		entities: entities.(*entityRepo), ops: ops.(*opRepo), otps: otps.(*otpRepo), sessions: sessions.(*sessionRepo),
-		chatSessions: chatSessions.(*chatSessionRepo), chatMessages: chatMessages.(*chatMessageRepo)}
+		chatSessions: chatSessions.(*chatSessionRepo), chatMessages: chatMessages.(*chatMessageRepo), connections: connections.(*connectionRepo)}
 }
 
 func (r *accountRepo) EraseSpace(_ context.Context, spaceID string) error {
@@ -62,6 +63,8 @@ func (r *accountRepo) EraseSpace(_ context.Context, spaceID string) error {
 }
 
 func (r *accountRepo) EraseUser(_ context.Context, u *dao.User) error {
+	r.connections.eraseUser(u.ID)
+
 	r.chatMessages.mu.Lock()
 	for k, m := range r.chatMessages.messages {
 		if m.UserID == u.ID {

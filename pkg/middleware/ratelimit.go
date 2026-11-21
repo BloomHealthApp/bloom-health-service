@@ -48,3 +48,26 @@ func LimitAuth() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+// LimitFriends applies the per-user limit on profile-link lookups and friend requests. It runs after Authenticate.
+func LimitFriends() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		a := utils.GetActor(c.Request.Context())
+		if a == nil || !di.AppLogic.GetRateLimiters().Friends.Allow(a.User.ID) {
+			utils.RespondError(c, apperrors.TooManyRequestsError("too many requests, try again later", "30"))
+			return
+		}
+		c.Next()
+	}
+}
+
+// LimitProfilePage applies the per-IP limit on the public profile page.
+func LimitProfilePage() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if !di.AppLogic.GetRateLimiters().ProfilePage.Allow(ClientIP(c)) {
+			utils.RespondError(c, apperrors.TooManyRequestsError("too many requests", "30"))
+			return
+		}
+		c.Next()
+	}
+}

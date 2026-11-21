@@ -103,6 +103,21 @@ Online only: these endpoints do not go through sync. Any role may chat; every se
 - `GET /chat/sessions/{id}/messages?before&limit` → `{items: [ChatMessage] oldest first, hasMore, nextBefore (int|null)}`. `limit` 1-50 (default 30); pass `nextBefore` as `before` to load older messages.
 - `POST /chat/sessions/{id}/messages` `{content (1-4000 chars, trimmed), modelId?}` → `202 {userMessage, assistantMessage}`; the assistant message is `pending` with empty `content`. Poll `GET .../messages` (about every 1.5 s) until it is `succeeded` or `failed`. One reply at a time per session: `409 conflict` with `details.reason = "turn_in_flight"` while one is pending. `429 rate_limited` (with `Retry-After`) after 100 messages per user per UTC day.
 
+## Friends (private, link only)
+Online only, like Chat. Any role. You can only send someone a friend request through their **profile link**; there is no search or lookup by email, phone or id for people who aren't friends. An accepted request makes both users friends (mutual). Other users are only ever returned as a `PublicProfile`.
+`PublicProfile`: `{id, displayName, avatar (string|null), stats?: {currentStreak, longestStreak, habits}}`. `stats` is present only for friends and for your own profile, and absent for an account with no space of its own (a viewer). It never includes days, rest days or anything about periods.
+`Connection`: `{id, profile: PublicProfile (no stats), since (RFC3339: when sent, or for friends when accepted)}`.
+- `GET /me/profile-link` → `{code, url}`. The code (12 characters, base62, random) is created on first use; `url` is `<public base>/u/{code}`.
+- `POST /me/profile-link/reset` → `{code, url}` with a new code. Links shared before stop working.
+- `GET /profiles/by-link/{code}` → `{profile, relation ("self"|"none"|"outgoing"|"incoming"|"friends"), connectionId?}`. `404 not_found` for an unknown, reset, malformed or deleted link (all identical). Rate limited per user.
+- `POST /connections` `{code}` → `201 {profile, relation, connectionId}`: sends a request (`relation: "outgoing"`), or accepts at once if they had already asked you (`"friends"`). `400` for your own link, `409 conflict` if a request or friendship already exists, `429 rate_limited` with `Retry-After` for 7 days after they declined you. Rate limited per user.
+- `GET /connections` → `{friends: [Connection], incoming: [Connection], outgoing: [Connection]}`, each newest first, at most 200. Accounts pending deletion are left out.
+- `POST /connections/{id}/accept` → `Connection`; `POST /connections/{id}/decline` → `204`. Addressee only; otherwise `404`. A decline is not shown to the requester (their view of the link goes back to `"none"`).
+- `DELETE /connections/{id}` → `204`: unfriend (either side) or withdraw your own pending request. The addressee of a pending request declines instead (`404` here).
+- `GET /profiles/{userId}` → `PublicProfile` with stats, for a friend or yourself; `404` for anyone else.
+- Public (no token): `GET /u/{code}` is an HTML page with the first name and an initial only, "Open in Bloom" (`bloomhealth://u/{code}`) and "Get Bloom" buttons, `noindex`, rate limited per IP; an inactive link gets one generic `404` page. `GET /.well-known/assetlinks.json` lists the Android app for App Links.
+- Erasing an account removes its link code, requests and friendships.
+
 ## Health
 `GET /health` → `{status:"ok", time, version}` (no auth, no DB detail).
 
