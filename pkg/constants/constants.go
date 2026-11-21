@@ -5,8 +5,8 @@ import "time"
 
 const (
 	// RequestTimeout bounds each /v1 request, so a stuck database call fails fast with 503 instead of hanging until
-	// the host kills it. It stays under the clients' 15s timeout.
-	RequestTimeout = 8 * time.Second
+	// the host kills it. 12s leaves room for a full 100-operation sync push and stays under the clients' 15s timeout.
+	RequestTimeout = 12 * time.Second
 
 	// MaxBodyBytes is the request body limit (1 MiB).
 	MaxBodyBytes = 1 << 20
