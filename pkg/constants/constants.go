@@ -4,6 +4,10 @@ package constants
 import "time"
 
 const (
+	// RequestTimeout bounds each /v1 request, so a stuck database call fails fast with 503 instead of hanging until
+	// the host kills it. It stays under the clients' 15s timeout.
+	RequestTimeout = 8 * time.Second
+
 	// MaxBodyBytes is the request body limit (1 MiB).
 	MaxBodyBytes = 1 << 20
 

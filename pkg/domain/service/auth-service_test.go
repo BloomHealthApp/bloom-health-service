@@ -512,6 +512,32 @@ func TestAuthenticate(t *testing.T) {
 			require.Equal(t, apperrors.CodeUnauthorized, herr.GetCode())
 		}
 	})
+	t.Run("a deleted user is unauthorized", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		svc, m := createAuthService(ctrl, nil)
+		token := mintForTest(t, svc, m)
+		m.users.EXPECT().ByID(gomock.Any(), anu.ID).Return(nil, apperrors.ErrRepoNotFound)
+		_, herr := svc.Authenticate(ctx, token)
+		require.NotNil(t, herr)
+		require.Equal(t, apperrors.CodeUnauthorized, herr.GetCode())
+	})
+	t.Run("a database failure is 503, never 401, so clients don't sign out", func(t *testing.T) {
+		for _, failing := range []string{"user", "membership"} {
+			ctrl := gomock.NewController(t)
+			svc, m := createAuthService(ctrl, nil)
+			token := mintForTest(t, svc, m)
+			if failing == "user" {
+				m.users.EXPECT().ByID(gomock.Any(), anu.ID).Return(nil, context.DeadlineExceeded)
+			} else {
+				m.users.EXPECT().ByID(gomock.Any(), anu.ID).Return(anu, nil)
+				m.memberships.EXPECT().ForUser(gomock.Any(), anu.ID).Return(nil, errors.New("connection reset"))
+			}
+			_, herr := svc.Authenticate(ctx, token)
+			require.NotNil(t, herr, failing)
+			status, _ := herr.Get()
+			require.Equal(t, 503, status, failing)
+		}
+	})
 	t.Run("valid token without membership is forbidden", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		svc, m := createAuthService(ctrl, nil)

@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	publicrouter "github.com/BloomHealthApp/bloom-health-service/pkg/application/httpserver/v1/public-router"
+	"github.com/BloomHealthApp/bloom-health-service/pkg/constants"
 	apperrors "github.com/BloomHealthApp/bloom-health-service/pkg/errors"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/middleware"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/utils"
@@ -35,6 +36,6 @@ func NewRouter() *gin.Engine {
 	r.GET("/privacy", publicrouter.HandleGetPrivacyPolicy)
 	r.GET("/delete-account", publicrouter.HandleGetDeleteAccount)
 	r.POST("/internal/accounts/purge-deleted", publicrouter.HandlePurgeDeletedAccounts)
-	publicrouter.RegisterRoutes(r.Group("/v1"))
+	publicrouter.RegisterRoutes(r.Group("/v1", middleware.RequestTimeout(constants.RequestTimeout)))
 	return r
 }
