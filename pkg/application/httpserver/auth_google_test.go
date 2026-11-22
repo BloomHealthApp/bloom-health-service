@@ -30,7 +30,7 @@ func withGoogle(t *testing.T, e *env) {
 	t.Helper()
 	cfg := &config.Store{ActiveEnv: "DEV", StoreKind: "memory", AccessSecret: secret, Issuer: issuer, Version: "1.0.0",
 		Mailer: "console", GoogleClientIDs: []string{"web-client.apps.googleusercontent.com"}}
-	app, err := di.InitializeTestApp(cfg, logger.NewDiscard(), e.clock, e.mail, e.google, e.repos)
+	app, err := di.InitializeTestApp(cfg, logger.NewDiscard(), e.clock, e.mail, e.google, e.push, e.repos)
 	require.NoError(t, err)
 	di.AppLogic = app
 }

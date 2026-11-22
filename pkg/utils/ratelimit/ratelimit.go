@@ -56,6 +56,8 @@ type Set struct {
 	Friends *Keyed
 	// ProfilePage limits the public /u/{code} page per client IP, for the same reason.
 	ProfilePage *Keyed
+	// Messages limits sending messages to friends per user, on top of the daily cap counted in the database.
+	Messages *Keyed
 }
 
 // NewSet builds the production limits.
@@ -66,5 +68,6 @@ func NewSet() *Set {
 		Email:       NewKeyed(rate.Every(2*time.Minute), 3),
 		Friends:     NewKeyed(rate.Every(2*time.Second), 20),
 		ProfilePage: NewKeyed(rate.Every(time.Second), 20),
+		Messages:    NewKeyed(rate.Every(time.Second), 20),
 	}
 }

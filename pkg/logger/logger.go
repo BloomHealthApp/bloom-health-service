@@ -28,7 +28,9 @@ var sensitiveParts = []string{"token", "otp", "code", "secret", "password", "pas
 	// private health/profile data (period tracker, gender) must never reach logs
 	"period", "gender", "symptom", "mood", "flow", "startdate", "enddate",
 	// AI chat text is private user input and model output
-	"content", "prompt", "title"}
+	"content", "prompt", "title",
+	// messages between friends
+	"text"}
 
 const redacted = "[REDACTED]"
 

@@ -26,7 +26,8 @@
 | `IStatsService` | [stats-service.md](stats-service.md) | entities, users, memberships |
 | `IHealthService` | [health-service.md](health-service.md) | `drivers.IPinger` |
 | `IChatService` | [chat-service.md](chat-service.md) | chat sessions, chat messages, `config.ChatConfig` |
-| `IConnectionService` | [connection-service.md](connection-service.md) | users, connections, Stats, `config.PublicBaseURL` |
+| `IConnectionService` | [connection-service.md](connection-service.md) | users, connections, DMs (unfriend deletes the chat), Stats, `config.PublicBaseURL` |
+| `IDMService` | [dm-service.md](dm-service.md) | users (incl. `pushTokens`), connections, DMs, `drivers.IPushSender` |
 
 Shared helper: [entity-writer.md](entity-writer.md).
 

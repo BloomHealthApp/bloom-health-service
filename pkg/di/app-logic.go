@@ -32,6 +32,7 @@ type AppInterface interface {
 	GetHealthService() service.IHealthService
 	GetChatService() service.IChatService
 	GetConnectionService() service.IConnectionService
+	GetDMService() service.IDMService
 }
 
 type appLogic struct {
@@ -52,6 +53,7 @@ type appLogic struct {
 	health     service.IHealthService
 	chat       service.IChatService
 	connection service.IConnectionService
+	dm         service.IDMService
 }
 
 func (a *appLogic) GetLogger() logger.ILogger                        { return a.logger }
@@ -71,3 +73,4 @@ func (a *appLogic) GetProvisionService() service.IProvisionService   { return a.
 func (a *appLogic) GetHealthService() service.IHealthService         { return a.health }
 func (a *appLogic) GetChatService() service.IChatService             { return a.chat }
 func (a *appLogic) GetConnectionService() service.IConnectionService { return a.connection }
+func (a *appLogic) GetDMService() service.IDMService                 { return a.dm }

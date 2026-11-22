@@ -71,6 +71,9 @@ type Store struct {
 	// GoogleClientIDs (GOOGLE_CLIENT_ID, comma-separated) are the OAuth client ids accepted as the `aud` of a Google
 	// ID token. Empty turns POST /v1/auth/google off.
 	GoogleClientIDs []string
+	// ExpoAccessToken (EXPO_ACCESS_TOKEN) is sent to Expo's push service when set; optional unless the Expo
+	// project turns on enhanced push security.
+	ExpoAccessToken string
 }
 
 // envBindings maps viper keys to the environment variables that may override them.
@@ -136,6 +139,7 @@ func NewConfig() (*Store, error) {
 		ReviewEmail: strings.ToLower(strings.TrimSpace(os.Getenv("REVIEW_LOGIN_EMAIL"))), ReviewCode: strings.TrimSpace(os.Getenv("REVIEW_LOGIN_CODE")),
 		InternalAPISecret:  strings.TrimSpace(os.Getenv("INTERNAL_API_SECRET")),
 		GoogleClientIDs:    splitList(os.Getenv("GOOGLE_CLIENT_ID")),
+		ExpoAccessToken:    strings.TrimSpace(os.Getenv("EXPO_ACCESS_TOKEN")),
 		PublicBaseURL:      strings.TrimRight(strings.TrimSpace(v.GetString("profiles.publicBaseUrl")), "/"),
 		PlayStoreURL:       strings.TrimSpace(v.GetString("profiles.playStoreUrl")),
 		AndroidCertSHA256s: splitList(v.GetString("profiles.androidCertSha256")),

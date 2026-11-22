@@ -57,6 +57,14 @@ func RegisterRoutes(v1 *gin.RouterGroup) {
 	byLink.GET("/profiles/by-link/:code", HandleGetProfileByLink)
 	byLink.POST("/connections", HandleSendConnectionRequest)
 
+	// Messages between friends: any role, friends only (404 for anyone else).
+	authed.GET("/dm/threads", HandleListDMThreads)
+	authed.GET("/dm/:id/messages", HandleListDMs)
+	authed.POST("/dm/:id/read", HandleMarkDMRead)
+	authed.Group("", middleware.LimitMessages()).POST("/dm/:id/messages", HandleSendDM)
+	authed.PUT("/me/push-token", HandleSavePushToken)
+	authed.DELETE("/me/push-token", HandleDeletePushToken)
+
 	owner := authed.Group("", middleware.RequireOwner())
 	owner.PATCH("/settings", HandlePatchSettings)
 	owner.POST("/habits", HandleCreateHabit)
