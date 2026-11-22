@@ -64,9 +64,8 @@ func InitializeApp() (AppInterface, func(), error) {
 	iConnectionRepo := repositories.Connections
 	iDirectMessageRepo := repositories.DMs
 	iConnectionService := service.NewConnectionService(iLogger, store, iUserRepo, iConnectionRepo, iDirectMessageRepo, iStatsService, clockClock)
-	iPushTokenRepo := repositories.PushTokens
 	iPushSender := drivers.NewExpoPushSender(store)
-	idmService := service.NewDMService(iLogger, iUserRepo, iConnectionRepo, iDirectMessageRepo, iPushTokenRepo, iPushSender, clockClock)
+	idmService := service.NewDMService(iLogger, iUserRepo, iConnectionRepo, iDirectMessageRepo, iPushSender, clockClock)
 	diAppLogic := &appLogic{
 		logger:     iLogger,
 		config:     store,
@@ -122,8 +121,7 @@ func InitializeTestApp(cfg *config.Store, log logger.ILogger, clk clock.Clock, m
 	iConnectionRepo := repos.Connections
 	iDirectMessageRepo := repos.DMs
 	iConnectionService := service.NewConnectionService(log, cfg, iUserRepo, iConnectionRepo, iDirectMessageRepo, iStatsService, clk)
-	iPushTokenRepo := repos.PushTokens
-	idmService := service.NewDMService(log, iUserRepo, iConnectionRepo, iDirectMessageRepo, iPushTokenRepo, push, clk)
+	idmService := service.NewDMService(log, iUserRepo, iConnectionRepo, iDirectMessageRepo, push, clk)
 	diAppLogic := &appLogic{
 		logger:     log,
 		config:     cfg,
@@ -153,7 +151,7 @@ func InitializeTestApp(cfg *config.Store, log logger.ILogger, clk clock.Clock, m
 var services = wire.NewSet(service.NewAuthService, service.NewUserService, service.NewHabitService, service.NewDailyLogService, service.NewWorkoutService, service.NewPeriodService, service.NewSettingsService, service.NewSyncService, service.NewStatsService, service.NewProvisionService, service.NewHealthService, service.NewChatService, service.NewConnectionService, service.NewDMService)
 
 var repositoryFields = wire.FieldsOf(new(*Repositories),
-	"Users", "Spaces", "Memberships", "Entities", "Ops", "OTPs", "Sessions", "ChatSessions", "ChatMessages", "Connections", "DMs", "PushTokens", "Accounts",
+	"Users", "Spaces", "Memberships", "Entities", "Ops", "OTPs", "Sessions", "ChatSessions", "ChatMessages", "Connections", "DMs", "Accounts",
 	"Pinger")
 
 var app = wire.NewSet(ratelimit.NewSet, services,

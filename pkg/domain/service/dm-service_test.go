@@ -23,15 +23,14 @@ type dmMocks struct {
 	users  *mongorepo.MockIUserRepo
 	conns  *mongorepo.MockIConnectionRepo
 	dms    *mongorepo.MockIDirectMessageRepo
-	tokens *mongorepo.MockIPushTokenRepo
 	push   *drivers.MockIPushSender
 }
 
 func createDMService(ctrl *gomock.Controller, setup func(m *dmMocks)) IDMService {
 	m := &dmMocks{users: mongorepo.NewMockIUserRepo(ctrl), conns: mongorepo.NewMockIConnectionRepo(ctrl), dms: mongorepo.NewMockIDirectMessageRepo(ctrl),
-		tokens: mongorepo.NewMockIPushTokenRepo(ctrl), push: drivers.NewMockIPushSender(ctrl)}
+		push: drivers.NewMockIPushSender(ctrl)}
 	setup(m)
-	return NewDMService(logger.NewDiscard(), m.users, m.conns, m.dms, m.tokens, m.push, clock.NewFake())
+	return NewDMService(logger.NewDiscard(), m.users, m.conns, m.dms, m.push, clock.NewFake())
 }
 
 func friendsWithU2(m *dmMocks) {

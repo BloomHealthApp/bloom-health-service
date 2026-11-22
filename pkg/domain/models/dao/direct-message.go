@@ -30,10 +30,9 @@ type DirectMessage struct {
 	CreatedAt time.Time `bson:"createdAt"`
 }
 
-// PushToken is one device's Expo push token. A user can have several devices.
+// PushToken is one device's Expo push token, kept in its user's document (User.PushTokens).
 type PushToken struct {
-	Token     string    `bson:"_id"`
-	UserID    string    `bson:"userId"`
+	Token     string    `bson:"token"`
 	Platform  string    `bson:"platform"`
 	UpdatedAt time.Time `bson:"updatedAt"`
 }

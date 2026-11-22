@@ -33,6 +33,9 @@ type User struct {
 	// The account is locked until it is restored, and erased once DeleteAfter has passed.
 	DeletionRequestedAt *time.Time `bson:"deletionRequestedAt,omitempty"`
 	DeleteAfter         *time.Time `bson:"deleteAfter,omitempty"`
+	// PushTokens are the Expo push tokens of the user's signed-in devices, newest last (at most
+	// constants.MaxPushTokensPerUser). A token belongs to one user at a time. Never returned by the API.
+	PushTokens []PushToken `bson:"pushTokens,omitempty"`
 }
 
 // PendingDeletion reports whether the account is scheduled for deletion.

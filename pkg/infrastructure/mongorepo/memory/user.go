@@ -106,3 +106,51 @@ func (r *userRepo) DueForDeletion(_ context.Context, now time.Time, limit int) (
 	}
 	return out, nil
 }
+
+func withoutTokens(ts []dao.PushToken, drop map[string]bool) []dao.PushToken {
+	out := []dao.PushToken{}
+	for _, t := range ts {
+		if !drop[t.Token] {
+			out = append(out, t)
+		}
+	}
+	return out
+}
+
+func (r *userRepo) AddPushToken(_ context.Context, userID string, t dao.PushToken, max int) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	drop := map[string]bool{t.Token: true}
+	for _, u := range r.users {
+		u.PushTokens = withoutTokens(u.PushTokens, drop)
+	}
+	if u, ok := r.users[userID]; ok {
+		u.PushTokens = append(u.PushTokens, t)
+		if len(u.PushTokens) > max {
+			u.PushTokens = u.PushTokens[len(u.PushTokens)-max:]
+		}
+	}
+	return nil
+}
+
+func (r *userRepo) RemovePushToken(_ context.Context, userID, token string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if u, ok := r.users[userID]; ok {
+		u.PushTokens = withoutTokens(u.PushTokens, map[string]bool{token: true})
+	}
+	return nil
+}
+
+func (r *userRepo) RemovePushTokens(_ context.Context, tokens []string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	drop := map[string]bool{}
+	for _, t := range tokens {
+		drop[t] = true
+	}
+	for _, u := range r.users {
+		u.PushTokens = withoutTokens(u.PushTokens, drop)
+	}
+	return nil
+}

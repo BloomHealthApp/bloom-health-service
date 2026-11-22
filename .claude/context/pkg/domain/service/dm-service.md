@@ -1,6 +1,6 @@
 # IDMService (`dm-service.go`)
 
-Text messages between friends ("Messages" in the app) and the Expo push tokens used to announce them.
+Text messages between friends ("Messages" in the app) and the Expo push tokens used to announce them, which live on the user document (`users.pushTokens`).
 
 ## Rules
 - `friend` is the only gate: an accepted connection with a live user, not yourself. Everything else is `errNoChat` (404), so a stranger can't tell a chat apart from an unknown id.
@@ -14,7 +14,7 @@ Text messages between friends ("Messages" in the app) and the Expo push tokens u
 ## Push
 - `notify` runs inline after the message is saved, with a 3 s timeout: Vercel stops work once the response is sent, so no goroutine. A push failure is logged and never fails the send.
 - The body is "<first name> sent you a message". Never add the text: it shows on the lock screen. Data `{type: "dm", from}`; Android channel `messages` (the app creates it).
-- Tokens Expo reports as `DeviceNotRegistered` are deleted. A token belongs to one user (`_id` is the token), so signing in as someone else on the same phone moves it.
+- Tokens Expo reports as `DeviceNotRegistered` are deleted. A token belongs to one user: saving it pulls it from any other account first, so signing in as someone else on the same phone moves it. `notify` reads them straight from the friend's user document, already loaded by `friend`.
 
 ## Related
-`pkg/drivers/expo-push.go`, `pkg/infrastructure/mongorepo/direct-message-repo.go`, `push-token-repo.go`, `_shared/privacy-invariants.md`.
+`pkg/drivers/expo-push.go`, `pkg/infrastructure/mongorepo/direct-message-repo.go`, `user-repo.go` (push tokens), `_shared/privacy-invariants.md`.

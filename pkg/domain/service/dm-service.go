@@ -39,14 +39,13 @@ type dmService struct {
 	users       mongorepo.IUserRepo
 	connections mongorepo.IConnectionRepo
 	dms         mongorepo.IDirectMessageRepo
-	tokens      mongorepo.IPushTokenRepo
 	push        drivers.IPushSender
 	clock       clock.Clock
 }
 
 func NewDMService(log logger.ILogger, users mongorepo.IUserRepo, connections mongorepo.IConnectionRepo, dms mongorepo.IDirectMessageRepo,
-	tokens mongorepo.IPushTokenRepo, push drivers.IPushSender, clk clock.Clock) IDMService {
-	return &dmService{log: log, users: users, connections: connections, dms: dms, tokens: tokens, push: push, clock: clk}
+	push drivers.IPushSender, clk clock.Clock) IDMService {
+	return &dmService{log: log, users: users, connections: connections, dms: dms, push: push, clock: clk}
 }
 
 var errNoChat = apperrors.NotFoundError("chat not found")
@@ -260,11 +259,7 @@ func (s *dmService) Send(ctx context.Context, actor *bo.Actor, req *request.Send
 // notify pushes "<name> sent you a message" to the friend's devices. It never includes the message text, which would
 // show on the lock screen, and a failure never fails the send.
 func (s *dmService) notify(ctx context.Context, from, to *dao.User) {
-	tokens, err := s.tokens.ForUser(ctx, to.ID)
-	if err != nil {
-		s.log.Warn(ctx, "dm: push tokens failed", map[string]any{"err": err.Error()})
-		return
-	}
+	tokens := to.PushTokens
 	if len(tokens) == 0 {
 		return
 	}
@@ -285,7 +280,7 @@ func (s *dmService) notify(ctx context.Context, from, to *dao.User) {
 		return
 	}
 	if len(res.Unregistered) > 0 {
-		if err := s.tokens.DeleteTokens(ctx, res.Unregistered); err != nil {
+		if err := s.users.RemovePushTokens(ctx, res.Unregistered); err != nil {
 			s.log.Warn(ctx, "dm: stale token cleanup failed", map[string]any{"err": err.Error()})
 		}
 	}
@@ -303,15 +298,15 @@ func (s *dmService) MarkRead(ctx context.Context, actor *bo.Actor, friendID stri
 }
 
 func (s *dmService) SavePushToken(ctx context.Context, actor *bo.Actor, req *request.PushTokenReq) apperrors.IHttpError {
-	t := &dao.PushToken{Token: req.Token, UserID: actor.User.ID, Platform: req.Platform, UpdatedAt: s.clock.Now()}
-	if err := s.tokens.Save(ctx, t); err != nil {
+	t := dao.PushToken{Token: req.Token, Platform: req.Platform, UpdatedAt: s.clock.Now()}
+	if err := s.users.AddPushToken(ctx, actor.User.ID, t, constants.MaxPushTokensPerUser); err != nil {
 		return internalErr(s.log, ctx, "push token save failed", err)
 	}
 	return nil
 }
 
 func (s *dmService) DeletePushToken(ctx context.Context, actor *bo.Actor, req *request.PushTokenReq) apperrors.IHttpError {
-	if err := s.tokens.Delete(ctx, req.Token, actor.User.ID); err != nil {
+	if err := s.users.RemovePushToken(ctx, actor.User.ID, req.Token); err != nil {
 		return internalErr(s.log, ctx, "push token delete failed", err)
 	}
 	return nil

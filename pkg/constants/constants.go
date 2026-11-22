@@ -52,6 +52,8 @@ const (
 	DMDailyCap = 500
 	// MaxDMThreadsListed bounds the inbox.
 	MaxDMThreadsListed = 200
+	// MaxPushTokensPerUser keeps the newest devices only; older ones drop off.
+	MaxPushTokensPerUser = 10
 	// MaxPushTokenChars bounds a stored Expo push token.
 	MaxPushTokenChars = 200
 )
@@ -99,5 +101,4 @@ const (
 	CollConnections  = "connections"
 	CollDMThreads    = "dmThreads"
 	CollDMs          = "directMessages"
-	CollPushTokens   = "pushTokens"
 )

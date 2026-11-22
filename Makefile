@@ -5,7 +5,7 @@ MOCKGEN     := $(GOBIN)/mockgen
 WIRE        := $(GOBIN)/wire
 
 SERVICE_IFACES   := IAuthService,IUserService,IHabitService,IDailyLogService,IWorkoutService,IPeriodService,ISettingsService,ISyncService,IStatsService,IProvisionService,IHealthService,IChatService,IConnectionService,IDMService
-MONGOREPO_IFACES := IUserRepo,ISpaceRepo,IMembershipRepo,IEntityRepo,IOpRepo,IOTPRepo,ISessionRepo,IChatSessionRepo,IChatMessageRepo,IConnectionRepo,IDirectMessageRepo,IPushTokenRepo,IAccountRepo
+MONGOREPO_IFACES := IUserRepo,ISpaceRepo,IMembershipRepo,IEntityRepo,IOpRepo,IOTPRepo,ISessionRepo,IChatSessionRepo,IChatMessageRepo,IConnectionRepo,IDirectMessageRepo,IAccountRepo
 DRIVER_IFACES    := IPinger,IMongoDB,IGoogleVerifier,IPushSender
 
 .PHONY: all build run wire install-tools mock-all mock-service mock-mongorepo mock-drivers mock-smtp vet test test-coverage tidy clean

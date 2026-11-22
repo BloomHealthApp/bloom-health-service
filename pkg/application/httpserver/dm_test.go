@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 
+	"github.com/BloomHealthApp/bloom-health-service/pkg/constants"
 	"github.com/BloomHealthApp/bloom-health-service/pkg/domain/models/dao"
 )
 
@@ -155,15 +156,37 @@ func TestUnregisteredPushTokensAreDropped(t *testing.T) {
 	e.push.unregistered["ExponentPushToken[old]"] = true
 	st, _ := e.sendDM(other, anuID, "one")
 	require.Equal(t, 201, st)
-	toks, err := e.repos.PushTokens.ForUser(context.Background(), anuID)
-	require.NoError(t, err)
-	require.Len(t, toks, 1)
-	require.Equal(t, "ExponentPushToken[new]", toks[0].Token)
+	require.Equal(t, []string{"ExponentPushToken[new]"}, e.tokensOf(anuID))
 
 	st, _ = e.do("DELETE", "/v1/me/push-token", anu, map[string]any{"token": "ExponentPushToken[new]"})
 	require.Equal(t, 204, st)
-	toks, _ = e.repos.PushTokens.ForUser(context.Background(), anuID)
-	require.Empty(t, toks, "signing out removes the device")
+	require.Empty(t, e.tokensOf(anuID), "signing out removes the device")
+}
+
+func TestPushTokensLiveOnTheUserAndFollowTheDevice(t *testing.T) {
+	e := setup(t)
+	anu, _ := e.login("anu@example.com")
+	other, _ := e.login("other-owner@example.com")
+	anuID, otherID := e.meID(anu), e.meID(other)
+	e.pushToken(anu, "ExponentPushToken[phone]")
+	e.pushToken(anu, "ExponentPushToken[phone]")
+	require.Equal(t, []string{"ExponentPushToken[phone]"}, e.tokensOf(anuID), "saving again doesn't duplicate")
+
+	// Someone else signs in on the same phone: the token moves to them.
+	e.pushToken(other, "ExponentPushToken[phone]")
+	require.Empty(t, e.tokensOf(anuID))
+	require.Equal(t, []string{"ExponentPushToken[phone]"}, e.tokensOf(otherID))
+
+	// Only the newest devices are kept.
+	for i := 0; i < constants.MaxPushTokensPerUser+2; i++ {
+		e.pushToken(anu, fmt.Sprintf("ExponentPushToken[d%d]", i))
+	}
+	toks := e.tokensOf(anuID)
+	require.Len(t, toks, constants.MaxPushTokensPerUser)
+	require.Equal(t, fmt.Sprintf("ExponentPushToken[d%d]", constants.MaxPushTokensPerUser+1), toks[len(toks)-1])
+
+	_, me := e.do("GET", "/v1/me", anu, nil)
+	require.NotContains(t, fmt.Sprint(me), "PushToken", "tokens are never returned")
 }
 
 func TestErasingAnAccountRemovesItsChatsAndTokens(t *testing.T) {
@@ -185,6 +208,17 @@ func TestErasingAnAccountRemovesItsChatsAndTokens(t *testing.T) {
 	require.Error(t, err, "the friend's messages to them are gone too")
 	_, err = e.repos.DMs.Thread(ctx, dao.PairKey(anuID, otherID))
 	require.Error(t, err)
-	toks, _ := e.repos.PushTokens.ForUser(ctx, anuID)
-	require.Empty(t, toks)
+	_, err = e.repos.Users.ByID(ctx, anuID)
+	require.Error(t, err, "the tokens went with the user document")
+}
+
+func (e *env) tokensOf(userID string) []string {
+	e.t.Helper()
+	u, err := e.repos.Users.ByID(context.Background(), userID)
+	require.NoError(e.t, err)
+	out := []string{}
+	for _, t := range u.PushTokens {
+		out = append(out, t.Token)
+	}
+	return out
 }

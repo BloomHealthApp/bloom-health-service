@@ -61,6 +61,8 @@ func EnsureIndexes(ctx context.Context, db drivers.IMongoDB) error {
 			SetPartialFilterExpression(bson.D{{Key: "googleSub", Value: bson.D{{Key: "$type", Value: "string"}}}})},
 		mongo.IndexModel{Keys: asc("profileLinkCode"), Options: options.Index().SetUnique(true).
 			SetPartialFilterExpression(bson.D{{Key: "profileLinkCode", Value: bson.D{{Key: "$type", Value: "string"}}}})},
+		// Finds who holds a push token, to move it to a new account or drop it when Expo says it's gone.
+		mongo.IndexModel{Keys: asc("pushTokens.token"), Options: options.Index().SetSparse(true)},
 		// Only accounts scheduled for deletion carry deleteAfter; the daily purge (PurgeDue) looks them up by it.
 		mongo.IndexModel{Keys: asc("deleteAfter"), Options: options.Index().SetSparse(true)}); err != nil {
 		return err
@@ -117,9 +119,6 @@ func EnsureIndexes(ctx context.Context, db drivers.IMongoDB) error {
 	if err := idx(constants.CollDMs,
 		mongo.IndexModel{Keys: asc("pairKey", "seq"), Options: options.Index().SetUnique(true)},
 		mongo.IndexModel{Keys: asc("senderId", "createdAt")}); err != nil {
-		return err
-	}
-	if err := idx(constants.CollPushTokens, mongo.IndexModel{Keys: asc("userId")}); err != nil {
 		return err
 	}
 	// The status/runAt/createdAt index serves bloom-health-task-worker's claim query.
