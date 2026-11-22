@@ -22,6 +22,7 @@ Access: public = no token; both = any member; owner = `RequireOwner`.
 | Route | Access | Service | Note |
 |---|---|---|---|
 | `GET /health`, `GET /v1/health` | public | Health | [health.md](health.md) |
+| `GET /livez` | public | none | [health.md](health.md) |
 | `GET /privacy` | public | — | [privacy.md](privacy.md) |
 | `GET /delete-account` | public | — | [privacy.md](privacy.md) |
 | `GET /u/:code` | public (per-IP limit) | Connection | [friends.md](friends.md) |

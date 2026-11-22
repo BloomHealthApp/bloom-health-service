@@ -33,6 +33,7 @@ func NewRouter() *gin.Engine {
 	r.NoMethod(func(c *gin.Context) { utils.RespondError(c, apperrors.MethodNotAllowedError("method not allowed")) })
 
 	r.GET("/health", publicrouter.HandleHealth)
+	r.GET("/livez", publicrouter.HandleLivez)
 	r.GET("/privacy", publicrouter.HandleGetPrivacyPolicy)
 	r.GET("/delete-account", publicrouter.HandleGetDeleteAccount)
 	r.GET("/u/:code", middleware.LimitProfilePage(), publicrouter.HandleGetPublicProfilePage)

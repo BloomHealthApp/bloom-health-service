@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: bloom-health-service
+  labels: { app.kubernetes.io/name: bloom-health-service }
+spec:
+  type: ClusterIP
+  selector: { app.kubernetes.io/name: bloom-health-service }
+  ports:
+    - { name: http, port: 3000, targetPort: http }

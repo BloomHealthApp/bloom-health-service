@@ -17,5 +17,8 @@ Set in `ratelimit.NewSet`.
 ## Why
 Per-email rate limits live in the handlers, not here, because they depend on the request body.
 
+## Request logging
+`RequestLogger` skips successful `kube-probe/` requests to `/livez` and `/health`; failed probes are still logged.
+
 ## Related
 `_shared/security-invariants.md`
