@@ -1,11 +1,12 @@
 # External services and dependencies
 
-The service's runtime external services are MongoDB, SMTP and, for Google sign-in, Google's public signing keys. That key fetch is its only outbound HTTP call. AI chat replies come from `bloom-health-task-worker`, which shares the MongoDB database and calls the model provider (Groq); this service holds no model API key.
+The service's runtime external services are MongoDB, SMTP and, for Google sign-in, Google's public signing keys. That key fetch and Expo push (new messages between friends) are its only outbound HTTP calls. AI chat replies come from `bloom-health-task-worker`, which shares the MongoDB database and calls the model provider (Groq); this service holds no model API key.
 
 ## Runtime services
 | Service | Used for | Code | Configuration |
 |---|---|---|---|
 | MongoDB (Atlas) | All persistent data | `pkg/drivers/mongodb.go`, `pkg/infrastructure/mongorepo/` | `STORE`, `MONGODB_URI` (secret), `MONGODB_DB` |
+| Expo push service | Telling a friend about a new message (`https://exp.host/--/api/v2/push/send`, which forwards to FCM and APNs) | `pkg/drivers/expo-push.go` (plain `net/http`, 3 s timeout) | `EXPO_ACCESS_TOKEN` (optional, secret; only needed if the Expo project turns on enhanced push security). The FCM credentials live in EAS, not here. |
 | Google OAuth signing keys | Checking Google ID tokens (`POST /auth/google`) | `pkg/drivers/google-verifier.go` (`google.golang.org/api/idtoken`) | `GOOGLE_CLIENT_ID` (web client id list, not secret) |
 | SMTP server | OTP emails | `pkg/infrastructure/transport/smtp/` | `MAILER`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER` and `SMTP_PASS` (secret), `MAIL_FROM` |
 

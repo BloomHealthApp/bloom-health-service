@@ -55,13 +55,14 @@ type connectionService struct {
 	cfg         *config.Store
 	users       mongorepo.IUserRepo
 	connections mongorepo.IConnectionRepo
+	dms         mongorepo.IDirectMessageRepo
 	stats       IStatsService
 	clock       clock.Clock
 }
 
 func NewConnectionService(log logger.ILogger, cfg *config.Store, users mongorepo.IUserRepo, connections mongorepo.IConnectionRepo,
-	stats IStatsService, clk clock.Clock) IConnectionService {
-	return &connectionService{log: log, cfg: cfg, users: users, connections: connections, stats: stats, clock: clk}
+	dms mongorepo.IDirectMessageRepo, stats IStatsService, clk clock.Clock) IConnectionService {
+	return &connectionService{log: log, cfg: cfg, users: users, connections: connections, dms: dms, stats: stats, clock: clk}
 }
 
 const linkAlphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -369,6 +370,12 @@ func (s *connectionService) Remove(ctx context.Context, actor *bo.Actor, id stri
 	allowed := c.Status == dao.ConnectionAccepted && c.Involves(me) || c.Status == dao.ConnectionPending && c.RequesterID == me
 	if !allowed {
 		return notFound
+	}
+	// Unfriending deletes the chat for both. It goes first, so a failure leaves them friends and a retry finishes it.
+	if c.Status == dao.ConnectionAccepted {
+		if err := s.dms.DeletePair(ctx, c.PairKey); err != nil {
+			return internalErr(s.log, ctx, "chat delete failed", err)
+		}
 	}
 	if err := s.connections.Delete(ctx, id, me); apperrors.IsNotFound(err) {
 		return notFound

@@ -24,6 +24,8 @@ type Repositories struct {
 	ChatSessions mongorepo.IChatSessionRepo
 	ChatMessages mongorepo.IChatMessageRepo
 	Connections  mongorepo.IConnectionRepo
+	DMs          mongorepo.IDirectMessageRepo
+	PushTokens   mongorepo.IPushTokenRepo
 	Accounts     mongorepo.IAccountRepo
 	Pinger       drivers.IPinger
 }
@@ -33,9 +35,9 @@ func NewMemoryRepositories() *Repositories {
 	r := &Repositories{Users: memory.NewUserRepo(), Spaces: memory.NewSpaceRepo(), Memberships: memory.NewMembershipRepo(),
 		Entities: memory.NewEntityRepo(), Ops: memory.NewOpRepo(), OTPs: memory.NewOTPRepo(), Sessions: memory.NewSessionRepo(),
 		ChatSessions: memory.NewChatSessionRepo(), ChatMessages: memory.NewChatMessageRepo(), Connections: memory.NewConnectionRepo(),
-		Pinger: memory.Pinger{}}
+		DMs: memory.NewDirectMessageRepo(), PushTokens: memory.NewPushTokenRepo(), Pinger: memory.Pinger{}}
 	r.Accounts = memory.NewAccountRepo(r.Users, r.Spaces, r.Memberships, r.Entities, r.Ops, r.OTPs, r.Sessions, r.ChatSessions, r.ChatMessages,
-		r.Connections)
+		r.Connections, r.DMs, r.PushTokens)
 	return r
 }
 
@@ -76,6 +78,8 @@ func NewRepositories(cfg *config.Store, log logger.ILogger) (*Repositories, func
 		Ops: mongorepo.NewOpRepo(db, log), OTPs: mongorepo.NewOTPRepo(db, log), Sessions: mongorepo.NewSessionRepo(db, log),
 		ChatSessions: mongorepo.NewChatSessionRepo(db, log), ChatMessages: mongorepo.NewChatMessageRepo(db, log),
 		Connections: mongorepo.NewConnectionRepo(db, log),
+		DMs:         mongorepo.NewDirectMessageRepo(db, log),
+		PushTokens:  mongorepo.NewPushTokenRepo(db, log),
 		Accounts:    mongorepo.NewAccountRepo(db, log),
 		Pinger:      db,
 	}, cleanup, nil

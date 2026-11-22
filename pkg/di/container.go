@@ -31,10 +31,12 @@ var services = wire.NewSet(
 	service.NewHealthService,
 	service.NewChatService,
 	service.NewConnectionService,
+	service.NewDMService,
 )
 
 var repositoryFields = wire.FieldsOf(new(*Repositories),
-	"Users", "Spaces", "Memberships", "Entities", "Ops", "OTPs", "Sessions", "ChatSessions", "ChatMessages", "Connections", "Accounts", "Pinger")
+	"Users", "Spaces", "Memberships", "Entities", "Ops", "OTPs", "Sessions", "ChatSessions", "ChatMessages", "Connections", "DMs", "PushTokens", "Accounts",
+	"Pinger")
 
 var app = wire.NewSet(
 	ratelimit.NewSet,
@@ -52,6 +54,7 @@ func InitializeApp() (AppInterface, func(), error) {
 		clock.NewRealClock,
 		smtp.NewMailer,
 		drivers.NewGoogleVerifier,
+		drivers.NewExpoPushSender,
 		NewRepositories,
 		app,
 	)
@@ -61,7 +64,7 @@ func InitializeApp() (AppInterface, func(), error) {
 // InitializeTestApp builds the graph from explicit dependencies (in-memory repositories, fake clock,
 // capturing mailer, fake Google verifier) so tests exercise the real services and HTTP layer.
 func InitializeTestApp(cfg *config.Store, log logger.ILogger, clk clock.Clock, mailer smtp.IMailer, google drivers.IGoogleVerifier,
-	repos *Repositories) (AppInterface, error) {
+	push drivers.IPushSender, repos *Repositories) (AppInterface, error) {
 	wire.Build(app)
 	return nil, nil
 }

@@ -8,7 +8,7 @@ Profile links, friend requests and friendships ("Friends" in the app).
 - `Profile` and `Activity` share `friendOrSelf`: the caller or an accepted friend who is still live, otherwise `errNoProfile`.
 - Unknown, reset, malformed and pending-deletion links all return the same `errNoProfile` 404 (`byLink`).
 - One `dao.Connection` per pair (`pairKey`, unique). Asking someone who already asked you accepts it (mutual). A decline turns the record into a `declined` marker with `expiresAt` = now + `DeclinedRequestCooldown` (7 days); during it the requester gets 429 with `Retry-After`, and their view goes back to `relation: "none"`. The person who declined can still ask later; their request replaces the marker. An expired marker is deleted on the next request (the TTL index may not have run yet).
-- `Remove`: either side can unfriend; only the requester can withdraw a pending request (the addressee uses `Decline`); decline markers can't be removed here, or the cooldown could be skipped.
+- `Remove`: unfriending first deletes the pair's chat (`IDirectMessageRepo.DeletePair`), so a failure leaves them friends and a retry finishes it. Either side can unfriend; only the requester can withdraw a pending request (the addressee uses `Decline`); decline markers can't be removed here, or the cooldown could be skipped.
 - `List` drops users that are gone or pending deletion; `Profile` and `Accept` treat them as not found.
 
 ## Gotchas

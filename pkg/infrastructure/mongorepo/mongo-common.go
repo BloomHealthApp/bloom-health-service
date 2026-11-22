@@ -109,6 +109,19 @@ func EnsureIndexes(ctx context.Context, db drivers.IMongoDB) error {
 		mongo.IndexModel{Keys: asc("expiresAt"), Options: options.Index().SetExpireAfterSeconds(0)}); err != nil {
 		return err
 	}
+	// One thread per friend pair (_id is the pair key); messages are numbered per thread.
+	if err := idx(constants.CollDMThreads,
+		mongo.IndexModel{Keys: bson.D{{Key: "members", Value: 1}, {Key: "last.createdAt", Value: -1}}}); err != nil {
+		return err
+	}
+	if err := idx(constants.CollDMs,
+		mongo.IndexModel{Keys: asc("pairKey", "seq"), Options: options.Index().SetUnique(true)},
+		mongo.IndexModel{Keys: asc("senderId", "createdAt")}); err != nil {
+		return err
+	}
+	if err := idx(constants.CollPushTokens, mongo.IndexModel{Keys: asc("userId")}); err != nil {
+		return err
+	}
 	// The status/runAt/createdAt index serves bloom-health-task-worker's claim query.
 	if err := idx(constants.CollChatMessages,
 		mongo.IndexModel{Keys: asc("sessionId", "idx"), Options: options.Index().SetUnique(true)},

@@ -64,6 +64,11 @@ Access: public = no token; both = any member; owner = `RequireOwner`.
 | `DELETE /v1/connections/:id` | both | Connection | [friends.md](friends.md) |
 | `GET /v1/profiles/:id` | both | Connection | [friends.md](friends.md) |
 | `GET /v1/profiles/:id/activity` | both | Connection | [friends.md](friends.md) |
+| `GET /v1/dm/threads` | both | DM | [dm-service.md](../../../../domain/service/dm-service.md) |
+| `GET /v1/dm/:id/messages` | both | DM | [dm-service.md](../../../../domain/service/dm-service.md) |
+| `POST /v1/dm/:id/messages` | both (per-user limit) | DM | [dm-service.md](../../../../domain/service/dm-service.md) |
+| `POST /v1/dm/:id/read` | both | DM | [dm-service.md](../../../../domain/service/dm-service.md) |
+| `PUT /v1/me/push-token`, `DELETE /v1/me/push-token` | both | DM | [dm-service.md](../../../../domain/service/dm-service.md) |
 | `POST /v1/sync/push` | owner | Sync | [sync.md](sync.md) |
 | `GET /v1/sync/pull` | both | Sync | [sync.md](sync.md) |
 | `GET /v1/chat/models` | both | Chat | [chat.md](chat.md) |

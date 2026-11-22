@@ -18,7 +18,8 @@ type IAccountRepo interface {
 	// counter and all its memberships.
 	EraseSpace(ctx context.Context, spaceID string) error
 	// EraseUser deletes the user and everything tied to them: memberships, refresh sessions, pending codes mailed
-	// to their email, their chat sessions and messages, and their friend requests and friendships.
+	// to their email, their chat sessions and messages, their friend requests and friendships, the conversations they are in
+	// (both sides' messages) and their push tokens.
 	EraseUser(ctx context.Context, user *dao.User) error
 }
 
@@ -62,7 +63,15 @@ func (r *accountRepo) EraseSpace(ctx context.Context, spaceID string) error {
 
 func (r *accountRepo) EraseUser(ctx context.Context, u *dao.User) error {
 	byUser := bson.D{{Key: "userId", Value: u.ID}}
+	// Messages are found through the user's threads, so they go before the threads (a retried erase still finds them).
+	keys := []string{}
+	if err := r.db.Database().Collection(constants.CollDMThreads).Distinct(ctx, "_id", bson.D{{Key: "members", Value: u.ID}}).Decode(&keys); err != nil {
+		return err
+	}
 	return r.deleteAll(ctx, []deletion{
+		{constants.CollDMs, bson.D{{Key: "pairKey", Value: bson.D{{Key: "$in", Value: keys}}}}},
+		{constants.CollDMThreads, bson.D{{Key: "members", Value: u.ID}}},
+		{constants.CollPushTokens, byUser},
 		{constants.CollConnections, involving(u.ID)},
 		{constants.CollChatMessages, byUser},
 		{constants.CollChatSessions, byUser},

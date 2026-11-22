@@ -64,3 +64,9 @@ d.connections.createIndex({ pairKey: 1 }, { unique: true });
 d.connections.createIndex({ requesterId: 1, status: 1 });
 d.connections.createIndex({ addresseeId: 1, status: 1 });
 d.connections.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
+// Messages between friends: one thread per pair (_id is the pair key), messages numbered per thread.
+d.dmThreads.createIndex({ members: 1, "last.createdAt": -1 });
+d.directMessages.createIndex({ pairKey: 1, seq: 1 }, { unique: true });
+d.directMessages.createIndex({ senderId: 1, createdAt: 1 });
+d.pushTokens.createIndex({ userId: 1 });

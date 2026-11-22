@@ -50,6 +50,18 @@ func LimitAuth() gin.HandlerFunc {
 }
 
 // LimitFriends applies the per-user limit on profile-link lookups and friend requests. It runs after Authenticate.
+// LimitMessages limits sending messages to friends, per user (after auth).
+func LimitMessages() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		a := utils.GetActor(c.Request.Context())
+		if a == nil || !di.AppLogic.GetRateLimiters().Messages.Allow(a.User.ID) {
+			utils.RespondError(c, apperrors.TooManyRequestsError("too many messages, slow down", "5"))
+			return
+		}
+		c.Next()
+	}
+}
+
 func LimitFriends() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		a := utils.GetActor(c.Request.Context())

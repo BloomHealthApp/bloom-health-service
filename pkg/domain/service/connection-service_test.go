@@ -24,16 +24,17 @@ type connMocks struct {
 	users *mongorepo.MockIUserRepo
 	conns *mongorepo.MockIConnectionRepo
 	stats *MockIStatsService
+	dms   *mongorepo.MockIDirectMessageRepo
 	clock *clock.Fake
 }
 
 func createConnectionService(ctrl *gomock.Controller, setup func(m *connMocks)) IConnectionService {
 	m := &connMocks{users: mongorepo.NewMockIUserRepo(ctrl), conns: mongorepo.NewMockIConnectionRepo(ctrl),
-		stats: NewMockIStatsService(ctrl), clock: clock.NewFake()}
+		stats: NewMockIStatsService(ctrl), dms: mongorepo.NewMockIDirectMessageRepo(ctrl), clock: clock.NewFake()}
 	if setup != nil {
 		setup(m)
 	}
-	return NewConnectionService(logger.NewDiscard(), &config.Store{PublicBaseURL: "https://bloom.test"}, m.users, m.conns, m.stats, m.clock)
+	return NewConnectionService(logger.NewDiscard(), &config.Store{PublicBaseURL: "https://bloom.test"}, m.users, m.conns, m.dms, m.stats, m.clock)
 }
 
 const theirCode = "abcDEF123xyz"

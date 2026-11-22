@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"regexp"
+	"sync"
 	"testing"
 	"time"
 
@@ -32,6 +33,34 @@ type env struct {
 	mail   *smtp.CaptureMailer
 	clock  *clock.Fake
 	google *fakeGoogle
+	push   *fakePush
+}
+
+// fakePush records push notifications instead of calling Expo.
+type fakePush struct {
+	mu   sync.Mutex
+	sent []drivers.PushMessage
+	// unregistered tokens are reported back as no longer registered
+	unregistered map[string]bool
+}
+
+func (f *fakePush) Send(_ context.Context, msgs []drivers.PushMessage) (*drivers.PushResult, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.sent = append(f.sent, msgs...)
+	res := &drivers.PushResult{}
+	for _, m := range msgs {
+		if f.unregistered[m.To] {
+			res.Unregistered = append(res.Unregistered, m.To)
+		}
+	}
+	return res, nil
+}
+
+func (f *fakePush) messages() []drivers.PushMessage {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return append([]drivers.PushMessage(nil), f.sent...)
 }
 
 const secret = "0123456789abcdef0123456789abcdef-test"
@@ -46,7 +75,8 @@ func setup(t *testing.T) *env {
 	clk := clock.NewFake()
 	mailer := &smtp.CaptureMailer{}
 	google := &fakeGoogle{ids: map[string]*drivers.GoogleIdentity{}}
-	app, err := di.InitializeTestApp(cfg, logger.NewDiscard(), clk, mailer, google, repos)
+	push := &fakePush{unregistered: map[string]bool{}}
+	app, err := di.InitializeTestApp(cfg, logger.NewDiscard(), clk, mailer, google, push, repos)
 	require.NoError(t, err)
 	di.AppLogic = app
 
@@ -60,7 +90,7 @@ func setup(t *testing.T) *env {
 
 	srv := httptest.NewServer(httpserver.NewRouter())
 	t.Cleanup(srv.Close)
-	return &env{t: t, repos: repos, srv: srv, mail: mailer, clock: clk, google: google}
+	return &env{t: t, repos: repos, srv: srv, mail: mailer, clock: clk, google: google, push: push}
 }
 
 var codeRe = regexp.MustCompile(`\b(\d{6})\b`)

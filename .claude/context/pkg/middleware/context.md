@@ -12,6 +12,7 @@ Set in `ratelimit.NewSet`.
 | `Auth` | client IP, `/v1/auth/*` | 1 per 6 seconds | 10 |
 | `Email` | email, phone or challenge, in auth handlers | 1 per 2 minutes | 3 |
 | `Friends` | user id, `GET /v1/profiles/by-link/*` and `POST /v1/connections` | 1 per 2 seconds | 20 |
+| `Messages` | user id, `POST /v1/dm/:id/messages` (`LimitMessages`) | 1 per second | 20 |
 | `ProfilePage` | client IP, `GET /u/*` | 1 per second | 20 |
 
 ## Why

@@ -89,7 +89,7 @@ Client keeps SQLite cache + `syncOperations` queue; direct REST writes above are
 - Max 100 operations per request; processed in order.
 
 `GET /sync/pull?cursor=<opaque|empty>&limit=500` → `{"cursor":"<opaque>","hasMore":bool,"changes":{"habits":[],"dailyLogs":[],"workouts":[],"settings":[],"periods":[]}}`; includes tombstones (`deletedAt != null`). `periods` is only populated for the owner (always `[]` for viewers). Cursor is monotonic server sequence; client persists it only after applying a full page transactionally. Both roles may pull (scoped to their shared space).
-Viewer freshness: pull on app foreground, tab focus, pull-to-refresh, and every 30 s while Home is focused. No websockets in v1.
+Viewer freshness: pull on app foreground, tab focus, pull-to-refresh, and every 30 s while Home is focused. No websockets in v1. Chats with friends are polled while open; new messages also arrive as push notifications.
 
 Client retry: exponential backoff 2s→5min with jitter on network/5xx; never retry `rejected`; mark `failed` after 8 attempts (user can retry manually). Status chip: `synced | pending(n) | failed(n) | offline`.
 
@@ -117,7 +117,16 @@ Online only, like Chat. Any role. You can only send someone a friend request thr
 - `GET /profiles/{userId}` → `PublicProfile` with stats, for a friend or yourself; `404` for anyone else.
 - `GET /profiles/{userId}/activity` → `{days: [{date, level}], todayHabits: [{title, icon, done}]}`, for a friend or yourself; `404` for anyone else. `days` covers the last 53 weeks in the owner's timezone and lists only days with progress (`level` 1-4, the app's heat buckets); every other day is 0. No rest-day flag, percentages or log values. Both lists are empty for an account without a space of its own.
 - Public (no token): `GET /u/{code}` is an HTML page with the first name and an initial only, "Open in Bloom" (`bloomhealth://u/{code}`) and "Get Bloom" buttons, `noindex`, rate limited per IP; an inactive link gets one generic `404` page. `GET /.well-known/assetlinks.json` lists the Android app for App Links.
-- Erasing an account removes its link code, requests and friendships.
+- Erasing an account removes its link code, requests and friendships, its chats with friends (both sides' messages) and its push tokens.
+
+## Messages (friends only)
+Online only. Any role. You can only message an accepted friend; for anyone else (stranger, pending request, deleted account, yourself, unknown id) every route answers the same `404 not_found`. Unfriending deletes the chat for both people.
+`DM`: `{id, seq, senderId, text, createdAt}`. `seq` numbers the messages of one chat (1, 2, 3...), possibly with gaps.
+- `GET /dm/threads` → `{items: [{friend: PublicProfile (no stats), last: {text, mine, createdAt}|null, unread}], unreadCount}`, chats with at least one message, newest message first (at most 200). `unread` is true when the newest message is from the friend and newer than your last read.
+- `GET /dm/{userId}/messages?before&after&limit` → `{items: [DM] oldest first, hasMore, nextBefore (int|null), seenAt (RFC3339|null)}`. `limit` 1-100 (default 30). Pass `nextBefore` as `before` for older messages; pass your newest `seq` as `after` to poll for new ones (then `hasMore` means more newer messages wait). `before` and `after` together → 400. `seenAt` is when the friend last read the chat; your messages with `createdAt <= seenAt` are seen.
+- `POST /dm/{userId}/messages` `{id (UUID chosen by the app), text (1-1000 chars, trimmed)}` → `201 DM`. Sending the same `id` again returns `200` with the saved message, so a retry after a lost reply never duplicates. An `id` used by someone else → `409`. `429 rate_limited` with `Retry-After` when sending too fast (per user) or after 500 messages per user per UTC day. Sending marks the chat read for the sender, and pushes "<first name> sent you a message" (never the text) to the friend's devices.
+- `POST /dm/{userId}/read` → `204`: marks the chat read up to now.
+- `PUT /me/push-token` `{token ("ExponentPushToken[...]"), platform ("android"|"ios")}` → `204`. A token belongs to one account; saving it moves it from any other. `DELETE /me/push-token` `{token}` → `204` (on sign-out). Push data is `{type: "dm", from: userId}` on Android channel `messages`.
 
 ## Health
 `GET /health` → `{status:"ok", time, version}` (no auth, no DB detail).

@@ -43,6 +43,17 @@ const (
 	DefaultChatPageLimit  = 30
 	MaxChatPageLimit      = 50
 	MaxChatSessionsListed = 100
+	// MaxDMChars is the longest message between friends, in runes.
+	MaxDMChars = 1000
+	// DefaultDMPageLimit and MaxDMPageLimit bound GET /dm/{userId}/messages.
+	DefaultDMPageLimit = 30
+	MaxDMPageLimit     = 100
+	// DMDailyCap is how many messages one user can send per UTC day.
+	DMDailyCap = 500
+	// MaxDMThreadsListed bounds the inbox.
+	MaxDMThreadsListed = 200
+	// MaxPushTokenChars bounds a stored Expo push token.
+	MaxPushTokenChars = 200
 )
 
 // Request header names understood by the generic-request-info middleware.
@@ -86,4 +97,7 @@ const (
 	CollChatSessions = "chatSessions"
 	CollChatMessages = "chatMessages"
 	CollConnections  = "connections"
+	CollDMThreads    = "dmThreads"
+	CollDMs          = "directMessages"
+	CollPushTokens   = "pushTokens"
 )

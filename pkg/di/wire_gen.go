@@ -62,7 +62,11 @@ func InitializeApp() (AppInterface, func(), error) {
 	iChatMessageRepo := repositories.ChatMessages
 	iChatService := service.NewChatService(iLogger, store, iChatSessionRepo, iChatMessageRepo, clockClock)
 	iConnectionRepo := repositories.Connections
-	iConnectionService := service.NewConnectionService(iLogger, store, iUserRepo, iConnectionRepo, iStatsService, clockClock)
+	iDirectMessageRepo := repositories.DMs
+	iConnectionService := service.NewConnectionService(iLogger, store, iUserRepo, iConnectionRepo, iDirectMessageRepo, iStatsService, clockClock)
+	iPushTokenRepo := repositories.PushTokens
+	iPushSender := drivers.NewExpoPushSender(store)
+	idmService := service.NewDMService(iLogger, iUserRepo, iConnectionRepo, iDirectMessageRepo, iPushTokenRepo, iPushSender, clockClock)
 	diAppLogic := &appLogic{
 		logger:     iLogger,
 		config:     store,
@@ -81,6 +85,7 @@ func InitializeApp() (AppInterface, func(), error) {
 		health:     iHealthService,
 		chat:       iChatService,
 		connection: iConnectionService,
+		dm:         idmService,
 	}
 	return diAppLogic, func() {
 		cleanup()
@@ -89,7 +94,7 @@ func InitializeApp() (AppInterface, func(), error) {
 
 // InitializeTestApp builds the graph from explicit dependencies (in-memory repositories, fake clock,
 // capturing mailer, fake Google verifier) so tests exercise the real services and HTTP layer.
-func InitializeTestApp(cfg *config.Store, log logger.ILogger, clk clock.Clock, mailer smtp.IMailer, google drivers.IGoogleVerifier, repos *Repositories) (AppInterface, error) {
+func InitializeTestApp(cfg *config.Store, log logger.ILogger, clk clock.Clock, mailer smtp.IMailer, google drivers.IGoogleVerifier, push drivers.IPushSender, repos *Repositories) (AppInterface, error) {
 	set := ratelimit.NewSet()
 	iUserRepo := repos.Users
 	iMembershipRepo := repos.Memberships
@@ -115,7 +120,10 @@ func InitializeTestApp(cfg *config.Store, log logger.ILogger, clk clock.Clock, m
 	iChatMessageRepo := repos.ChatMessages
 	iChatService := service.NewChatService(log, cfg, iChatSessionRepo, iChatMessageRepo, clk)
 	iConnectionRepo := repos.Connections
-	iConnectionService := service.NewConnectionService(log, cfg, iUserRepo, iConnectionRepo, iStatsService, clk)
+	iDirectMessageRepo := repos.DMs
+	iConnectionService := service.NewConnectionService(log, cfg, iUserRepo, iConnectionRepo, iDirectMessageRepo, iStatsService, clk)
+	iPushTokenRepo := repos.PushTokens
+	idmService := service.NewDMService(log, iUserRepo, iConnectionRepo, iDirectMessageRepo, iPushTokenRepo, push, clk)
 	diAppLogic := &appLogic{
 		logger:     log,
 		config:     cfg,
@@ -134,6 +142,7 @@ func InitializeTestApp(cfg *config.Store, log logger.ILogger, clk clock.Clock, m
 		health:     iHealthService,
 		chat:       iChatService,
 		connection: iConnectionService,
+		dm:         idmService,
 	}
 	return diAppLogic, nil
 }
@@ -141,10 +150,11 @@ func InitializeTestApp(cfg *config.Store, log logger.ILogger, clk clock.Clock, m
 // container.go:
 
 // services are shared by the production and the test injector.
-var services = wire.NewSet(service.NewAuthService, service.NewUserService, service.NewHabitService, service.NewDailyLogService, service.NewWorkoutService, service.NewPeriodService, service.NewSettingsService, service.NewSyncService, service.NewStatsService, service.NewProvisionService, service.NewHealthService, service.NewChatService, service.NewConnectionService)
+var services = wire.NewSet(service.NewAuthService, service.NewUserService, service.NewHabitService, service.NewDailyLogService, service.NewWorkoutService, service.NewPeriodService, service.NewSettingsService, service.NewSyncService, service.NewStatsService, service.NewProvisionService, service.NewHealthService, service.NewChatService, service.NewConnectionService, service.NewDMService)
 
 var repositoryFields = wire.FieldsOf(new(*Repositories),
-	"Users", "Spaces", "Memberships", "Entities", "Ops", "OTPs", "Sessions", "ChatSessions", "ChatMessages", "Connections", "Accounts", "Pinger")
+	"Users", "Spaces", "Memberships", "Entities", "Ops", "OTPs", "Sessions", "ChatSessions", "ChatMessages", "Connections", "DMs", "PushTokens", "Accounts",
+	"Pinger")
 
 var app = wire.NewSet(ratelimit.NewSet, services,
 	repositoryFields, wire.Struct(new(appLogic), "*"), wire.Bind(new(AppInterface), new(*appLogic)),
