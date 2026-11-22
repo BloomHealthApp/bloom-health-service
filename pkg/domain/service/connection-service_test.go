@@ -137,3 +137,12 @@ func TestLinkCodeRetriesOnAClash(t *testing.T) {
 	require.True(t, request.IsProfileLinkCode(resp.Code))
 	require.Equal(t, "https://bloom.test/u/"+resp.Code, resp.URL)
 }
+
+func TestActivityIsOnlyForFriends(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	svc := createConnectionService(ctrl, func(m *connMocks) {
+		m.conns.EXPECT().ByPair(gomock.Any(), "u1", "u2").Return(nil, nil)
+	})
+	_, herr := svc.Activity(context.Background(), actorWithRole(userrole.Owner), "u2")
+	require.Equal(t, 404, status(herr))
+}

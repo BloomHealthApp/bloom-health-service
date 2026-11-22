@@ -21,3 +21,6 @@ Computes streaks, completion and workout totals on the server, as a cross-check 
 
 ## ProfileStats
 `ProfileStats(userID)` gives the public-profile numbers for the space the user owns: `currentStreak` and `longestStreak` from the same summary, and the count of active habits. It returns nil (no error) for a viewer, who has no space of their own. Only these three numbers may leave it: never days, `restDay` or anything period-related, because friends see them.
+
+## ProfileActivity
+`ProfileActivity(userID)` is a friend's activity graph and today's habits, from the same scoring (`score`) as the summary. Days leave as `scoring.HeatLevel` (mirrors the app's `heatLevel` with the owner's threshold) and only when the level is above 0, so a rest or period day with nothing done is indistinguishable from a missed one. Today's habits are active and scheduled on the owner's local today, ordered by `sortOrder`, with only title, icon and done. Nil for a viewer.

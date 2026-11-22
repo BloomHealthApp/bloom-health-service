@@ -216,3 +216,26 @@ func LocalDate(t time.Time, tz string) string {
 	}
 	return t.In(loc).Format("2006-01-02")
 }
+
+// IsScheduled reports whether h is due on weekday (0=Sunday).
+func IsScheduled(h Habit, weekday int) bool { return scheduled(h, weekday) }
+
+// Status is a habit's status for a day's log: the recorded status, or one evaluated from its value.
+func Status(h Habit, l Log) string { return statusOf(h, l) }
+
+// HeatLevel buckets a day's completion into 0-4 for the activity graph. It mirrors heatLevel in the app's
+// CalendarDayCell; 0 also covers days with nothing scheduled.
+func HeatLevel(percent, threshold float64) int {
+	switch {
+	case percent <= 0:
+		return 0
+	case percent >= 100:
+		return 4
+	case percent >= threshold:
+		return 3
+	case percent >= threshold/2:
+		return 2
+	default:
+		return 1
+	}
+}

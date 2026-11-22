@@ -44,6 +44,8 @@ type IConnectionService interface {
 	Remove(ctx context.Context, actor *bo.Actor, id string) apperrors.IHttpError
 	// Profile returns a friend's (or the caller's own) public profile with stats; 404 for anyone else.
 	Profile(ctx context.Context, actor *bo.Actor, userID string) (*response.PublicProfileResponse, apperrors.IHttpError)
+	// Activity returns a friend's (or the caller's own) year of daily progress and today's habits; 404 for anyone else.
+	Activity(ctx context.Context, actor *bo.Actor, userID string) (*response.ProfileActivityResponse, apperrors.IHttpError)
 	// PublicCard is what the signed-out web page may show for a link; false for an unknown, reset or deleted link.
 	PublicCard(ctx context.Context, code string) (*bo.PublicCard, bool)
 }
@@ -376,8 +378,8 @@ func (s *connectionService) Remove(ctx context.Context, actor *bo.Actor, id stri
 	return nil
 }
 
-func (s *connectionService) Profile(ctx context.Context, actor *bo.Actor, userID string) (*response.PublicProfileResponse, apperrors.IHttpError) {
-	me := actor.User.ID
+// friendOrSelf is userID's account when it is the caller or one of their friends, and errNoProfile otherwise.
+func (s *connectionService) friendOrSelf(ctx context.Context, me, userID string) (*dao.User, apperrors.IHttpError) {
 	if userID != me {
 		c, err := s.pair(ctx, me, userID)
 		if err != nil {
@@ -394,11 +396,31 @@ func (s *connectionService) Profile(ctx context.Context, actor *bo.Actor, userID
 	if !ok {
 		return nil, errNoProfile
 	}
+	return u, nil
+}
+
+func (s *connectionService) Profile(ctx context.Context, actor *bo.Actor, userID string) (*response.PublicProfileResponse, apperrors.IHttpError) {
+	u, herr := s.friendOrSelf(ctx, actor.User.ID, userID)
+	if herr != nil {
+		return nil, herr
+	}
 	p, herr := s.profileFor(ctx, u, true)
 	if herr != nil {
 		return nil, herr
 	}
 	return &p, nil
+}
+
+func (s *connectionService) Activity(ctx context.Context, actor *bo.Actor, userID string) (*response.ProfileActivityResponse, apperrors.IHttpError) {
+	u, herr := s.friendOrSelf(ctx, actor.User.ID, userID)
+	if herr != nil {
+		return nil, herr
+	}
+	a, err := s.stats.ProfileActivity(ctx, u.ID)
+	if err != nil {
+		return nil, internalErr(s.log, ctx, "profile activity failed", err)
+	}
+	return helpers.ProfileActivityResponse(a), nil
 }
 
 func (s *connectionService) PublicCard(ctx context.Context, code string) (*bo.PublicCard, bool) {

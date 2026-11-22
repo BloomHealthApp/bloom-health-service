@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	"github.com/BloomHealthApp/bloom-health-service/pkg/constants"
@@ -26,6 +27,9 @@ type IStatsService interface {
 	// ProfileStats returns the streaks and active habit count of the space userID owns, for their public profile.
 	// It is nil, with no error, when they own no space (a viewer).
 	ProfileStats(ctx context.Context, userID string) (*bo.ProfileStats, error)
+	// ProfileActivity returns a year of daily heat levels and today's habits for the space userID owns, for friends.
+	// It is nil, with no error, when they own no space (a viewer).
+	ProfileActivity(ctx context.Context, userID string) (*bo.ProfileActivity, error)
 }
 
 type statsService struct {
@@ -91,22 +95,31 @@ func (s *statsService) Summary(ctx context.Context, a *bo.Actor, req *request.Ra
 	return sum, nil
 }
 
-func (s *statsService) ProfileStats(ctx context.Context, userID string) (*bo.ProfileStats, error) {
+// ownedSpace is the id of the space userID owns, or "" when they own none.
+func (s *statsService) ownedSpace(ctx context.Context, userID string) (string, error) {
 	m, err := s.memberships.ForUser(ctx, userID)
 	if apperrors.IsNotFound(err) {
-		return nil, nil
+		return "", nil
 	}
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	if m.Role != userrole.Owner {
-		return nil, nil
+		return "", nil
 	}
-	sum, err := s.summary(ctx, m.SpaceID, &request.RangeReq{})
+	return m.SpaceID, nil
+}
+
+func (s *statsService) ProfileStats(ctx context.Context, userID string) (*bo.ProfileStats, error) {
+	spaceID, err := s.ownedSpace(ctx, userID)
+	if err != nil || spaceID == "" {
+		return nil, err
+	}
+	sum, err := s.summary(ctx, spaceID, &request.RangeReq{})
 	if err != nil {
 		return nil, err
 	}
-	habits, err := s.entities.List(ctx, m.SpaceID, entitytype.Habit, mongorepo.EntityQuery{})
+	habits, err := s.entities.List(ctx, spaceID, entitytype.Habit, mongorepo.EntityQuery{})
 	if err != nil {
 		return nil, err
 	}
@@ -119,21 +132,67 @@ func (s *statsService) ProfileStats(ctx context.Context, userID string) (*bo.Pro
 	return &bo.ProfileStats{CurrentStreak: sum.CurrentStreak, LongestStreak: sum.LongestStreak, Habits: active}, nil
 }
 
-func (s *statsService) summary(ctx context.Context, spaceID string, req *request.RangeReq) (*response.SummaryResponse, error) {
+// activityDays is how far back a friend's activity graph goes: 53 weeks, as drawn by the app.
+const activityDays = 53 * 7
+
+func (s *statsService) ProfileActivity(ctx context.Context, userID string) (*bo.ProfileActivity, error) {
+	spaceID, err := s.ownedSpace(ctx, userID)
+	if err != nil || spaceID == "" {
+		return nil, err
+	}
+	sc, err := s.score(ctx, spaceID)
+	if err != nil {
+		return nil, err
+	}
+	today, _ := time.Parse(utils.DateLayout, sc.today)
+	since := today.AddDate(0, 0, -activityDays).Format(utils.DateLayout)
+	// Only the heat level leaves here: rest days, and so period days, look like any other day.
+	out := &bo.ProfileActivity{Days: []bo.ActivityDay{}, TodayHabits: []bo.TodayHabit{}}
+	for _, d := range sc.days {
+		if d.Date <= since {
+			continue
+		}
+		if lvl := scoring.HeatLevel(d.Percent, sc.settings.Threshold); lvl > 0 {
+			out.Days = append(out.Days, bo.ActivityDay{Date: d.Date, Level: lvl})
+		}
+	}
+	ents := append([]dao.Entity(nil), sc.habitEnts...)
+	sort.SliceStable(ents, func(i, j int) bool {
+		a, _ := ents[i].Data["sortOrder"].(float64)
+		b, _ := ents[j].Data["sortOrder"].(float64)
+		return a < b
+	})
+	logs := sc.byDate[sc.today]
+	for i := range ents {
+		h := habitFromEntity(&ents[i])
+		if !h.Active || !scoring.IsScheduled(h, int(today.Weekday())) {
+			continue
+		}
+		title, _ := ents[i].Data["title"].(string)
+		icon, _ := ents[i].Data["icon"].(string)
+		l, logged := logs[h.ID]
+		out.TodayHabits = append(out.TodayHabits, bo.TodayHabit{Title: title, Icon: icon, Done: logged && scoring.Status(h, l) == scoring.Complete})
+	}
+	return out, nil
+}
+
+// spaceScore is a space's scored history from its first log through today, in the owner's timezone.
+type spaceScore struct {
+	today     string
+	habitEnts []dao.Entity
+	habits    []scoring.Habit
+	byDate    map[string]map[string]scoring.Log
+	settings  scoring.Settings
+	days      []scoring.Day
+}
+
+func (s *statsService) score(ctx context.Context, spaceID string) (*spaceScore, error) {
 	owner := s.spaceOwner(ctx, spaceID)
 	tz := "UTC"
 	if owner != nil {
 		tz = owner.Timezone
 	}
 	today := scoring.LocalDate(s.clock.Now(), tz)
-	from, to := req.From, req.To
-	if to == "" {
-		to = today
-	}
-	if from == "" {
-		t, _ := time.Parse(utils.DateLayout, to)
-		from = t.AddDate(0, 0, -29).Format(utils.DateLayout)
-	}
 	habitEnts, err := s.entities.List(ctx, spaceID, entitytype.Habit, mongorepo.EntityQuery{})
 	if err != nil {
 		return nil, err
@@ -199,6 +258,23 @@ func (s *statsService) summary(ctx context.Context, spaceID string, req *request
 	all, err := scoring.ComputeDays(habits, byDate, settings, earliest, today, today)
 	if err != nil {
 		return nil, err
+	}
+	return &spaceScore{today: today, habitEnts: habitEnts, habits: habits, byDate: byDate, settings: settings, days: all}, nil
+}
+
+func (s *statsService) summary(ctx context.Context, spaceID string, req *request.RangeReq) (*response.SummaryResponse, error) {
+	sc, err := s.score(ctx, spaceID)
+	if err != nil {
+		return nil, err
+	}
+	today, all := sc.today, sc.days
+	from, to := req.From, req.To
+	if to == "" {
+		to = today
+	}
+	if from == "" {
+		t, _ := time.Parse(utils.DateLayout, to)
+		from = t.AddDate(0, 0, -29).Format(utils.DateLayout)
 	}
 	cur, long := scoring.Streaks(all, today)
 	window := []scoring.Day{}

@@ -729,6 +729,21 @@ func (m *MockIStatsService) EXPECT() *MockIStatsServiceMockRecorder {
 	return m.recorder
 }
 
+// ProfileActivity mocks base method.
+func (m *MockIStatsService) ProfileActivity(arg0 context.Context, arg1 string) (*bo.ProfileActivity, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProfileActivity", arg0, arg1)
+	ret0, _ := ret[0].(*bo.ProfileActivity)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ProfileActivity indicates an expected call of ProfileActivity.
+func (mr *MockIStatsServiceMockRecorder) ProfileActivity(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProfileActivity", reflect.TypeOf((*MockIStatsService)(nil).ProfileActivity), arg0, arg1)
+}
+
 // ProfileStats mocks base method.
 func (m *MockIStatsService) ProfileStats(arg0 context.Context, arg1 string) (*bo.ProfileStats, error) {
 	m.ctrl.T.Helper()
@@ -1011,6 +1026,21 @@ func (m *MockIConnectionService) Accept(arg0 context.Context, arg1 *bo.Actor, ar
 func (mr *MockIConnectionServiceMockRecorder) Accept(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Accept", reflect.TypeOf((*MockIConnectionService)(nil).Accept), arg0, arg1, arg2)
+}
+
+// Activity mocks base method.
+func (m *MockIConnectionService) Activity(arg0 context.Context, arg1 *bo.Actor, arg2 string) (*response.ProfileActivityResponse, errors.IHttpError) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Activity", arg0, arg1, arg2)
+	ret0, _ := ret[0].(*response.ProfileActivityResponse)
+	ret1, _ := ret[1].(errors.IHttpError)
+	return ret0, ret1
+}
+
+// Activity indicates an expected call of Activity.
+func (mr *MockIConnectionServiceMockRecorder) Activity(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Activity", reflect.TypeOf((*MockIConnectionService)(nil).Activity), arg0, arg1, arg2)
 }
 
 // Decline mocks base method.
