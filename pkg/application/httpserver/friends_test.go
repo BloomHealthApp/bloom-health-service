@@ -2,6 +2,7 @@ package httpserver_test
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"sort"
@@ -202,4 +203,58 @@ func TestPublicProfilePageShowsOnlyAFirstName(t *testing.T) {
 	st, links, _ := e.get("/.well-known/assetlinks.json")
 	require.Equal(t, 200, st)
 	require.JSONEq(t, "[]", links, "no fingerprints configured")
+}
+
+// befriend makes a and b friends through a's link.
+func (e *env) befriend(a, b string) {
+	e.t.Helper()
+	st, sent := e.do("POST", "/v1/connections", b, map[string]any{"code": e.linkCode(a)})
+	require.Equal(e.t, 201, st, sent)
+	st, acc := e.do("POST", "/v1/connections/"+sent["connectionId"].(string)+"/accept", a, nil)
+	require.Equal(e.t, 200, st, acc)
+}
+
+func TestFriendActivityShowsProgressButNotRestOrPeriodDays(t *testing.T) {
+	e := setup(t)
+	anu, _ := e.login("anu@example.com")
+	other, _ := e.login("other-owner@example.com")
+	stranger, _ := e.login("other-viewer@example.com")
+	anuID := e.meID(anu)
+
+	e.enableTracker(anu)
+	e.logPerfect(anu, dayStr(-2))
+	e.logPerfect(anu, today())
+	// A period over days with nothing logged must look exactly like days that were simply missed.
+	st, p := e.do("POST", "/v1/periods", anu, map[string]any{"startDate": dayStr(-6), "endDate": dayStr(-4), "note": privateNote})
+	require.Equal(t, 201, st, p)
+
+	st, _ = e.do("GET", "/v1/profiles/"+anuID+"/activity", stranger, nil)
+	require.Equal(t, 404, st, "strangers can't see activity")
+
+	e.befriend(anu, other)
+	st, act := e.do("GET", "/v1/profiles/"+anuID+"/activity", other, nil)
+	require.Equal(t, 200, st, act)
+	require.Equal(t, []string{"days", "todayHabits"}, keys(act))
+
+	levels := map[string]float64{}
+	for _, d := range list(act, "days") {
+		m := d.(map[string]any)
+		require.Equal(t, []string{"date", "level"}, keys(m))
+		levels[m["date"].(string)] = m["level"].(float64)
+	}
+	require.Equal(t, float64(4), levels[today()])
+	require.Equal(t, float64(4), levels[dayStr(-2)])
+	for _, off := range []int{-6, -5, -4, -3} {
+		_, present := levels[dayStr(off)]
+		require.False(t, present, "quiet days are left out, whatever the reason")
+	}
+
+	habits := list(act, "todayHabits")
+	require.NotEmpty(t, habits)
+	for _, h := range habits {
+		m := h.(map[string]any)
+		require.Equal(t, []string{"done", "icon", "title"}, keys(m))
+		require.Equal(t, true, m["done"])
+	}
+	require.NotContains(t, fmt.Sprint(act), privateNote)
 }

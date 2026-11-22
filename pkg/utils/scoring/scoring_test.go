@@ -102,3 +102,15 @@ func TestMilestones(t *testing.T) {
 	require.Equal(t, []int{3, 7}, MilestonesReached(10))
 	require.Equal(t, []int{}, MilestonesReached(2))
 }
+
+func TestHeatLevel(t *testing.T) {
+	cases := []struct {
+		pct, threshold float64
+		want           int
+	}{{0, 80, 0}, {10, 80, 1}, {40, 80, 2}, {80, 80, 3}, {99, 80, 3}, {100, 80, 4}}
+	for _, c := range cases {
+		if got := HeatLevel(c.pct, c.threshold); got != c.want {
+			t.Errorf("HeatLevel(%v, %v) = %d, want %d", c.pct, c.threshold, got, c.want)
+		}
+	}
+}

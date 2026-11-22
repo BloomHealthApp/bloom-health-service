@@ -63,6 +63,7 @@ Access: public = no token; both = any member; owner = `RequireOwner`.
 | `POST /v1/connections/:id/decline` | both | Connection | [friends.md](friends.md) |
 | `DELETE /v1/connections/:id` | both | Connection | [friends.md](friends.md) |
 | `GET /v1/profiles/:id` | both | Connection | [friends.md](friends.md) |
+| `GET /v1/profiles/:id/activity` | both | Connection | [friends.md](friends.md) |
 | `POST /v1/sync/push` | owner | Sync | [sync.md](sync.md) |
 | `GET /v1/sync/pull` | both | Sync | [sync.md](sync.md) |
 | `GET /v1/chat/models` | both | Chat | [chat.md](chat.md) |

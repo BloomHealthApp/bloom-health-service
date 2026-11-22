@@ -115,6 +115,7 @@ Online only, like Chat. Any role. You can only send someone a friend request thr
 - `POST /connections/{id}/accept` → `Connection`; `POST /connections/{id}/decline` → `204`. Addressee only; otherwise `404`. A decline is not shown to the requester (their view of the link goes back to `"none"`).
 - `DELETE /connections/{id}` → `204`: unfriend (either side) or withdraw your own pending request. The addressee of a pending request declines instead (`404` here).
 - `GET /profiles/{userId}` → `PublicProfile` with stats, for a friend or yourself; `404` for anyone else.
+- `GET /profiles/{userId}/activity` → `{days: [{date, level}], todayHabits: [{title, icon, done}]}`, for a friend or yourself; `404` for anyone else. `days` covers the last 53 weeks in the owner's timezone and lists only days with progress (`level` 1-4, the app's heat buckets); every other day is 0. No rest-day flag, percentages or log values. Both lists are empty for an account without a space of its own.
 - Public (no token): `GET /u/{code}` is an HTML page with the first name and an initial only, "Open in Bloom" (`bloomhealth://u/{code}`) and "Get Bloom" buttons, `noindex`, rate limited per IP; an inactive link gets one generic `404` page. `GET /.well-known/assetlinks.json` lists the Android app for App Links.
 - Erasing an account removes its link code, requests and friendships.
 

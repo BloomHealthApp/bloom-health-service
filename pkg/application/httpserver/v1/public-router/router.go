@@ -52,6 +52,7 @@ func RegisterRoutes(v1 *gin.RouterGroup) {
 	authed.POST("/connections/:id/decline", HandleDeclineConnection)
 	authed.DELETE("/connections/:id", HandleDeleteConnection)
 	authed.GET("/profiles/:id", HandleGetProfile)
+	authed.GET("/profiles/:id/activity", HandleGetProfileActivity)
 	byLink := authed.Group("", middleware.LimitFriends())
 	byLink.GET("/profiles/by-link/:code", HandleGetProfileByLink)
 	byLink.POST("/connections", HandleSendConnectionRequest)

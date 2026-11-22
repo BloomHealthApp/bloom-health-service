@@ -25,3 +25,18 @@ func ConnectionResponse(c *dao.Connection, other *dao.User) response.ConnectionR
 	}
 	return response.ConnectionResponse{ID: c.ID, Profile: PublicProfileResponse(other, nil), Since: since.UTC().Format(time.RFC3339)}
 }
+
+// ProfileActivityResponse renders a friend's activity; nil (no space of their own) is an empty graph.
+func ProfileActivityResponse(a *bo.ProfileActivity) *response.ProfileActivityResponse {
+	out := &response.ProfileActivityResponse{Days: []response.ProfileActivityDay{}, TodayHabits: []response.ProfileTodayHabit{}}
+	if a == nil {
+		return out
+	}
+	for _, d := range a.Days {
+		out.Days = append(out.Days, response.ProfileActivityDay{Date: d.Date, Level: d.Level})
+	}
+	for _, h := range a.TodayHabits {
+		out.TodayHabits = append(out.TodayHabits, response.ProfileTodayHabit{Title: h.Title, Icon: h.Icon, Done: h.Done})
+	}
+	return out
+}
